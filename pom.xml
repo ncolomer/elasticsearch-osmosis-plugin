@@ -8,8 +8,8 @@
 
 	<scm>
 		<connection>scm:git:git@github.com:ncolomer/elasticsearch-osmosis-plugin.git</connection>
-	  <tag>elasticsearch-osmosis-plugin-0.0.1</tag>
-  </scm>
+		<tag>elasticsearch-osmosis-plugin-0.0.1</tag>
+	</scm>
 
 	<properties>
 		<!-- Project -->
@@ -29,8 +29,11 @@
 		<!-- Maven plugins -->
 		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
 		<maven-jar-plugin.version>2.4</maven-jar-plugin.version>
+		<maven-source-plugin.version>2.1.2</maven-source-plugin.version>
+		<maven-javadoc-plugin.version>2.8.1</maven-javadoc-plugin.version>
 		<maven-install-plugin.version>2.3.1</maven-install-plugin.version>
 		<maven-release-plugin.version>2.3.2</maven-release-plugin.version>
+		<maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
 		<downloads-maven-plugin.version>0.6</downloads-maven-plugin.version>
 	</properties>
 
@@ -108,6 +111,17 @@
 				<version>${maven-jar-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven-source-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven-javadoc-plugin.version}</version>
+				<configuration>
+					<quiet>true</quiet>
+				</configuration>
+			</plugin>
+			<plugin>
 				<artifactId>maven-install-plugin</artifactId>
 				<version>${maven-install-plugin.version}</version>
 			</plugin>
@@ -115,17 +129,20 @@
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
 				<configuration>
-					<goals>install ghDownloads:upload</goals>
+					<goals>clean install ghDownloads:upload</goals>
 				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>${maven-deploy-plugin.version}</version>
 			</plugin>
 			<plugin>
 				<groupId>com.github.github</groupId>
 				<artifactId>downloads-maven-plugin</artifactId>
-				<version>{downloads-maven-plugin.version}</version>
+				<version>${downloads-maven-plugin.version}</version>
 				<configuration>
 					<description>${project.version} release of ${project.name}</description>
 					<override>true</override>
-					<includes>${project.build.directory}/</includes>
 					<includeAttached>true</includeAttached>
 				</configuration>
 			</plugin>
