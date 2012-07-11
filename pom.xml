@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.openstreetmap.osmosis</groupId>
 	<artifactId>elasticsearch-osmosis-plugin</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.2</version>
 	<name>elasticsearch-osmosis-plugin</name>
 	<packaging>jar</packaging>
 
