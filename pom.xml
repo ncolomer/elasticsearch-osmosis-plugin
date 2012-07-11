@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.openstreetmap.osmosis</groupId>
 	<artifactId>elasticsearch-osmosis-plugin</artifactId>
-	<version>0.0.3-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>elasticsearch-osmosis-plugin</name>
 	<packaging>jar</packaging>
 
@@ -137,13 +137,13 @@
 				<version>${maven-deploy-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<!-- https://github.com/github/maven-plugins/ -->
 				<groupId>com.github.github</groupId>
 				<artifactId>downloads-maven-plugin</artifactId>
 				<version>${downloads-maven-plugin.version}</version>
 				<configuration>
 					<description>${project.version} release of ${project.name}</description>
 					<override>true</override>
-					<includeAttached>true</includeAttached>
 				</configuration>
 			</plugin>
 		</plugins>
