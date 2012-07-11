@@ -1,0 +1,135 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.openstreetmap.osmosis</groupId>
+	<artifactId>elasticsearch-osmosis-plugin</artifactId>
+	<version>0.0.1</version>
+	<name>elasticsearch-osmosis-plugin</name>
+	<packaging>jar</packaging>
+
+	<scm>
+		<connection>scm:git:git@github.com:ncolomer/elasticsearch-osmosis-plugin.git</connection>
+	  <tag>elasticsearch-osmosis-plugin-0.0.1</tag>
+  </scm>
+
+	<properties>
+		<!-- Project -->
+		<github.global.server>github</github.global.server>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.6</java.version>
+		<!-- Libraries -->
+		<osmosis-core.version>0.40.1</osmosis-core.version>
+		<elasticsearch.version>0.19.8</elasticsearch.version>
+		<!-- Test -->
+		<commons-io.version>2.1</commons-io.version>
+		<testng.version>6.5.2</testng.version>
+		<!-- Log -->
+		<slf4j-bridge.version>1.6.4</slf4j-bridge.version>
+		<logback.version>1.0.3</logback.version>
+		<!-- Maven plugins -->
+		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
+		<maven-jar-plugin.version>2.4</maven-jar-plugin.version>
+		<maven-install-plugin.version>2.3.1</maven-install-plugin.version>
+		<maven-release-plugin.version>2.3.2</maven-release-plugin.version>
+		<downloads-maven-plugin.version>0.6</downloads-maven-plugin.version>
+	</properties>
+
+	<repositories>
+		<!-- Sonatype -->
+		<repository>
+			<id>repository.sonatype.releases</id>
+			<url>http://oss.sonatype.org/content/repositories/releases/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>repository.sonatype.snapshots</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<!-- Osmosis -->
+		<dependency>
+			<groupId>org.openstreetmap</groupId>
+			<artifactId>osmosis-core</artifactId>
+			<version>${osmosis-core.version}</version>
+		</dependency>
+		<!-- Elasticsearch -->
+		<dependency>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>${elasticsearch.version}</version>
+		</dependency>
+		<!-- Test -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${commons-io.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>${testng.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Log -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+			<version>${slf4j-bridge.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-install-plugin</artifactId>
+				<version>${maven-install-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>${maven-release-plugin.version}</version>
+				<configuration>
+					<goals>install ghDownloads:upload</goals>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.github.github</groupId>
+				<artifactId>downloads-maven-plugin</artifactId>
+				<version>{downloads-maven-plugin.version}</version>
+				<configuration>
+					<description>${project.version} release of ${project.name}</description>
+					<override>true</override>
+					<includes>${project.build.directory}/</includes>
+					<includeAttached>true</includeAttached>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

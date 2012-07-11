@@ -1,6 +1,13 @@
-*.class
+.project
+.classpath
+.settings/
 
-# Package Files #
-*.jar
-*.war
-*.ear
+bin/
+target/
+data/
+test-output/
+
+release.properties
+pom.xml.releaseBackup
+
+.DS_Store
