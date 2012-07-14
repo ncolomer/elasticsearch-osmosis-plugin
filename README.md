@@ -48,7 +48,7 @@ You must have an Elasticsearch cluster up and running and reachable to make this
 You can get osm files (planet, extract) from various location. OpenStreetMap have some listed on their dedicated 
 [Planet.osm](http://wiki.openstreetmap.org/wiki/Planet.osm) wiki page.
 
-Here is an example for the <code>ile-de-france.osm.pbf</code> extract by [geofabrik.de](http://www.geofabrik.de/):
+Here is an example for the <code>ile-de-france.osm.pbf</code> extract by [Geofabrik.de](http://www.geofabrik.de/):
 
     mkdir -p ~/osm/extract ~/osm/planet ~/osm/output
     wget -P ~/osm/extract http://download.geofabrik.de/osm/europe/france/ile-de-france.osm.pbf
