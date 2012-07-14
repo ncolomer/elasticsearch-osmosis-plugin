@@ -1,6 +1,6 @@
 # elasticsearch-osmosis-plugin
 
-An Osmosis plugin that injects OpenStreetMap data into an Elasticsearch cluster
+An Osmosis plugin that inserts OpenStreetMap data into an Elasticsearch cluster
 
 - - -
 
