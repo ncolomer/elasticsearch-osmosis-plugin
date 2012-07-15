@@ -1,13 +1,18 @@
 # elasticsearch-osmosis-plugin
-An Osmosis plugin that injects OSM data into an Elasticsearch cluster
+
+An Osmosis plugin that inserts OpenStreetMap data into an Elasticsearch cluster
 
 - - -
 
-## 1. Bootstrap
+## 1. Installation
 
 ### 1.1 Install Osmosis
 
-Follow this procedure:
+Untar the wanted build (look at the Osmosis builds [page](http://dev.openstreetmap.org/~bretth/osmosis-build/)) into 
+the <code>/opt</code> directory, create the <code>/etc/osmosis</code> file and set the <code>$OSMOSIS_HOME</code> and 
+<code>$PATH</code> environment variable accordingly.
+
+5-command shell procedure:
 
     # Osmosis 0.40.1 installation
     wget -P /tmp http://dev.openstreetmap.org/~bretth/osmosis-build/osmosis-0.40.1.tgz
@@ -15,61 +20,77 @@ Follow this procedure:
     echo "JAVACMD_OPTIONS=\"-server -Xmx2G\"" > /etc/osmosis
     export OSMOSIS_HOME=/opt/osmosis-0.40.1
     export PATH=$PATH:$OSMOSIS_HOME/bin
+    
+You may also be interested in the [osmosis-chef-cookbook](https://github.com/ncolomer/osmosis-chef-cookbook) that 
+automates the osmosis installation on a Chef-managed node.
 
 ### 1.2 Install elasticsearch-osmosis-plugin
 
-Put jar into <code>lib/default</code> and add line <code>org.openstreetmap.osmosis.plugin.elasticsearch.ElasticSearchWriterPluginLoader</code> 
-into the <code>config/osmosis-plugins.conf</code> file (create if necessary).
+Put the latest jar (see the [downloads](https://github.com/ncolomer/elasticsearch-osmosis-plugin/downloads) section) 
+into <code>$OSMOSIS_HOME/lib/default</code> directory and add the <code>org.openstreetmap.osmosis.plugin.elasticsearch.ElasticSearchWriterPluginLoader</code>
+line into the <code>OSMOSIS_HOME/config/osmosis-plugins.conf</code> file (create it if necessary).
 
-    cp ~/elasticsearch-plugin-0.0.1-SNAPSHOT.jar $OSMOSIS_HOME/lib/default/
+3-command shell procedure:
+
+    # elasticsearch-osmosis-plugin 0.0.2 installation
+    wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-0.0.2.jar
+    cp /tmp/elasticsearch-osmosis-plugin-0.0.2.jar $OSMOSIS_HOME/lib/default/
     echo "org.openstreetmap.osmosis.plugin.elasticsearch.ElasticSearchWriterPluginLoader" > $OSMOSIS_HOME/config/osmosis-plugins.conf
 
-### 1.3 Download
+## 2. Usage
 
-You can get osm files from the [download](http://download.geofabrik.de/) section of [geofabrik.de](http://www.geofabrik.de/). 
-Example for _ile-de-france_ extract below:
+### 2.1 Prerequisites
+
+You must have an Elasticsearch cluster up and running and reachable to make this plugin running.
+
+### 2.2 Download
+
+You can get osm files (planet, extract) from various location. OpenStreetMap have some listed on their dedicated 
+[Planet.osm](http://wiki.openstreetmap.org/wiki/Planet.osm) wiki page.
+
+Here is an example for the <code>ile-de-france.osm.pbf</code> extract by [Geofabrik.de](http://www.geofabrik.de/):
 
     mkdir -p ~/osm/extract ~/osm/planet ~/osm/output
     wget -P ~/osm/extract http://download.geofabrik.de/osm/europe/france/ile-de-france.osm.pbf
 
-### 1.4 Plugin usage
+### 2.3 Plugin usage
 
---write-elasticsearch (--wes)
+    --write-elasticsearch (--wes)
+    Options:
+      host (default: localhost)
+      port (default: 9300)
+      clustername (default: elasticsearch)
 
-* host (default: localhost)
-* port (default: 9300)
-* clustername (default: elasticsearch)
-
-### 1.5 Examples
+### 2.4 Examples
 
     osmosis \
     	--read-pbf ~/osm/extract/ile-de-france.osm.pbf \
     	--way-key keyList="highway" \
     	--tag-filter reject-relations \
     	--used-node \
-    	--write-elasticsearch
+    	--write-elasticsearch host="10.0.0.1" clustername="mycluster"
 
-### 1.6 Benchmarks
-
-* 171626 milliseconds (from pbf to pbf, 2 CPUs, 3072 Mo RAM)
-* 110462 milliseconds (from pbf to osm, 2 CPUs, 3072 Mo RAM)
-
-## 2. Administration
+## 3. Administration
 
 Some useful HTTP command:
 
+    # Reset the whole osm index created by this plugin
     curl -XDELETE 'http://localhost:9200/osm/'
 
-## 3. Resources
+## 4. Resources
 
-Osmosis plugin samples :
+### Osmosis related
 
-* Mapsforge's [mapsforge-map-writer](http://code.google.com/p/mapsforge/source/browse/trunk/mapsforge-map-writer/) plugin
-* Neo4j's [neo4j-osmosis-plugin](https://github.com/svzdvd/neo4j-osmosis-plugin/) plugin
+* Osmosis detailed usage wiki [page](http://wiki.openstreetmap.org/wiki/Osmosis/Detailed_Usage)
 * Self-Updating Local OpenStreetMap Extract [tutorial](https://docs.google.com/document/pub?id=1paaYsOakgJEYP380R70s4SGYq8ME3ASl-mweVi1DlQ4)
+* Other Osmosis plugins (largely inspirated from)
+  * Mapsforge's [mapsforge-map-writer](http://code.google.com/p/mapsforge/source/browse/trunk/mapsforge-map-writer/) plugin
+  * Neo4j's [neo4j-osmosis-plugin](https://github.com/svzdvd/neo4j-osmosis-plugin/) plugin
 
-ElasticSearch geospatial capabilities :
+### Elasticsearch related
 
-* Geo Location and Search [article](http://www.elasticsearch.org/blog/2010/08/16/geo_location_and_search.html)
-* Geo Distance Filter [guide](http://www.elasticsearch.org/guide/reference/query-dsl/geo-distance-filter.html)
-* Geo Point Type [guide](http://www.elasticsearch.org/guide/reference/mapping/geo-point-type.html)
+* [Elasticsearch Chef cookbook](https://github.com/karmi/cookbook-elasticsearch) by [karmi](https://github.com/karmi/)
+* Documentation about geospatial capabilities
+  * Geo Location and Search [article](http://www.elasticsearch.org/blog/2010/08/16/geo_location_and_search.html)
+  * Geo Distance Filter [guide](http://www.elasticsearch.org/guide/reference/query-dsl/geo-distance-filter.html)
+  * Geo Point Type [guide](http://www.elasticsearch.org/guide/reference/mapping/geo-point-type.html)
