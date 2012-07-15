@@ -12,7 +12,7 @@ Untar the wanted build (look at the Osmosis builds [page](http://dev.openstreetm
 the <code>/opt</code> directory, create the <code>/etc/osmosis</code> file and set the <code>$OSMOSIS_HOME</code> and 
 <code>$PATH</code> environment variable accordingly.
 
-5-command shell procedure:
+5 shell command procedure:
 
     # Osmosis 0.40.1 installation
     wget -P /tmp http://dev.openstreetmap.org/~bretth/osmosis-build/osmosis-0.40.1.tgz
@@ -28,9 +28,9 @@ automates the osmosis installation on a Chef-managed node.
 
 Put the latest jar (see the [downloads](https://github.com/ncolomer/elasticsearch-osmosis-plugin/downloads) section) 
 into <code>$OSMOSIS_HOME/lib/default</code> directory and add the <code>org.openstreetmap.osmosis.plugin.elasticsearch.ElasticSearchWriterPluginLoader</code>
-line into the <code>OSMOSIS_HOME/config/osmosis-plugins.conf</code> file (create it if necessary).
+line into the <code>$OSMOSIS_HOME/config/osmosis-plugins.conf</code> file (create it if necessary).
 
-3-command shell procedure:
+3 shell command procedure:
 
     # elasticsearch-osmosis-plugin 0.0.2 installation
     wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-0.0.2.jar
