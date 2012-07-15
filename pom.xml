@@ -8,7 +8,7 @@
 
 	<scm>
 		<connection>scm:git:git@github.com:ncolomer/elasticsearch-osmosis-plugin.git</connection>
-		<tag>elasticsearch-osmosis-plugin-0.0.2</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<properties>
@@ -129,7 +129,7 @@
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
 				<configuration>
-					<goals>clean install ghDownloads:upload</goals>
+					<goals>ghDownloads:upload</goals>
 				</configuration>
 			</plugin>
 			<plugin>
