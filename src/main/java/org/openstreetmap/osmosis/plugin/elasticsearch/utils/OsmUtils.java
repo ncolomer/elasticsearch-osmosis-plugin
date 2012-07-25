@@ -1,6 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.utils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,26 +11,30 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 
-public final class ModelUtils {
+public final class OsmUtils {
 
-	public static Map<String, String> getTagsFromWay(Way way) {
-		Map<String, String> tags = new HashMap<String, String>();
-		for (Tag tag : way.getTags()) {
-			tags.put(tag.getKey(), tag.getValue());
-		}
-		return tags;
+	public static Map<String, String> getTags(Way way) {
+		return buildMapFromTags(way.getTags());
 	}
 
-	public static List<Long> getNodesFromWay(Way way) {
+	public static Map<String, String> getTags(Node node) {
+		return buildMapFromTags(node.getTags());
+	}
+
+	protected static Map<String, String> buildMapFromTags(Collection<Tag> tags) {
+		Map<String, String> map = new HashMap<String, String>();
+		for (Tag tag : tags) {
+			map.put(tag.getKey(), tag.getValue());
+		}
+		return map;
+	}
+
+	public static List<Long> getNodes(Way way) {
 		List<Long> nodes = new ArrayList<Long>();
 		for (WayNode wayNode : way.getWayNodes()) {
 			nodes.add(wayNode.getNodeId());
 		}
 		return nodes;
-	}
-
-	public static Object[] getLonLatFromNode(Node node) {
-		return new Object[] { node.getLongitude(), node.getLatitude() };
 	}
 
 }
