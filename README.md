@@ -33,8 +33,8 @@ line into the <code>$OSMOSIS_HOME/config/osmosis-plugins.conf</code> file (creat
 3-shell-command procedure:
 
     # elasticsearch-osmosis-plugin 0.0.2 installation
-    wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-0.0.2.jar
-    cp /tmp/elasticsearch-osmosis-plugin-0.0.2.jar $OSMOSIS_HOME/lib/default/
+    wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-1.0.2.jar
+    cp /tmp/elasticsearch-osmosis-plugin-1.0.2.jar $OSMOSIS_HOME/lib/default/
     echo "org.openstreetmap.osmosis.plugin.elasticsearch.elasticsearchWriterPluginLoader" > $OSMOSIS_HOME/config/osmosis-plugins.conf
 
 ## 2. Usage
