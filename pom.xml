@@ -144,7 +144,7 @@
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
 				<configuration>
-					<goals>ghDownloads:upload</goals>
+					<goals>clean install ghDownloads:upload</goals>
 				</configuration>
 			</plugin>
 			<plugin>
