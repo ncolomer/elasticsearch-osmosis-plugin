@@ -150,15 +150,6 @@
 			<plugin>
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>clean</goal>
-							<goal>release</goal>
-							<goal>perform</goal>
-						</goals>
-					</execution>
-				</executions>
 				<configuration>
 					<goals>clean install ghDownloads:upload</goals>
 				</configuration>
