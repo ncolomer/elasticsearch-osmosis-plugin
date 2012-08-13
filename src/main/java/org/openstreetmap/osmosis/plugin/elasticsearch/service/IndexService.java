@@ -1,11 +1,14 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import java.util.Map;
 
+import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.ActionRequestBuilder;
+import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 
 public class IndexService {
 
@@ -15,45 +18,50 @@ public class IndexService {
 		this.client = client;
 	}
 
+	public void createIndex(String indexName, Map<String, XContentBuilder> map) {
+		// Delete previous existing index
+		if (indexExists(indexName)) deleteIndex(indexName);
+		// Create the new index
+		CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(indexName);
+		for (String key : map.keySet())
+			builder.addMapping(key, map.get(key));
+		builder.execute().actionGet();
+	}
+
 	public boolean indexExists(String... indices) {
 		return client.admin().indices().prepareExists(indices)
 				.execute().actionGet().exists();
 	}
 
-	public void createIndex(String indexName) {
-		try {
-			// Delete previous existing index
-			if (indexExists(indexName)) {
-				client.admin().indices().prepareDelete(indexName).execute().actionGet();
-			}
-			// Build mapping for geo fields
-			XContentBuilder source = jsonBuilder()
-					.startObject().startObject(EntityType.Node.name().toLowerCase()).startObject("properties")
-					.startObject("location").field("type", "geo_point").endObject()
-					.endObject().endObject().endObject();
-			// Create the new index
-			client.admin().indices().prepareCreate(indexName)
-					.addMapping(EntityType.Node.name().toLowerCase(), source)
-					.execute()
-					.actionGet();
-		} catch (Exception e) {
-			throw new IllegalStateException("Unable to recreate index " + indexName, e);
-		}
+	public void index(String index, String type, long id, XContentBuilder sourceBuilder) {
+		client.prepareIndex(index, type, Long.toString(id))
+				.setSource(sourceBuilder)
+				.execute().actionGet();
 	}
 
-	public void index(String index, EntityType type, long id, XContentBuilder sourceBuilder) {
-		client.prepareIndex(index, type.name().toLowerCase(), Long.toString(id))
-				.setSource(sourceBuilder)
-				.execute()
-				.actionGet();
+	public void deleteIndex(String... indices) {
+		client.admin().indices().prepareDelete(indices)
+				.execute().actionGet();
+	}
+
+	public void deleteDocument(String indexName, String type, String id) {
+		client.prepareDelete()
+				.setIndex(indexName)
+				.setType(type)
+				.setId(id)
+				.execute().actionGet();
 	}
 
 	public void refresh(String... indices) {
 		client.admin().indices().refresh(Requests.refreshRequest(indices)).actionGet();
 	}
 
-	public void close() {
-		client.close();
+	public Client getClient() {
+		return client;
+	}
+
+	public <T extends ActionRequest, S extends ActionResponse> S execute(ActionRequestBuilder<T, S> request) {
+		return request.execute().actionGet();
 	}
 
 }

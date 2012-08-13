@@ -1,77 +1,126 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
+import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmUtils;
 
 public class EntityDao {
 
 	private static final Logger LOG = Logger.getLogger(EntityDao.class.getName());
 
-	protected final IndexService indexService;
+	protected String indexName;
 
-	protected final String indexName;
+	protected IndexService indexService;
 
-	public EntityDao(IndexService indexService, String indexName) {
+	protected EntityMapper entityMapper;
+
+	public EntityDao(String indexName, IndexService indexService) {
 		this.indexService = indexService;
 		this.indexName = indexName;
-		if (!indexService.indexExists(indexName)) throw new IllegalStateException(
-				"The index " + indexName + " does not exist");
-
+		this.entityMapper = new EntityMapper();
 	}
 
-	public void save(Node node) {
-		if (node == null) throw new IllegalArgumentException("Provided node is null");
+	public String getIndexName() {
+		return indexName;
+	}
+
+	public void save(Entity entity) {
+		switch (entity.getType()) {
+		case Node:
+			saveNode((Node) entity);
+			break;
+		case Way:
+			saveWay((Way) entity);
+			break;
+		case Relation:
+			saveRelation((Relation) entity);
+			break;
+		case Bound:
+			saveBound((Bound) entity);
+			break;
+		}
+	}
+
+	protected void saveNode(Node node) {
 		try {
-			XContentBuilder sourceBuilder = jsonBuilder()
-					.startObject()
-					.field("id", node.getId())
-					.field("location", new Object[] { node.getLongitude(), node.getLatitude() })
-					.field("tags", OsmUtils.getTags(node))
-					.endObject();
-			indexService.index(indexName, node.getType(), node.getId(), sourceBuilder);
+			XContentBuilder xContentBuilder = entityMapper.marshallNode(node);
+			indexService.index(indexName, "node", node.getId(), xContentBuilder);
 		} catch (Exception e) {
 			LOG.log(Level.SEVERE, "Unable to process node: " + e.getMessage(), e);
 		}
 	}
 
-	public void save(Way way) {
-		if (way == null) throw new IllegalArgumentException("Provided way is null");
+	protected void saveWay(Way way) {
 		try {
-			XContentBuilder sourceBuilder = jsonBuilder()
-					.startObject()
-					.field("id", way.getId())
-					.field("tags", OsmUtils.getTags(way))
-					.field("nodes", OsmUtils.getNodes(way))
-					.endObject();
-			indexService.index(indexName, way.getType(), way.getId(), sourceBuilder);
+			XContentBuilder xContentBuilder = entityMapper.marshallWay(way);
+			indexService.index(indexName, "way", way.getId(), xContentBuilder);
 		} catch (Exception e) {
 			LOG.log(Level.SEVERE, "Unable to process way: " + e.getMessage(), e);
 		}
 	}
 
-	public void save(Relation relation) {
-		LOG.warning(String.format("Unable to process relation with osmid %d:" +
+	protected void saveRelation(Relation relation) {
+		LOG.warning(String.format("Unable to process relation with osmid [%d]:" +
 				" processing of Relations has not been implemented yet", relation.getId()));
 	}
 
-	public void save(Bound bound) {
-		LOG.warning(String.format("Unable to process bound with osmid %d:" +
+	protected void saveBound(Bound bound) {
+		LOG.warning(String.format("Unable to process bound with osmid [%d]:" +
 				" processing of Bounds has not been implemented yet", bound.getId()));
 	}
 
-	public void release() {
-		indexService.refresh(indexName);
-		indexService.close();
+	@SuppressWarnings("unchecked")
+	public <T extends Entity> T find(long osmid, Class<T> entityClass) {
+		if (entityClass == null) throw new NullPointerException();
+		else if (entityClass.equals(Node.class)) return (T) findNode(osmid);
+		else if (entityClass.equals(Way.class)) return (T) findWay(osmid);
+		else if (entityClass.equals(Relation.class)) return (T) findRelation(osmid);
+		else if (entityClass.equals(Bound.class)) return (T) findBound(osmid);
+		else throw new IllegalArgumentException(entityClass.getSimpleName() + " is not valid");
+	}
+
+	protected Node findNode(long osmid) {
+		SearchRequestBuilder searchRequest = findNodeQuery(osmid);
+		SearchResponse searchResponse = indexService.execute(searchRequest);
+		return searchResponse.getHits().getTotalHits() != 1 ? null :
+				entityMapper.unmarshallNode(searchResponse.getHits().getAt(0));
+	}
+
+	protected SearchRequestBuilder findNodeQuery(long osmid) {
+		return indexService.getClient().prepareSearch("osm")
+				.setQuery(QueryBuilders.idsQuery("node").ids(Long.toString(osmid)))
+				.addFields("location", "tags");
+	}
+
+	protected Way findWay(long osmid) {
+		SearchRequestBuilder searchRequest = findWayQuery(osmid);
+		SearchResponse searchResponse = indexService.execute(searchRequest);
+		return searchResponse.getHits().getTotalHits() != 1 ? null :
+				entityMapper.unmarshallWay(searchResponse.getHits().getAt(0));
+	}
+
+	protected SearchRequestBuilder findWayQuery(long osmid) {
+		return indexService.getClient().prepareSearch("osm")
+				.setQuery(QueryBuilders.idsQuery("way").ids(Long.toString(osmid)))
+				.addFields("tags", "nodes");
+	}
+
+	protected Relation findRelation(long osmid) {
+		throw new UnsupportedOperationException("Find Relation is not yet supported");
+	}
+
+	protected Bound findBound(long osmid) {
+		throw new UnsupportedOperationException("Find Bound is not yet supported");
 	}
 
 }
