@@ -1,7 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.integration;
 
+import static junit.framework.Assert.fail;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
-import static org.testng.FileAssert.fail;
 
 import java.io.File;
 import java.io.IOException;

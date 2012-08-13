@@ -27,10 +27,11 @@ public interface IndexBuilder {
 	 * Note that the returned mapping will be created using the
 	 * {@link IndexService#createIndex(String, Map)} method which itself uses
 	 * the {@link CreateIndexRequestBuilder#addMapping(String, Map)} builder
-	 * internally.
+	 * internally. See the elasticsearch <a
+	 * href="http://www.elasticsearch.org/guide/reference/mapping/">mapping
+	 * reference</a> for more information.
 	 * 
 	 * @return A {@link Map}
-	 * @see http://www.elasticsearch.org/guide/reference/mapping/
 	 */
 	public Map<String, XContentBuilder> getIndexMapping();
 
