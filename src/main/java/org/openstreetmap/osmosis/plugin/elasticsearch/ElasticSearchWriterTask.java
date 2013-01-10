@@ -1,5 +1,6 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,6 +34,11 @@ public class ElasticSearchWriterTask implements Sink {
 		this.indexService = indexService;
 		this.entityDao = entityDao;
 		this.specIndexes = specIndexes;
+	}
+
+	@Override
+	public void initialize(Map<String, Object> metadata) {
+		LOG.fine("initialize() with metadata: " + metadata.toString());
 	}
 
 	@Override

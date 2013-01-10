@@ -60,7 +60,7 @@ public class IndexService {
 		return client;
 	}
 
-	public <T extends ActionRequest, S extends ActionResponse> S execute(ActionRequestBuilder<T, S> request) {
+	public <R extends ActionRequest, S extends ActionResponse, T extends ActionRequestBuilder> S execute(ActionRequestBuilder<R, S, T> request) {
 		return request.execute().actionGet();
 	}
 
