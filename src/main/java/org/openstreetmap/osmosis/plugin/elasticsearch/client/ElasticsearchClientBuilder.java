@@ -37,20 +37,25 @@ public class ElasticsearchClientBuilder {
 	protected Client buildNodeClient() {
 		LOG.info(String.format("Connecting to elasticsearch cluster '%s' via [%s:%s]" +
 				" using NodeClient", clusterName, host, port));
-		// Connect as NodeClient (but PURE client)
-		// See: https://gist.github.com/2491022 and http://www.elasticsearch.org/guide/reference/modules/discovery/zen.html
+		// Connect as NodeClient (but PURE client), see Gists:
+		// https://gist.github.com/2491022 and https://gist.github.com/2491022
+		// http://www.elasticsearch.org/guide/reference/modules/discovery/zen.html
 		Settings settings = ImmutableSettings.settingsBuilder()
-				.put("node.master", false)
-				.put("discovery.type", "zen")
+				.put("node.local", false) // Disable local JVM discovery
+				.put("node.data", false) // Disable data on this node
+				.put("node.master", false) // Never elected as master
+				.put("node.client", true) // Various client optim
+				.put("cluster.name", clusterName) // Join clusterName
+				.put("discovery.type", "zen") // Use zen discovery
+				// Connect to 1 node min
 				.put("discovery.zen.minimum_master_nodes", 1)
+				// Disable multicast discover
 				.put("discovery.zen.ping.multicast.enabled", false)
+				// Add host to join
 				.putArray("discovery.zen.ping.unicast.hosts", host + ":" + port)
 				.build();
 		Node node = NodeBuilder.nodeBuilder()
 				.settings(settings)
-				.clusterName(clusterName)
-				.client(true)
-				.local(false)
 				.node();
 		return node.client();
 	}
