@@ -15,7 +15,7 @@ import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.IndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.SpecialiazedIndex;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class ElasticSearchWriterTask implements Sink {
 
@@ -26,12 +26,12 @@ public class ElasticSearchWriterTask implements Sink {
 	private int wayProcessedCounter = 0;
 	private int relationProcessedCounter = 0;
 
-	private final IndexService indexService;
+	private final IndexAdminService indexAdminService;
 	private final EntityDao entityDao;
 	private final Set<SpecialiazedIndex> specIndexes;
 
-	public ElasticSearchWriterTask(IndexService indexService, EntityDao entityDao, Set<SpecialiazedIndex> specIndexes) {
-		this.indexService = indexService;
+	public ElasticSearchWriterTask(IndexAdminService indexAdminService, EntityDao entityDao, Set<SpecialiazedIndex> specIndexes) {
+		this.indexAdminService = indexAdminService;
 		this.entityDao = entityDao;
 		this.specIndexes = specIndexes;
 	}
@@ -80,9 +80,9 @@ public class ElasticSearchWriterTask implements Sink {
 				IndexBuilder indexBuilder = index.getIndexBuilderClass().newInstance();
 				LOG.info("Creating specialized index " + index.name());
 				String indexName = entityDao.getIndexName() + "-" + indexBuilder.getIndexName();
-				indexService.createIndex(indexName, indexBuilder.getIndexMapping());
+				indexAdminService.createIndex(indexName, indexBuilder.getIndexMapping());
 				LOG.info("Building specialized index " + index.name());
-				indexBuilder.buildIndex(indexService);
+				indexBuilder.buildIndex(indexAdminService);
 			} catch (Exception e) {
 				LOG.log(Level.SEVERE, "Unable to build index", e);
 			}
@@ -94,8 +94,8 @@ public class ElasticSearchWriterTask implements Sink {
 		float consumedMemoryMb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())
 				/ (float) Math.pow(1024, 2);
 		LOG.info(String.format("Estimated memory consumption: %.2f MB ", consumedMemoryMb));
-		indexService.refresh();
-		indexService.getClient().close();
+		indexAdminService.refresh();
+		indexAdminService.getClient().close();
 	}
 
 }

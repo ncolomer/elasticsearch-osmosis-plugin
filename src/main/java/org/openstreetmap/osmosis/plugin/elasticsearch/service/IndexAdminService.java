@@ -10,11 +10,11 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
-public class IndexService {
+public class IndexAdminService {
 
 	protected final Client client;
 
-	public IndexService(Client client) {
+	public IndexAdminService(Client client) {
 		this.client = client;
 	}
 

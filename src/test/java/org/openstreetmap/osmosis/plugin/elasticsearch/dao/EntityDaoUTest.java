@@ -27,13 +27,13 @@ import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class EntityDaoUTest {
 
 	private static final String INDEX_NAME = "osm";
 
-	private IndexService indexServiceMocked;
+	private IndexAdminService indexAdminServiceMocked;
 
 	private EntityMapper entityMapperMocked;
 
@@ -41,9 +41,9 @@ public class EntityDaoUTest {
 
 	@Before
 	public void setUp() throws Exception {
-		indexServiceMocked = mock(IndexService.class);
+		indexAdminServiceMocked = mock(IndexAdminService.class);
 		entityMapperMocked = mock(EntityMapper.class);
-		entityDao = new EntityDao(INDEX_NAME, indexServiceMocked);
+		entityDao = new EntityDao(INDEX_NAME, indexAdminServiceMocked);
 		entityDao.entityMapper = entityMapperMocked;
 	}
 
@@ -86,7 +86,7 @@ public class EntityDaoUTest {
 		// Action
 		entityDao.saveNode(node);
 		// Assert
-		verify(indexServiceMocked).index(eq(INDEX_NAME),
+		verify(indexAdminServiceMocked).index(eq(INDEX_NAME),
 				eq("node"),
 				eq(1l),
 				same(content));
@@ -103,7 +103,7 @@ public class EntityDaoUTest {
 		// Action
 		entityDao.saveWay(way);
 		// Assert
-		verify(indexServiceMocked).index(eq(INDEX_NAME),
+		verify(indexAdminServiceMocked).index(eq(INDEX_NAME),
 				eq("way"),
 				eq(1l),
 				same(content));
@@ -116,7 +116,7 @@ public class EntityDaoUTest {
 		// Action
 		entityDao.saveRelation(relation);
 		// Assert
-		Mockito.verifyZeroInteractions(indexServiceMocked);
+		Mockito.verifyZeroInteractions(indexAdminServiceMocked);
 	}
 
 	@Test
@@ -126,7 +126,7 @@ public class EntityDaoUTest {
 		// Action
 		entityDao.saveBound(bound);
 		// Assert
-		Mockito.verifyZeroInteractions(indexServiceMocked);
+		Mockito.verifyZeroInteractions(indexAdminServiceMocked);
 	}
 
 	@Test
@@ -169,7 +169,7 @@ public class EntityDaoUTest {
 		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		SearchHit searchHitMocked = mock(SearchHit.class);
 		doReturn(searchRequestBuilderMocked).when(entityDao).findNodeQuery(1l);
-		when(indexServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
+		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
 		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(1l);
 		when(searchResponseMocked.getHits().getAt(0)).thenReturn(searchHitMocked);
 		// Action
@@ -185,7 +185,7 @@ public class EntityDaoUTest {
 		SearchRequestBuilder searchRequestBuilderMocked = mock(SearchRequestBuilder.class);
 		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		doReturn(searchRequestBuilderMocked).when(entityDao).findNodeQuery(1l);
-		when(indexServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
+		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
 		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(0l);
 		// Action
 		Node node = entityDao.findNode(1l);
@@ -201,7 +201,7 @@ public class EntityDaoUTest {
 		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		SearchHit searchHitMocked = mock(SearchHit.class);
 		doReturn(searchRequestBuilderMocked).when(entityDao).findWayQuery(1l);
-		when(indexServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
+		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
 		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(1l);
 		when(searchResponseMocked.getHits().getAt(0)).thenReturn(searchHitMocked);
 		// Action
@@ -217,7 +217,7 @@ public class EntityDaoUTest {
 		SearchRequestBuilder searchRequestBuilderMocked = mock(SearchRequestBuilder.class);
 		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		doReturn(searchRequestBuilderMocked).when(entityDao).findWayQuery(1l);
-		when(indexServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
+		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
 		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(0l);
 		// Action
 		Way way = entityDao.findWay(1l);

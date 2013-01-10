@@ -12,7 +12,7 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class EntityDao {
 
@@ -20,12 +20,12 @@ public class EntityDao {
 
 	protected String indexName;
 
-	protected IndexService indexService;
+	protected IndexAdminService indexAdminService;
 
 	protected EntityMapper entityMapper;
 
-	public EntityDao(String indexName, IndexService indexService) {
-		this.indexService = indexService;
+	public EntityDao(String indexName, IndexAdminService indexAdminService) {
+		this.indexAdminService = indexAdminService;
 		this.indexName = indexName;
 		this.entityMapper = new EntityMapper();
 	}
@@ -54,7 +54,7 @@ public class EntityDao {
 	protected void saveNode(Node node) {
 		try {
 			XContentBuilder xContentBuilder = entityMapper.marshallNode(node);
-			indexService.index(indexName, "node", node.getId(), xContentBuilder);
+			indexAdminService.index(indexName, "node", node.getId(), xContentBuilder);
 		} catch (Exception e) {
 			LOG.log(Level.SEVERE, "Unable to process node: " + e.getMessage(), e);
 		}
@@ -63,7 +63,7 @@ public class EntityDao {
 	protected void saveWay(Way way) {
 		try {
 			XContentBuilder xContentBuilder = entityMapper.marshallWay(way);
-			indexService.index(indexName, "way", way.getId(), xContentBuilder);
+			indexAdminService.index(indexName, "way", way.getId(), xContentBuilder);
 		} catch (Exception e) {
 			LOG.log(Level.SEVERE, "Unable to process way: " + e.getMessage(), e);
 		}
@@ -91,26 +91,26 @@ public class EntityDao {
 
 	protected Node findNode(long osmid) {
 		SearchRequestBuilder searchRequest = findNodeQuery(osmid);
-		SearchResponse searchResponse = indexService.execute(searchRequest);
+		SearchResponse searchResponse = indexAdminService.execute(searchRequest);
 		return searchResponse.getHits().getTotalHits() != 1 ? null :
 				entityMapper.unmarshallNode(searchResponse.getHits().getAt(0));
 	}
 
 	protected SearchRequestBuilder findNodeQuery(long osmid) {
-		return indexService.getClient().prepareSearch("osm")
+		return indexAdminService.getClient().prepareSearch("osm")
 				.setQuery(QueryBuilders.idsQuery("node").ids(Long.toString(osmid)))
 				.addFields("location", "tags");
 	}
 
 	protected Way findWay(long osmid) {
 		SearchRequestBuilder searchRequest = findWayQuery(osmid);
-		SearchResponse searchResponse = indexService.execute(searchRequest);
+		SearchResponse searchResponse = indexAdminService.execute(searchRequest);
 		return searchResponse.getHits().getTotalHits() != 1 ? null :
 				entityMapper.unmarshallWay(searchResponse.getHits().getAt(0));
 	}
 
 	protected SearchRequestBuilder findWayQuery(long osmid) {
-		return indexService.getClient().prepareSearch("osm")
+		return indexAdminService.getClient().prepareSearch("osm")
 				.setQuery(QueryBuilders.idsQuery("way").ids(Long.toString(osmid)))
 				.addFields("tags", "nodes");
 	}

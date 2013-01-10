@@ -8,7 +8,7 @@ import java.util.Map;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.IndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class OsmIndexBuilder implements IndexBuilder {
 
@@ -38,6 +38,6 @@ public class OsmIndexBuilder implements IndexBuilder {
 	}
 
 	@Override
-	public void buildIndex(IndexService indexService) {}
+	public void buildIndex(IndexAdminService indexAdminService) {}
 
 }

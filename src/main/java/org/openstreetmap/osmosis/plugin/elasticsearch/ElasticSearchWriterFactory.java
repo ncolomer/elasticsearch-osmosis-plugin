@@ -13,7 +13,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.client.ElasticsearchClient
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.SpecialiazedIndex;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class ElasticSearchWriterFactory extends TaskManagerFactory {
 
@@ -29,14 +29,14 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 	protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig) {
 		// Build ElasticSearch client
 		Client client = buildElasticsearchClient(taskConfig);
-		// Build IndexService
-		IndexService indexService = new IndexService(client);
+		// Build indexAdminService
+		IndexAdminService indexAdminService = new IndexAdminService(client);
 		// Build EntityDao
-		EntityDao entityDao = buildEntityDao(taskConfig, indexService);
+		EntityDao entityDao = buildEntityDao(taskConfig, indexAdminService);
 		// Get specialized index to build
 		Set<SpecialiazedIndex> specIndexes = getWantedSpecializedIndexes(taskConfig);
 		// Return the SinkManager
-		Sink sink = new ElasticSearchWriterTask(indexService, entityDao, specIndexes);
+		Sink sink = new ElasticSearchWriterTask(indexAdminService, entityDao, specIndexes);
 		return new SinkManager(taskConfig.getId(), sink, taskConfig.getPipeArgs());
 	}
 
@@ -52,12 +52,12 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		return clientBuilder.build();
 	}
 
-	protected EntityDao buildEntityDao(TaskConfiguration taskConfig, IndexService indexService) {
+	protected EntityDao buildEntityDao(TaskConfiguration taskConfig, IndexAdminService indexAdminService) {
 		String indexName = getStringArgument(taskConfig, PARAM_INDEX_NAME,
 				getDefaultStringArgument(taskConfig, "osm"));
 		Boolean createIndex = getBooleanArgument(taskConfig, PARAM_CREATE_INDEX, false);
-		if (createIndex) indexService.createIndex(indexName, new OsmIndexBuilder().getIndexMapping());
-		EntityDao entityDao = new EntityDao(indexName, indexService);
+		if (createIndex) indexAdminService.createIndex(indexName, new OsmIndexBuilder().getIndexMapping());
+		EntityDao entityDao = new EntityDao(indexName, indexAdminService);
 		return entityDao;
 	}
 

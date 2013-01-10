@@ -15,13 +15,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openstreetmap.osmosis.plugin.elasticsearch.integration.AbstractElasticsearchInMemoryTest;
 
-public class IndexServiceITest extends AbstractElasticsearchInMemoryTest {
+public class IndexAdminServiceITest extends AbstractElasticsearchInMemoryTest {
 
-	IndexService indexService;
+	IndexAdminService indexAdminService;
 
 	@Before
 	public void setUp() {
-		indexService = new IndexService(client());
+		indexAdminService = new IndexAdminService(client());
 	}
 
 	@After
@@ -36,7 +36,7 @@ public class IndexServiceITest extends AbstractElasticsearchInMemoryTest {
 		String indexName = "my_index";
 		Map<String, XContentBuilder> mapping = getDummyMapping();
 		// Action
-		indexService.createIndex(indexName, mapping);
+		indexAdminService.createIndex(indexName, mapping);
 		// Assert
 		Assert.assertTrue(client().admin().indices().prepareExists(indexName)
 				.execute().actionGet().exists());
@@ -50,7 +50,7 @@ public class IndexServiceITest extends AbstractElasticsearchInMemoryTest {
 		client().admin().indices().refresh(Requests.refreshRequest()).actionGet();
 		Map<String, XContentBuilder> mapping = getDummyMapping();
 		// Action
-		indexService.createIndex(indexName, mapping);
+		indexAdminService.createIndex(indexName, mapping);
 		// Assert
 		Assert.assertTrue(client().admin().indices().prepareExists(indexName)
 				.execute().actionGet().exists());

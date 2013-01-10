@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public interface IndexBuilder {
 
@@ -25,9 +25,9 @@ public interface IndexBuilder {
 	 * contains the mapping as JSON.
 	 * <p>
 	 * Note that the returned mapping will be created using the
-	 * {@link IndexService#createIndex(String, Map)} method which itself uses
-	 * the {@link CreateIndexRequestBuilder#addMapping(String, Map)} builder
-	 * internally. See the elasticsearch <a
+	 * {@link IndexAdminService#createIndex(String, Map)} method which itself
+	 * uses the {@link CreateIndexRequestBuilder#addMapping(String, Map)}
+	 * builder internally. See the elasticsearch <a
 	 * href="http://www.elasticsearch.org/guide/reference/mapping/">mapping
 	 * reference</a> for more information.
 	 * 
@@ -42,10 +42,10 @@ public interface IndexBuilder {
 	 * created (using {@link #getIndexName()} and {@link #getIndexMapping()}
 	 * methods).
 	 * 
-	 * @param indexService
-	 *            An {@link IndexService} instance to use when building the
+	 * @param indexAdminService
+	 *            An {@link IndexAdminService} instance to use when building the
 	 *            specialized index.
 	 */
-	public void buildIndex(IndexService indexService);
+	public void buildIndex(IndexAdminService indexAdminService);
 
 }

@@ -20,7 +20,7 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class EntityDaoIntTest extends AbstractElasticsearchInMemoryTest {
 
@@ -28,9 +28,9 @@ public class EntityDaoIntTest extends AbstractElasticsearchInMemoryTest {
 
 	@Before
 	public void setUp() throws IOException {
-		IndexService indexService = new IndexService(this.client());
-		indexService.createIndex("osm", new OsmIndexBuilder().getIndexMapping());
-		entityDao = new EntityDao("osm", indexService);
+		IndexAdminService indexAdminService = new IndexAdminService(this.client());
+		indexAdminService.createIndex("osm", new OsmIndexBuilder().getIndexMapping());
+		entityDao = new EntityDao("osm", indexAdminService);
 	}
 
 	@After
