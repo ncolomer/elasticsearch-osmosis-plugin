@@ -44,7 +44,7 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		ElasticsearchClientBuilder clientBuilder = new ElasticsearchClientBuilder();
 		clientBuilder.clusterName = getStringArgument(taskConfig, PARAM_CLUSTER_NAME,
 				getDefaultStringArgument(taskConfig, "elasticsearch"));
-		clientBuilder.isNodeClient = getBooleanArgument(taskConfig, PARAM_IS_NODE_CLIENT, false);
+		clientBuilder.isNodeClient = getBooleanArgument(taskConfig, PARAM_IS_NODE_CLIENT, true);
 		clientBuilder.host = getStringArgument(taskConfig, PARAM_HOST,
 				getDefaultStringArgument(taskConfig, "localhost"));
 		clientBuilder.port = getIntegerArgument(taskConfig, PARAM_PORT,
