@@ -13,7 +13,7 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.IndexBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.SpecialiazedIndex;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
@@ -83,12 +83,12 @@ public class ElasticSearchWriterTask implements Sink {
 	private void buildSpecializedIndex() {
 		for (SpecialiazedIndex index : specIndexes) {
 			try {
-				IndexBuilder indexBuilder = index.getIndexBuilderClass().newInstance();
+				AbstractIndexBuilder indexBuilder = index.getIndexBuilderClass().newInstance();
 				LOG.info("Creating specialized index [" + index.name() + "]");
-				String indexName = entityDao.getIndexName() + "-" + indexBuilder.getIndexName();
+				String indexName = indexBuilder.getSpecializedIndexName();
 				indexAdminService.createIndex(indexName, indexBuilder.getIndexMapping());
 				LOG.info("Building specialized index [" + index.name() + "]");
-				indexBuilder.buildIndex(indexAdminService);
+				indexBuilder.buildIndex();
 			} catch (Exception e) {
 				LOG.log(Level.SEVERE, "Unable to build index", e);
 			}

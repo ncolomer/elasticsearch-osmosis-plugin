@@ -7,13 +7,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.IndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 
-public class OsmIndexBuilder implements IndexBuilder {
+public class OsmIndexBuilder extends AbstractIndexBuilder {
+
+	public OsmIndexBuilder() {
+		super(null, null, null);
+	}
 
 	@Override
-	public String getIndexName() {
+	public String getSpecializedIndexSuffix() {
 		return null;
 	}
 
@@ -38,6 +41,6 @@ public class OsmIndexBuilder implements IndexBuilder {
 	}
 
 	@Override
-	public void buildIndex(IndexAdminService indexAdminService) {}
+	public void buildIndex() {}
 
 }

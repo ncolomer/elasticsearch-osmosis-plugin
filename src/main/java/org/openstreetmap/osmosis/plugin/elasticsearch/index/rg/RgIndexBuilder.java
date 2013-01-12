@@ -6,14 +6,19 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.IndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
+import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 
-public class RgIndexBuilder implements IndexBuilder {
+public class RgIndexBuilder extends AbstractIndexBuilder {
+
+	public RgIndexBuilder(Client client, EntityDao entityDao, String indexName) {
+		super(client, entityDao, indexName);
+	}
 
 	@Override
-	public String getIndexName() {
+	public String getSpecializedIndexSuffix() {
 		return "rg";
 	}
 
@@ -37,21 +42,8 @@ public class RgIndexBuilder implements IndexBuilder {
 	}
 
 	@Override
-	public void buildIndex(IndexAdminService indexAdminService) {
-		// TODO: to implement
-		/*
-		 * SearchResponse response =
-		 * indexAdminService.getClient().prepareSearch("osm").setTypes("way")
-		 * .setQuery(matchAllQuery()) .setFilter(existsFilter("highway"))
-		 * .setNoFields().execute().actionGet(); // We get all ways for
-		 * (SearchHit hit : response.getHits()) { SearchHit way =
-		 * indexAdminService.getClient().prepareSearch("osm").setTypes("way")
-		 * .setQuery(QueryBuilders.idsQuery("way").ids(hit.getId()))
-		 * .execute().actionGet().getHits().getAt(0); // For this way, we
-		 * retrieve all wayNodes List<Long> wayNodes =
-		 * way.field("nodes").<List<Long>> getValue(); for (Long wayNode :
-		 * wayNodes) { } }
-		 */
+	public void buildIndex() {
+		// TODO To implement
 	}
 
 }

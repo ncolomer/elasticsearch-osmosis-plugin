@@ -6,13 +6,13 @@ public enum SpecialiazedIndex {
 
 	RG_INDEX(RgIndexBuilder.class);
 
-	private final Class<? extends IndexBuilder> clazz;
+	private final Class<? extends AbstractIndexBuilder> clazz;
 
-	private SpecialiazedIndex(Class<? extends IndexBuilder> clazz) {
+	private SpecialiazedIndex(Class<? extends AbstractIndexBuilder> clazz) {
 		this.clazz = clazz;
 	}
 
-	public Class<? extends IndexBuilder> getIndexBuilderClass() {
+	public Class<? extends AbstractIndexBuilder> getIndexBuilderClass() {
 		return this.clazz;
 	}
 
