@@ -1,7 +1,5 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import java.util.logging.Logger;
-
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -13,8 +11,6 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 
 public class EntityDao {
-
-	private static final Logger LOG = Logger.getLogger(EntityDao.class.getName());
 
 	private static final String NODE = "node";
 	private static final String WAY = "way";
@@ -33,7 +29,21 @@ public class EntityDao {
 		return indexName;
 	}
 
+	/**
+	 * Save (index) an OSM Entity.
+	 * <p>
+	 * <b>Warning:</b> please note that saving {@link Relation} and
+	 * {@link Bound} is not yet supported. Trying to save such {@link Entity}
+	 * causes this method to throw an {@link UnsupportedOperationException}.
+	 * 
+	 * @param entity
+	 *            the Entity object to save
+	 * @return The Entity index id (actually its OSM id) as String
+	 * @throws DaoException
+	 *             if something was wrong during the elasticsearch request
+	 */
 	public String save(Entity entity) {
+		if (entity == null) throw new IllegalArgumentException("You must provide an Entity");
 		switch (entity.getType()) {
 		case Node:
 			return saveNode((Node) entity);
@@ -46,7 +56,6 @@ public class EntityDao {
 		default:
 			return null;
 		}
-
 	}
 
 	protected String saveNode(Node node) {
@@ -56,7 +65,7 @@ public class EntityDao {
 					.setSource(xContentBuilder)
 					.execute().actionGet().getId();
 		} catch (Exception e) {
-			throw new DaoException("Unable to process node: " + node.toString(), e);
+			throw new DaoException("Unable to save Node: " + node.toString(), e);
 		}
 	}
 
@@ -67,23 +76,39 @@ public class EntityDao {
 					.setSource(xContentBuilder)
 					.execute().actionGet().getId();
 		} catch (Exception e) {
-			throw new DaoException("Unable to process way: " + way.toString(), e);
+			throw new DaoException("Unable to save Way: " + way.toString(), e);
 		}
 	}
 
 	protected String saveRelation(Relation relation) {
-		LOG.warning("Save Relation is not yet supported");
-		return null;
+		throw new UnsupportedOperationException("Save Relation is not yet supported");
 	}
 
 	protected String saveBound(Bound bound) {
-		LOG.warning("Save Bound is not yet supported");
-		return null;
+		throw new UnsupportedOperationException("Save Bound is not yet supported");
 	}
 
+	/**
+	 * Find an OSM entity.
+	 * <p>
+	 * <b>Warning:</b> please note that finding {@link Relation} and
+	 * {@link Bound} is not yet supported. Trying to find such {@link Entity}
+	 * causes this method to throw an {@link UnsupportedOperationException}.
+	 * 
+	 * @param osmid
+	 *            the OSM id that identifies the Entity
+	 * @param entityClass
+	 *            the class (among {@link Node}, {@link Way}, {@link Relation}
+	 *            and {@link Bound}) of the Entity
+	 * @return The Entity object, null if not found
+	 * @throws IllegalArgumentException
+	 *             if the provided entityClass is null or invalid
+	 * @throws DaoException
+	 *             if something was wrong during the elasticsearch request
+	 */
 	@SuppressWarnings("unchecked")
 	public <T extends Entity> T find(long osmid, Class<T> entityClass) {
-		if (entityClass == null) throw new NullPointerException("You must provide an Entity class");
+		if (entityClass == null) throw new IllegalArgumentException("You must provide an Entity class");
 		else if (entityClass.equals(Node.class)) return (T) findNode(osmid);
 		else if (entityClass.equals(Way.class)) return (T) findWay(osmid);
 		else if (entityClass.equals(Relation.class)) return (T) findRelation(osmid);
@@ -92,21 +117,29 @@ public class EntityDao {
 	}
 
 	protected Node findNode(long osmid) {
-		SearchResponse searchResponse = client.prepareSearch(indexName)
-				.setQuery(QueryBuilders.idsQuery(NODE).ids(Long.toString(osmid)))
-				.addFields("location", "tags")
-				.execute().actionGet();
-		return searchResponse.getHits().getTotalHits() != 1 ? null :
-				entityMapper.unmarshallNode(searchResponse.getHits().getAt(0));
+		try {
+			SearchResponse searchResponse = client.prepareSearch(indexName)
+					.setQuery(QueryBuilders.idsQuery(NODE).ids(Long.toString(osmid)))
+					.addFields("location", "tags")
+					.execute().actionGet();
+			return searchResponse.getHits().getTotalHits() != 1 ? null :
+					entityMapper.unmarshallNode(searchResponse.getHits().getAt(0));
+		} catch (Exception e) {
+			throw new DaoException("Unable to find Node [" + osmid + "]", e);
+		}
 	}
 
 	protected Way findWay(long osmid) {
-		SearchResponse searchResponse = client.prepareSearch(indexName)
-				.setQuery(QueryBuilders.idsQuery(WAY).ids(Long.toString(osmid)))
-				.addFields("tags", "nodes")
-				.execute().actionGet();
-		return searchResponse.getHits().getTotalHits() != 1 ? null :
-				entityMapper.unmarshallWay(searchResponse.getHits().getAt(0));
+		try {
+			SearchResponse searchResponse = client.prepareSearch(indexName)
+					.setQuery(QueryBuilders.idsQuery(WAY).ids(Long.toString(osmid)))
+					.addFields("tags", "nodes")
+					.execute().actionGet();
+			return searchResponse.getHits().getTotalHits() != 1 ? null :
+					entityMapper.unmarshallWay(searchResponse.getHits().getAt(0));
+		} catch (Exception e) {
+			throw new DaoException("Unable to find Way [" + osmid + "]", e);
+		}
 	}
 
 	protected Relation findRelation(long osmid) {

@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
+import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -95,6 +96,12 @@ public class EntityDaoUTest {
 		assertEquals("4", boundId);
 	}
 
+	@Test(expected = IllegalArgumentException.class)
+	public void saveEntity_withNull_shouldThrowException() {
+		// Action
+		entityDao.save(null);
+	}
+
 	@Test
 	public void saveNode() throws IOException {
 		// Setup
@@ -125,7 +132,7 @@ public class EntityDaoUTest {
 	public void saveNode_withClientException_shouldThrowDaoException() throws IOException {
 		// Setup
 		Node node = OsmDataBuilder.buildSampleNode();
-		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenThrow(new RuntimeException(""));
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenThrow(new ElasticSearchException("Simulated Exception"));
 
 		// Action
 		entityDao.saveNode(node);
@@ -159,31 +166,29 @@ public class EntityDaoUTest {
 	@Test(expected = DaoException.class)
 	public void saveWay_withClientException_shouldThrowDaoException() throws IOException {
 		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenThrow(new RuntimeException(""));
+		Way way = OsmDataBuilder.buildSampleWay();
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenThrow(new ElasticSearchException("Simulated Exception"));
 
 		// Action
-		entityDao.saveNode(node);
+		entityDao.saveWay(way);
 	}
 
-	@Test
-	public void saveRelation() {
+	@Test(expected = UnsupportedOperationException.class)
+	public void saveRelation_shouldBeUnsupported() {
 		// Setup
 		Relation relation = mock(Relation.class);
+
 		// Action
-		String relationId = entityDao.saveRelation(relation);
-		// Assert
-		assertNull(relationId);
+		entityDao.saveRelation(relation);
 	}
 
-	@Test
-	public void saveBound() {
+	@Test(expected = UnsupportedOperationException.class)
+	public void saveBound_shouldBeUnsupported() {
 		// Setup
 		Bound bound = mock(Bound.class);
+
 		// Action
-		String boundId = entityDao.saveBound(bound);
-		// Assert
-		assertNull(boundId);
+		entityDao.saveBound(bound);
 	}
 
 	@Test
@@ -217,7 +222,7 @@ public class EntityDaoUTest {
 		assertSame(bound, resultBound);
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void findEntity_withNullClass_shouldThrowException() {
 		// Action
 		entityDao.find(1l, null);
@@ -286,6 +291,15 @@ public class EntityDaoUTest {
 		assertNull(actual);
 	}
 
+	@Test(expected = DaoException.class)
+	public void findNode_withClientException_shouldThrowDaoException() throws IOException {
+		// Setup
+		when(clientMocked.prepareSearch(any(String.class))).thenThrow(new ElasticSearchException("Simulated Exception"));
+
+		// Action
+		entityDao.findNode(1l);
+	}
+
 	@Test
 	public void findWay() {
 		// Setup
@@ -341,6 +355,15 @@ public class EntityDaoUTest {
 		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("way").ids("1"))));
 		verify(searchRequestBuilderMocked).addFields(eq("tags"), eq("nodes"));
 		assertNull(actual);
+	}
+
+	@Test(expected = DaoException.class)
+	public void findWay_withClientException_shouldThrowDaoException() throws IOException {
+		// Setup
+		when(clientMocked.prepareSearch(any(String.class))).thenThrow(new ElasticSearchException("Simulated Exception"));
+
+		// Action
+		entityDao.findWay(1l);
 	}
 
 	@Test(expected = UnsupportedOperationException.class)

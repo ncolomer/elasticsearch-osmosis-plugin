@@ -43,24 +43,30 @@ public class ElasticSearchWriterTask implements Sink {
 
 	@Override
 	public void process(EntityContainer entityContainer) {
-		Entity entity = entityContainer.getEntity();
-		switch (entity.getType()) {
-		case Node:
-			entityDao.save((Node) entity);
-			nodeProcessedCounter++;
-			break;
-		case Way:
-			entityDao.save((Way) entity);
-			wayProcessedCounter++;
-			break;
-		case Relation:
-			entityDao.save((Relation) entity);
-			relationProcessedCounter++;
-			break;
-		case Bound:
-			entityDao.save((Bound) entity);
-			boundProcessedCounter++;
-			break;
+		try {
+			Entity entity = entityContainer.getEntity();
+			switch (entity.getType()) {
+			case Node:
+				entityDao.save((Node) entity);
+				nodeProcessedCounter++;
+				break;
+			case Way:
+				entityDao.save((Way) entity);
+				wayProcessedCounter++;
+				break;
+			case Relation:
+				entityDao.save((Relation) entity);
+				relationProcessedCounter++;
+				break;
+			case Bound:
+				entityDao.save((Bound) entity);
+				boundProcessedCounter++;
+				break;
+			}
+		} catch (UnsupportedOperationException e) {
+			LOG.warning(e.getMessage());
+		} catch (Exception e) {
+			LOG.severe(e.getMessage());
 		}
 	}
 
