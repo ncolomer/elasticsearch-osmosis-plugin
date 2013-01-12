@@ -17,11 +17,11 @@ the <code>/opt</code> directory, create the <code>/etc/osmosis</code> file and s
 
 5-shell-command procedure:
 
-    # Osmosis 0.40.1 installation
-    wget -P /tmp http://dev.openstreetmap.org/~bretth/osmosis-build/osmosis-0.40.1.tgz
-    tar -zxvf /tmp/osmosis-0.40.1.tgz -C /opt
+	# Osmosis 0.41 installation
+	wget -P /tmp http://dev.openstreetmap.org/~bretth/osmosis-build/osmosis-0.41.tgz
+	tar -zxvf /tmp/osmosis-0.41.tgz -C /opt
     echo "JAVACMD_OPTIONS=\"-server -Xmx2G\"" > /etc/osmosis
-    export OSMOSIS_HOME=/opt/osmosis-0.40.1
+    export OSMOSIS_HOME=/opt/osmosis-0.41
     export PATH=$PATH:$OSMOSIS_HOME/bin
 
 ### 1.2. Install elasticsearch-osmosis-plugin
@@ -32,16 +32,17 @@ line into the <code>$OSMOSIS_HOME/config/osmosis-plugins.conf</code> file (creat
 
 3-shell-command procedure:
 
-    # elasticsearch-osmosis-plugin 0.0.2 installation
-    wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-1.0.2.jar
-    cp /tmp/elasticsearch-osmosis-plugin-1.0.2.jar $OSMOSIS_HOME/lib/default/
-    echo "org.openstreetmap.osmosis.plugin.elasticsearch.elasticsearchWriterPluginLoader" > $OSMOSIS_HOME/config/osmosis-plugins.conf
+	# elasticsearch-osmosis-plugin 1.1.0 installation
+    wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-1.1.0.jar
+    cp /tmp/elasticsearch-osmosis-plugin-1.1.0.jar $OSMOSIS_HOME/lib/default/
+    echo "org.openstreetmap.osmosis.plugin.elasticsearch.ElasticSearchWriterPluginLoader" > $OSMOSIS_HOME/config/osmosis-plugins.conf
 
 ## 2. Usage
 
 ### 2.1. Prerequisites
 
-You must have an elasticsearch cluster up and running and reachable to make this plugin running.
+This plugin was built using elasticsearch 0.20.2 and Osmosis 0.41. It is not guaranteed to work with older version.
+You must have an elasticsearch cluster up and running and reachable to make it running.
 
 ### 2.2. Plugin usage
 
@@ -59,14 +60,14 @@ Available options are:
 		<td>clusterName</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
 	</tr>
 	<tr>
-		<td>isNodeClient</td><td>Boolean</td><td>false</td><td>Join as NodeClient or TransportClient 
+		<td>isNodeClient</td><td>Boolean</td><td>true</td><td>Join as NodeClient or TransportClient 
 			(See <a href="http://www.elasticsearch.org/guide/reference/java-api/client.html">here</a> for the difference)</td>
 	</tr>
 	<tr>
-		<td>host</td><td>String</td><td>localhost</td><td>Hostname or IP of an elasticsearch node</td>
+		<td>host</td><td>String</td><td>localhost</td><td>Hostname or IP of the elasticsearch node to join</td>
 	</tr>
 	<tr>
-		<td>port</td><td>Integer</td><td>9300</td><td>elasticsearch transport port of nodes in cluster</td>
+		<td>port</td><td>Integer</td><td>9300</td><td>Transport port of the elasticsearch node to join</td>
 	</tr>
 	<tr>
 		<td>indexName</td><td>String</td><td>osm</td><td>Name of the index that will be filled with data</td>
@@ -78,18 +79,18 @@ Available options are:
 
 ### 2.3. Examples
 
-Connect to cluster **elasticsearch** as <code>TransportClient</code> through <code>localhost:9300</code>:
+Connect to cluster **elasticsearch** as <code>NodeClient</code> through <code>localhost:9300</code>:
 
     osmosis \
         --read-pbf ~/osm/extract/ile-de-france.osm.pbf \
         --write-elasticsearch
 
-Connect to cluster **openstreetmap** as <code>NodeClient</code> through <code>10.0.0.1:9300</code> 
+Connect to cluster **openstreetmap** as <code>TransportClient</code> through <code>10.0.0.1:9300</code> 
 and (re)create index **osm** prior to insert data:
 
     osmosis \
     	--read-pbf ~/osm/extract/ile-de-france.osm.pbf \
-    	--wes isNodeClient="true" host="10.0.0.1" clustername="openstreetmap" createIndex="true"
+    	--wes isNodeClient="false" host="10.0.0.1" clustername="openstreetmap" createIndex="true"
 
 ## 3. Mapping
 
@@ -162,7 +163,7 @@ You can get OSM files (planet, extract) from various location. OpenStreetMap hav
 Here is an example for the <code>ile-de-france.osm.pbf</code> extract by [Geofabrik.de](http://www.geofabrik.de/):
 
     mkdir -p ~/osm/extract ~/osm/planet ~/osm/output
-    wget -P ~/osm/extract http://download.geofabrik.de/osm/europe/france/ile-de-france.osm.pbf
+    wget -P ~/osm/extract http://download.geofabrik.de/openstreetmap/europe/france/ile-de-france.osm.pbf
 
 ### 4.2. Useful elasticsearch HTTP commands
 
