@@ -13,8 +13,8 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 
 public class EntityDao {
 
-	private static final String NODE = "node";
-	private static final String WAY = "way";
+	public static final String NODE = "node";
+	public static final String WAY = "way";
 
 	private final String indexName;
 	private final Client client;
@@ -24,10 +24,6 @@ public class EntityDao {
 		this.client = client;
 		this.indexName = indexName;
 		this.entityMapper = new EntityMapper();
-	}
-
-	public String getIndexName() {
-		return indexName;
 	}
 
 	/**
@@ -62,7 +58,7 @@ public class EntityDao {
 	protected String saveNode(Node node) {
 		try {
 			XContentBuilder xContentBuilder = entityMapper.marshallNode(node);
-			return client.prepareIndex(indexName, NODE, Long.toString(node.getId()))
+			return client.prepareIndex(indexName, EntityDao.NODE, Long.toString(node.getId()))
 					.setSource(xContentBuilder)
 					.execute().actionGet().getId();
 		} catch (Exception e) {
@@ -73,7 +69,7 @@ public class EntityDao {
 	protected String saveWay(Way way) {
 		try {
 			XContentBuilder xContentBuilder = entityMapper.marshallWay(way);
-			return client.prepareIndex(indexName, WAY, Long.toString(way.getId()))
+			return client.prepareIndex(indexName, EntityDao.WAY, Long.toString(way.getId()))
 					.setSource(xContentBuilder)
 					.execute().actionGet().getId();
 		} catch (Exception e) {
@@ -120,7 +116,7 @@ public class EntityDao {
 	protected Node findNode(long osmid) {
 		try {
 			SearchResponse searchResponse = client.prepareSearch(indexName)
-					.setQuery(QueryBuilders.idsQuery(NODE).ids(Long.toString(osmid)))
+					.setQuery(QueryBuilders.idsQuery(EntityDao.NODE).ids(Long.toString(osmid)))
 					.addFields("location", "tags")
 					.execute().actionGet();
 			return searchResponse.getHits().getTotalHits() != 1 ? null :
@@ -133,7 +129,7 @@ public class EntityDao {
 	protected Way findWay(long osmid) {
 		try {
 			SearchResponse searchResponse = client.prepareSearch(indexName)
-					.setQuery(QueryBuilders.idsQuery(WAY).ids(Long.toString(osmid)))
+					.setQuery(QueryBuilders.idsQuery(EntityDao.WAY).ids(Long.toString(osmid)))
 					.addFields("tags", "nodes")
 					.execute().actionGet();
 			return searchResponse.getHits().getTotalHits() != 1 ? null :
@@ -172,8 +168,8 @@ public class EntityDao {
 	 */
 	public <T extends Entity> boolean delete(long osmid, Class<T> entityClass) {
 		if (entityClass == null) throw new IllegalArgumentException("You must provide an Entity class");
-		else if (entityClass.equals(Node.class)) return deleteEntity(osmid, NODE);
-		else if (entityClass.equals(Way.class)) return deleteEntity(osmid, WAY);
+		else if (entityClass.equals(Node.class)) return deleteEntity(osmid, EntityDao.NODE);
+		else if (entityClass.equals(Way.class)) return deleteEntity(osmid, EntityDao.WAY);
 		else if (entityClass.equals(Relation.class)) throw new UnsupportedOperationException("Delete Relation is not yet supported");
 		else if (entityClass.equals(Bound.class)) throw new UnsupportedOperationException("Delete Bound is not yet supported");
 		else throw new IllegalArgumentException(entityClass.getSimpleName() + " is not valid");
