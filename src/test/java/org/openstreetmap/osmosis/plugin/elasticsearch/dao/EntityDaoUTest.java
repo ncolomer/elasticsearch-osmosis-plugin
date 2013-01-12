@@ -5,8 +5,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -17,6 +15,8 @@ import java.io.IOException;
 
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -123,9 +123,9 @@ public class EntityDaoUTest {
 
 		// Assert
 		assertEquals("1", id);
-		verify(clientMocked).prepareIndex(eq(INDEX_NAME), eq("node"), eq("1"));
+		verify(clientMocked).prepareIndex(INDEX_NAME, "node", "1");
 		verify(entityMapperMocked).marshallNode(node);
-		verify(indexRequestBuilderMocked).setSource(same(xContentBuilder));
+		verify(indexRequestBuilderMocked).setSource(xContentBuilder);
 	}
 
 	@Test(expected = DaoException.class)
@@ -159,8 +159,8 @@ public class EntityDaoUTest {
 
 		// Assert
 		assertEquals("1", id);
-		verify(clientMocked).prepareIndex(eq(INDEX_NAME), eq("way"), eq("1"));
-		verify(indexRequestBuilderMocked).setSource(same(xContentBuilder));
+		verify(clientMocked).prepareIndex(INDEX_NAME, "way", "1");
+		verify(indexRequestBuilderMocked).setSource(xContentBuilder);
 	}
 
 	@Test(expected = DaoException.class)
@@ -261,8 +261,8 @@ public class EntityDaoUTest {
 
 		// Assert
 		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("node").ids("1"))));
-		verify(searchRequestBuilderMocked).addFields(eq("location"), eq("tags"));
-		verify(entityMapperMocked).unmarshallNode(same(searchHitMocked));
+		verify(searchRequestBuilderMocked).addFields("location", "tags");
+		verify(entityMapperMocked).unmarshallNode(searchHitMocked);
 		assertEquals(expected, actual);
 	}
 
@@ -287,7 +287,7 @@ public class EntityDaoUTest {
 
 		// Assert
 		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("node").ids("1"))));
-		verify(searchRequestBuilderMocked).addFields(eq("location"), eq("tags"));
+		verify(searchRequestBuilderMocked).addFields("location", "tags");
 		assertNull(actual);
 	}
 
@@ -327,8 +327,8 @@ public class EntityDaoUTest {
 
 		// Assert
 		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("way").ids("1"))));
-		verify(searchRequestBuilderMocked).addFields(eq("tags"), eq("nodes"));
-		verify(entityMapperMocked).unmarshallWay(same(searchHitMocked));
+		verify(searchRequestBuilderMocked).addFields("tags", "nodes");
+		verify(entityMapperMocked).unmarshallWay(searchHitMocked);
 		assertEquals(expected, actual);
 	}
 
@@ -353,7 +353,7 @@ public class EntityDaoUTest {
 
 		// Assert
 		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("way").ids("1"))));
-		verify(searchRequestBuilderMocked).addFields(eq("tags"), eq("nodes"));
+		verify(searchRequestBuilderMocked).addFields("tags", "nodes");
 		assertNull(actual);
 	}
 
@@ -376,6 +376,96 @@ public class EntityDaoUTest {
 	public void findBound_shouldBeUnsupported() {
 		// Action
 		entityDao.find(1l, Bound.class);
+	}
+
+	@Test
+	public void delete() {
+		// Setup
+		doReturn(true).when(entityDao).deleteEntity(1l, "node");
+		doReturn(true).when(entityDao).deleteEntity(2l, "way");
+
+		// Action
+		boolean resultNode = entityDao.delete(1l, Node.class);
+		boolean resultWay = entityDao.delete(2l, Way.class);
+
+		// Assert
+		verify(entityDao, times(1)).deleteEntity(1l, "node");
+		verify(entityDao, times(1)).deleteEntity(2l, "way");
+		assertEquals(true, resultNode);
+		assertEquals(true, resultWay);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void delete_withNullClass_shouldThrowException() {
+		// Action
+		entityDao.delete(1l, null);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void delete_withEntityClass_shouldThrowException() {
+		// Action
+		entityDao.delete(1l, Entity.class);
+	}
+
+	@Test(expected = UnsupportedOperationException.class)
+	public void deleteRelation_shouldBeUnsupported() {
+		// Action
+		entityDao.delete(1l, Relation.class);
+	}
+
+	@Test(expected = UnsupportedOperationException.class)
+	public void deleteBound_shouldBeUnsupported() {
+		// Action
+		entityDao.delete(1l, Bound.class);
+	}
+
+	@Test
+	public void deleteEntity() {
+		// Setup
+		DeleteRequestBuilder deleteRequestBuilderMocked = mock(DeleteRequestBuilder.class);
+		ListenableActionFuture<DeleteResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		DeleteResponse deleteResponseMocked = mock(DeleteResponse.class);
+
+		when(clientMocked.prepareDelete(any(String.class), any(String.class), any(String.class))).thenReturn(deleteRequestBuilderMocked);
+		when(deleteRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(deleteResponseMocked);
+		when(deleteResponseMocked.notFound()).thenReturn(false);
+
+		// Action
+		boolean actual = entityDao.deleteEntity(1l, "node");
+
+		// Assert
+		verify(clientMocked).prepareDelete(INDEX_NAME, "node", "1");
+		assertEquals(true, actual);
+	}
+
+	@Test
+	public void deleteEntity_withEntityNotFound() {
+		// Setup
+		DeleteRequestBuilder deleteRequestBuilderMocked = mock(DeleteRequestBuilder.class);
+		ListenableActionFuture<DeleteResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		DeleteResponse deleteResponseMocked = mock(DeleteResponse.class);
+
+		when(clientMocked.prepareDelete(any(String.class), any(String.class), any(String.class))).thenReturn(deleteRequestBuilderMocked);
+		when(deleteRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(deleteResponseMocked);
+		when(deleteResponseMocked.notFound()).thenReturn(true);
+
+		// Action
+		boolean actual = entityDao.deleteEntity(1l, "node");
+
+		// Assert
+		verify(clientMocked).prepareDelete(INDEX_NAME, "node", "1");
+		assertEquals(false, actual);
+	}
+
+	@Test(expected = DaoException.class)
+	public void deleteEntity_withClientException_shouldThrowDaoException() throws IOException {
+		// Setup
+		when(clientMocked.prepareDelete()).thenThrow(new ElasticSearchException("Simulated Exception"));
+
+		// Action
+		entityDao.deleteEntity(1l, "node");
 	}
 
 	public class QueryBuilderMatcher extends BaseMatcher<QueryBuilder> {
