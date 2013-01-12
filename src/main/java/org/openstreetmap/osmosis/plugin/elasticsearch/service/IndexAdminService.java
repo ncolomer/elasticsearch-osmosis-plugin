@@ -2,9 +2,6 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 
 import java.util.Map;
 
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.ActionRequestBuilder;
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
@@ -58,10 +55,6 @@ public class IndexAdminService {
 
 	public Client getClient() {
 		return client;
-	}
-
-	public <R extends ActionRequest, S extends ActionResponse, T extends ActionRequestBuilder> S execute(ActionRequestBuilder<R, S, T> request) {
-		return request.execute().actionGet();
 	}
 
 }

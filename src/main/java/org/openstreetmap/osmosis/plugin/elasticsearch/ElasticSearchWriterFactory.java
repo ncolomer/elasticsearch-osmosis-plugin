@@ -57,7 +57,7 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 				getDefaultStringArgument(taskConfig, "osm"));
 		Boolean createIndex = getBooleanArgument(taskConfig, PARAM_CREATE_INDEX, false);
 		if (createIndex) indexAdminService.createIndex(indexName, new OsmIndexBuilder().getIndexMapping());
-		EntityDao entityDao = new EntityDao(indexName, indexAdminService);
+		EntityDao entityDao = new EntityDao(indexName, indexAdminService.getClient());
 		return entityDao;
 	}
 

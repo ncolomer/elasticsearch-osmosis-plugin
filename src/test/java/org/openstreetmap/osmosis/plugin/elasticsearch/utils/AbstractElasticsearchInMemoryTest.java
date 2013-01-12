@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.integration;
+package org.openstreetmap.osmosis.plugin.elasticsearch.utils;
 
 import static junit.framework.Assert.fail;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;

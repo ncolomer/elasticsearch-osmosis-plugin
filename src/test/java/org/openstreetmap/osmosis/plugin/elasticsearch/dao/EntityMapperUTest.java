@@ -40,8 +40,10 @@ public class EntityMapperUTest {
 		when(node.getLongitude()).thenReturn(2.0d);
 		List<Tag> tags = Arrays.asList(new Tag[] { new Tag("highway", "traffic_signals") });
 		when(node.getTags()).thenReturn(tags);
+
 		// Action
 		String actual = entityMapper.marshallNode(node).string();
+
 		// Assert
 		String expected = "{\"location\":[2.0,1.0],\"tags\":{\"highway\":\"traffic_signals\"}}";
 		Assert.assertEquals(expected, actual);
@@ -63,8 +65,10 @@ public class EntityMapperUTest {
 		SearchHitField locationHitField = mock(SearchHitField.class);
 		when(locationHitField.getValue()).thenReturn(Arrays.asList(new Double[] { 2.0d, 1.0d }));
 		when(hit.field("location")).thenReturn(locationHitField);
+
 		// Action
 		Node node = entityMapper.unmarshallNode(hit);
+
 		// Assert
 		Assert.assertEquals(1l, node.getId());
 		Tag actualTag = node.getTags().iterator().next();
@@ -79,6 +83,7 @@ public class EntityMapperUTest {
 		// Setup
 		SearchHit hit = mock(SearchHit.class);
 		when(hit.getType()).thenReturn("way");
+
 		// Action
 		entityMapper.unmarshallNode(hit);
 	}
@@ -93,8 +98,10 @@ public class EntityMapperUTest {
 		when(way.getWayNodes()).thenReturn(nodes);
 		List<Tag> tags = Arrays.asList(new Tag[] { new Tag("highway", "residential") });
 		when(way.getTags()).thenReturn(tags);
+
 		// Action
 		String actual = entityMapper.marshallWay(way).string();
+
 		// Assert
 		String expected = "{\"tags\":{\"highway\":\"residential\"},\"nodes\":[1]}";
 		Assert.assertEquals(expected, actual);
@@ -116,8 +123,10 @@ public class EntityMapperUTest {
 		SearchHitField nodesHitField = mock(SearchHitField.class);
 		when(nodesHitField.getValues()).thenReturn(Arrays.asList(new Object[] { 1l, 2l }));
 		when(hit.field("nodes")).thenReturn(nodesHitField);
+
 		// Action
 		Way way = entityMapper.unmarshallWay(hit);
+
 		// Assert
 		Assert.assertEquals(1l, way.getId());
 		Tag actualTag = way.getTags().iterator().next();
@@ -132,6 +141,7 @@ public class EntityMapperUTest {
 		// Setup
 		SearchHit hit = mock(SearchHit.class);
 		when(hit.getType()).thenReturn("node");
+
 		// Action
 		entityMapper.unmarshallWay(hit);
 	}

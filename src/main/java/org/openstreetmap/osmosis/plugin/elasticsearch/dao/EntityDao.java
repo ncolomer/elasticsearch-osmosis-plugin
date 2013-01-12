@@ -1,10 +1,9 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
@@ -12,20 +11,20 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class EntityDao {
 
 	private static final Logger LOG = Logger.getLogger(EntityDao.class.getName());
 
-	protected String indexName;
+	private static final String NODE = "node";
+	private static final String WAY = "way";
 
-	protected IndexAdminService indexAdminService;
-
+	private final String indexName;
+	private final Client client;
 	protected EntityMapper entityMapper;
 
-	public EntityDao(String indexName, IndexAdminService indexAdminService) {
-		this.indexAdminService = indexAdminService;
+	public EntityDao(String indexName, Client client) {
+		this.client = client;
 		this.indexName = indexName;
 		this.entityMapper = new EntityMapper();
 	}
@@ -34,54 +33,57 @@ public class EntityDao {
 		return indexName;
 	}
 
-	public void save(Entity entity) {
+	public String save(Entity entity) {
 		switch (entity.getType()) {
 		case Node:
-			saveNode((Node) entity);
-			break;
+			return saveNode((Node) entity);
 		case Way:
-			saveWay((Way) entity);
-			break;
+			return saveWay((Way) entity);
 		case Relation:
-			saveRelation((Relation) entity);
-			break;
+			return saveRelation((Relation) entity);
 		case Bound:
-			saveBound((Bound) entity);
-			break;
+			return saveBound((Bound) entity);
+		default:
+			return null;
 		}
+
 	}
 
-	protected void saveNode(Node node) {
+	protected String saveNode(Node node) {
 		try {
 			XContentBuilder xContentBuilder = entityMapper.marshallNode(node);
-			indexAdminService.index(indexName, "node", node.getId(), xContentBuilder);
+			return client.prepareIndex(indexName, NODE, Long.toString(node.getId()))
+					.setSource(xContentBuilder)
+					.execute().actionGet().getId();
 		} catch (Exception e) {
-			LOG.log(Level.SEVERE, "Unable to process node: " + e.getMessage(), e);
+			throw new DaoException("Unable to process node: " + node.toString(), e);
 		}
 	}
 
-	protected void saveWay(Way way) {
+	protected String saveWay(Way way) {
 		try {
 			XContentBuilder xContentBuilder = entityMapper.marshallWay(way);
-			indexAdminService.index(indexName, "way", way.getId(), xContentBuilder);
+			return client.prepareIndex(indexName, WAY, Long.toString(way.getId()))
+					.setSource(xContentBuilder)
+					.execute().actionGet().getId();
 		} catch (Exception e) {
-			LOG.log(Level.SEVERE, "Unable to process way: " + e.getMessage(), e);
+			throw new DaoException("Unable to process way: " + way.toString(), e);
 		}
 	}
 
-	protected void saveRelation(Relation relation) {
-		LOG.warning(String.format("Unable to process relation with osmid [%d]:" +
-				" processing of Relations has not been implemented yet", relation.getId()));
+	protected String saveRelation(Relation relation) {
+		LOG.warning("Save Relation is not yet supported");
+		return null;
 	}
 
-	protected void saveBound(Bound bound) {
-		LOG.warning(String.format("Unable to process bound with osmid [%d]:" +
-				" processing of Bounds has not been implemented yet", bound.getId()));
+	protected String saveBound(Bound bound) {
+		LOG.warning("Save Bound is not yet supported");
+		return null;
 	}
 
 	@SuppressWarnings("unchecked")
 	public <T extends Entity> T find(long osmid, Class<T> entityClass) {
-		if (entityClass == null) throw new NullPointerException();
+		if (entityClass == null) throw new NullPointerException("You must provide an Entity class");
 		else if (entityClass.equals(Node.class)) return (T) findNode(osmid);
 		else if (entityClass.equals(Way.class)) return (T) findWay(osmid);
 		else if (entityClass.equals(Relation.class)) return (T) findRelation(osmid);
@@ -90,29 +92,21 @@ public class EntityDao {
 	}
 
 	protected Node findNode(long osmid) {
-		SearchRequestBuilder searchRequest = findNodeQuery(osmid);
-		SearchResponse searchResponse = indexAdminService.execute(searchRequest);
+		SearchResponse searchResponse = client.prepareSearch(indexName)
+				.setQuery(QueryBuilders.idsQuery(NODE).ids(Long.toString(osmid)))
+				.addFields("location", "tags")
+				.execute().actionGet();
 		return searchResponse.getHits().getTotalHits() != 1 ? null :
 				entityMapper.unmarshallNode(searchResponse.getHits().getAt(0));
 	}
 
-	protected SearchRequestBuilder findNodeQuery(long osmid) {
-		return indexAdminService.getClient().prepareSearch("osm")
-				.setQuery(QueryBuilders.idsQuery("node").ids(Long.toString(osmid)))
-				.addFields("location", "tags");
-	}
-
 	protected Way findWay(long osmid) {
-		SearchRequestBuilder searchRequest = findWayQuery(osmid);
-		SearchResponse searchResponse = indexAdminService.execute(searchRequest);
+		SearchResponse searchResponse = client.prepareSearch(indexName)
+				.setQuery(QueryBuilders.idsQuery(WAY).ids(Long.toString(osmid)))
+				.addFields("tags", "nodes")
+				.execute().actionGet();
 		return searchResponse.getHits().getTotalHits() != 1 ? null :
 				entityMapper.unmarshallWay(searchResponse.getHits().getAt(0));
-	}
-
-	protected SearchRequestBuilder findWayQuery(long osmid) {
-		return indexAdminService.getClient().prepareSearch("osm")
-				.setQuery(QueryBuilders.idsQuery("way").ids(Long.toString(osmid)))
-				.addFields("tags", "nodes");
 	}
 
 	protected Relation findRelation(long osmid) {

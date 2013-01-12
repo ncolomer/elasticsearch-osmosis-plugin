@@ -1,8 +1,12 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -11,13 +15,19 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
-import junit.framework.Assert;
-
+import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -27,13 +37,14 @@ import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
 
+@SuppressWarnings("unchecked")
 public class EntityDaoUTest {
 
-	private static final String INDEX_NAME = "osm";
+	private static final String INDEX_NAME = "osm-test";
 
-	private IndexAdminService indexAdminServiceMocked;
+	private Client clientMocked;
 
 	private EntityMapper entityMapperMocked;
 
@@ -41,72 +52,118 @@ public class EntityDaoUTest {
 
 	@Before
 	public void setUp() throws Exception {
-		indexAdminServiceMocked = mock(IndexAdminService.class);
+		clientMocked = mock(Client.class);
 		entityMapperMocked = mock(EntityMapper.class);
-		entityDao = new EntityDao(INDEX_NAME, indexAdminServiceMocked);
+		entityDao = new EntityDao(INDEX_NAME, clientMocked);
 		entityDao.entityMapper = entityMapperMocked;
+		entityDao = Mockito.spy(entityDao);
 	}
 
 	@Test
 	public void saveEntity() {
 		// Setup
-		entityDao = Mockito.spy(entityDao);
 		Node node = mock(Node.class);
 		Way way = mock(Way.class);
 		Relation relation = mock(Relation.class);
 		Bound bound = mock(Bound.class);
-		doNothing().when(entityDao).saveNode(node);
-		doNothing().when(entityDao).saveWay(way);
-		doNothing().when(entityDao).saveRelation(relation);
-		doNothing().when(entityDao).saveBound(bound);
+
 		when(node.getType()).thenReturn(EntityType.Node);
 		when(way.getType()).thenReturn(EntityType.Way);
 		when(relation.getType()).thenReturn(EntityType.Relation);
 		when(bound.getType()).thenReturn(EntityType.Bound);
+
+		doReturn("1").when(entityDao).saveNode(node);
+		doReturn("2").when(entityDao).saveWay(way);
+		doReturn("3").when(entityDao).saveRelation(relation);
+		doReturn("4").when(entityDao).saveBound(bound);
+
 		// Action
-		entityDao.save((Entity) node);
-		entityDao.save((Entity) way);
-		entityDao.save((Entity) relation);
-		entityDao.save((Entity) bound);
+		String nodeId = entityDao.save((Entity) node);
+		String wayId = entityDao.save((Entity) way);
+		String relationId = entityDao.save((Entity) relation);
+		String boundId = entityDao.save((Entity) bound);
+
 		// Assert
 		verify(entityDao, times(1)).saveNode(node);
 		verify(entityDao, times(1)).saveWay(way);
 		verify(entityDao, times(1)).saveRelation(relation);
 		verify(entityDao, times(1)).saveBound(bound);
+
+		assertEquals("1", nodeId);
+		assertEquals("2", wayId);
+		assertEquals("3", relationId);
+		assertEquals("4", boundId);
 	}
 
 	@Test
 	public void saveNode() throws IOException {
 		// Setup
-		Node node = mock(Node.class);
-		when(node.getType()).thenReturn(EntityType.Node);
-		when(node.getId()).thenReturn(1l);
-		XContentBuilder content = XContentFactory.jsonBuilder();
-		when(entityMapperMocked.marshallNode(node)).thenReturn(content);
+		Node node = OsmDataBuilder.buildSampleNode();
+		XContentBuilder xContentBuilder = new EntityMapper().marshallNode(node);
+
+		IndexRequestBuilder indexRequestBuilderMocked = mock(IndexRequestBuilder.class);
+		ListenableActionFuture<IndexResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		IndexResponse indexResponseMocked = mock(IndexResponse.class);
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenReturn(indexRequestBuilderMocked);
+		when(entityMapperMocked.marshallNode(node)).thenReturn(xContentBuilder);
+		when(indexRequestBuilderMocked.setSource(any(XContentBuilder.class))).thenReturn(indexRequestBuilderMocked);
+		when(indexRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(indexResponseMocked);
+		when(indexResponseMocked.getId()).thenReturn("1");
+
+		// Action
+		String id = entityDao.saveNode(node);
+
+		// Assert
+		assertEquals("1", id);
+		verify(clientMocked).prepareIndex(eq(INDEX_NAME), eq("node"), eq("1"));
+		verify(entityMapperMocked).marshallNode(node);
+		verify(indexRequestBuilderMocked).setSource(same(xContentBuilder));
+	}
+
+	@Test(expected = DaoException.class)
+	public void saveNode_withClientException_shouldThrowDaoException() throws IOException {
+		// Setup
+		Node node = OsmDataBuilder.buildSampleNode();
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenThrow(new RuntimeException(""));
+
 		// Action
 		entityDao.saveNode(node);
-		// Assert
-		verify(indexAdminServiceMocked).index(eq(INDEX_NAME),
-				eq("node"),
-				eq(1l),
-				same(content));
 	}
 
 	@Test
 	public void saveWay() throws IOException {
 		// Setup
-		Way way = mock(Way.class);
-		when(way.getType()).thenReturn(EntityType.Way);
-		when(way.getId()).thenReturn(1l);
-		XContentBuilder content = XContentFactory.jsonBuilder();
-		when(entityMapperMocked.marshallWay(way)).thenReturn(content);
+		Way way = OsmDataBuilder.buildSampleWay();
+		XContentBuilder xContentBuilder = new EntityMapper().marshallWay(way);
+
+		IndexRequestBuilder indexRequestBuilderMocked = mock(IndexRequestBuilder.class);
+		ListenableActionFuture<IndexResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		IndexResponse indexResponseMocked = mock(IndexResponse.class);
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenReturn(indexRequestBuilderMocked);
+		when(entityMapperMocked.marshallWay(way)).thenReturn(xContentBuilder);
+		when(indexRequestBuilderMocked.setSource(any(XContentBuilder.class))).thenReturn(indexRequestBuilderMocked);
+		when(indexRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(indexResponseMocked);
+		when(indexResponseMocked.getId()).thenReturn("1");
+
 		// Action
-		entityDao.saveWay(way);
+		String id = entityDao.saveWay(way);
+
 		// Assert
-		verify(indexAdminServiceMocked).index(eq(INDEX_NAME),
-				eq("way"),
-				eq(1l),
-				same(content));
+		assertEquals("1", id);
+		verify(clientMocked).prepareIndex(eq(INDEX_NAME), eq("way"), eq("1"));
+		verify(indexRequestBuilderMocked).setSource(same(xContentBuilder));
+	}
+
+	@Test(expected = DaoException.class)
+	public void saveWay_withClientException_shouldThrowDaoException() throws IOException {
+		// Setup
+		Node node = OsmDataBuilder.buildSampleNode();
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenThrow(new RuntimeException(""));
+
+		// Action
+		entityDao.saveNode(node);
 	}
 
 	@Test
@@ -114,9 +171,9 @@ public class EntityDaoUTest {
 		// Setup
 		Relation relation = mock(Relation.class);
 		// Action
-		entityDao.saveRelation(relation);
+		String relationId = entityDao.saveRelation(relation);
 		// Assert
-		Mockito.verifyZeroInteractions(indexAdminServiceMocked);
+		assertNull(relationId);
 	}
 
 	@Test
@@ -124,39 +181,50 @@ public class EntityDaoUTest {
 		// Setup
 		Bound bound = mock(Bound.class);
 		// Action
-		entityDao.saveBound(bound);
+		String boundId = entityDao.saveBound(bound);
 		// Assert
-		Mockito.verifyZeroInteractions(indexAdminServiceMocked);
+		assertNull(boundId);
 	}
 
 	@Test
 	public void findEntity() {
 		// Setup
-		entityDao = Mockito.spy(entityDao);
-		doReturn(null).when(entityDao).findNode(1l);
-		doReturn(null).when(entityDao).findWay(2l);
-		doReturn(null).when(entityDao).findRelation(3l);
-		doReturn(null).when(entityDao).findBound(4l);
+		Node node = mock(Node.class);
+		Way way = mock(Way.class);
+		Relation relation = mock(Relation.class);
+		Bound bound = mock(Bound.class);
+
+		doReturn(node).when(entityDao).findNode(1l);
+		doReturn(way).when(entityDao).findWay(2l);
+		doReturn(relation).when(entityDao).findRelation(3l);
+		doReturn(bound).when(entityDao).findBound(4l);
+
 		// Action
-		entityDao.find(1l, Node.class);
-		entityDao.find(2l, Way.class);
-		entityDao.find(3l, Relation.class);
-		entityDao.find(4l, Bound.class);
+		Node resultNode = entityDao.find(1l, Node.class);
+		Way resultWay = entityDao.find(2l, Way.class);
+		Relation resultRelation = entityDao.find(3l, Relation.class);
+		Bound resultBound = entityDao.find(4l, Bound.class);
+
 		// Assert
 		verify(entityDao, times(1)).findNode(1l);
 		verify(entityDao, times(1)).findWay(2l);
 		verify(entityDao, times(1)).findRelation(3l);
 		verify(entityDao, times(1)).findBound(4l);
+
+		assertSame(node, resultNode);
+		assertSame(way, resultWay);
+		assertSame(relation, resultRelation);
+		assertSame(bound, resultBound);
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void findEntity_withNullClass() {
+	public void findEntity_withNullClass_shouldThrowException() {
 		// Action
 		entityDao.find(1l, null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void findEntity_withEntityClass() {
+	public void findEntity_withEntityClass_shouldThrowException() {
 		// Action
 		entityDao.find(1l, Entity.class);
 	}
@@ -164,75 +232,149 @@ public class EntityDaoUTest {
 	@Test
 	public void findNode() {
 		// Setup
-		entityDao = Mockito.spy(entityDao);
+		Node expected = OsmDataBuilder.buildSampleNode();
+
 		SearchRequestBuilder searchRequestBuilderMocked = mock(SearchRequestBuilder.class);
-		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		ListenableActionFuture<SearchResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		SearchResponse searchResponseMocked = mock(SearchResponse.class);
+		SearchHits searchHitsMocked = mock(SearchHits.class);
 		SearchHit searchHitMocked = mock(SearchHit.class);
-		doReturn(searchRequestBuilderMocked).when(entityDao).findNodeQuery(1l);
-		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
-		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(1l);
-		when(searchResponseMocked.getHits().getAt(0)).thenReturn(searchHitMocked);
+
+		when(clientMocked.prepareSearch(any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.setQuery(any(QueryBuilder.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.addFields(any(String.class), any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(searchResponseMocked);
+		when(searchResponseMocked.getHits()).thenReturn(searchHitsMocked);
+		when(searchHitsMocked.getTotalHits()).thenReturn(1l);
+		when(searchHitsMocked.getAt(0)).thenReturn(searchHitMocked);
+
+		when(entityMapperMocked.unmarshallNode(any(SearchHit.class))).thenReturn(expected);
+
 		// Action
-		entityDao.findNode(1l);
+		Node actual = entityDao.findNode(1l);
+
 		// Assert
-		verify(entityMapperMocked).unmarshallNode(Mockito.same(searchHitMocked));
+		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("node").ids("1"))));
+		verify(searchRequestBuilderMocked).addFields(eq("location"), eq("tags"));
+		verify(entityMapperMocked).unmarshallNode(same(searchHitMocked));
+		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void findNode_withNoHit() {
 		// Setup
-		entityDao = Mockito.spy(entityDao);
 		SearchRequestBuilder searchRequestBuilderMocked = mock(SearchRequestBuilder.class);
-		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		doReturn(searchRequestBuilderMocked).when(entityDao).findNodeQuery(1l);
-		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
-		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(0l);
+		ListenableActionFuture<SearchResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		SearchResponse searchResponseMocked = mock(SearchResponse.class);
+		SearchHits searchHitsMocked = mock(SearchHits.class);
+
+		when(clientMocked.prepareSearch(any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.setQuery(any(QueryBuilder.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.addFields(any(String.class), any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(searchResponseMocked);
+		when(searchResponseMocked.getHits()).thenReturn(searchHitsMocked);
+		when(searchHitsMocked.getTotalHits()).thenReturn(0l);
+
 		// Action
-		Node node = entityDao.findNode(1l);
+		Node actual = entityDao.findNode(1l);
+
 		// Assert
-		Assert.assertNull(node);
+		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("node").ids("1"))));
+		verify(searchRequestBuilderMocked).addFields(eq("location"), eq("tags"));
+		assertNull(actual);
 	}
 
 	@Test
 	public void findWay() {
 		// Setup
-		entityDao = Mockito.spy(entityDao);
+		Way expected = OsmDataBuilder.buildSampleWay();
+
 		SearchRequestBuilder searchRequestBuilderMocked = mock(SearchRequestBuilder.class);
-		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		ListenableActionFuture<SearchResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		SearchResponse searchResponseMocked = mock(SearchResponse.class);
+		SearchHits searchHitsMocked = mock(SearchHits.class);
 		SearchHit searchHitMocked = mock(SearchHit.class);
-		doReturn(searchRequestBuilderMocked).when(entityDao).findWayQuery(1l);
-		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
-		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(1l);
-		when(searchResponseMocked.getHits().getAt(0)).thenReturn(searchHitMocked);
+
+		when(clientMocked.prepareSearch(any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.setQuery(any(QueryBuilder.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.addFields(any(String.class), any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(searchResponseMocked);
+		when(searchResponseMocked.getHits()).thenReturn(searchHitsMocked);
+		when(searchHitsMocked.getTotalHits()).thenReturn(1l);
+		when(searchHitsMocked.getAt(0)).thenReturn(searchHitMocked);
+
+		when(entityMapperMocked.unmarshallWay(any(SearchHit.class))).thenReturn(expected);
+
 		// Action
-		entityDao.findWay(1l);
+		Way actual = entityDao.findWay(1l);
+
 		// Assert
-		verify(entityMapperMocked).unmarshallWay(Mockito.same(searchHitMocked));
+		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("way").ids("1"))));
+		verify(searchRequestBuilderMocked).addFields(eq("tags"), eq("nodes"));
+		verify(entityMapperMocked).unmarshallWay(same(searchHitMocked));
+		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void findWay_withNoHit() {
 		// Setup
-		entityDao = Mockito.spy(entityDao);
 		SearchRequestBuilder searchRequestBuilderMocked = mock(SearchRequestBuilder.class);
-		SearchResponse searchResponseMocked = mock(SearchResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		doReturn(searchRequestBuilderMocked).when(entityDao).findWayQuery(1l);
-		when(indexAdminServiceMocked.execute(Mockito.same(searchRequestBuilderMocked))).thenReturn(searchResponseMocked);
-		when(searchResponseMocked.getHits().getTotalHits()).thenReturn(0l);
+		ListenableActionFuture<SearchResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		SearchResponse searchResponseMocked = mock(SearchResponse.class);
+		SearchHits searchHitsMocked = mock(SearchHits.class);
+
+		when(clientMocked.prepareSearch(any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.setQuery(any(QueryBuilder.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.addFields(any(String.class), any(String.class))).thenReturn(searchRequestBuilderMocked);
+		when(searchRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(searchResponseMocked);
+		when(searchResponseMocked.getHits()).thenReturn(searchHitsMocked);
+		when(searchHitsMocked.getTotalHits()).thenReturn(0l);
+
 		// Action
-		Way way = entityDao.findWay(1l);
+		Way actual = entityDao.findWay(1l);
+
 		// Assert
-		Assert.assertNull(way);
+		verify(searchRequestBuilderMocked).setQuery(argThat(new QueryBuilderMatcher(QueryBuilders.idsQuery("way").ids("1"))));
+		verify(searchRequestBuilderMocked).addFields(eq("tags"), eq("nodes"));
+		assertNull(actual);
 	}
 
 	@Test(expected = UnsupportedOperationException.class)
-	public void findRelation() {
-		entityDao.findRelation(1l);
+	public void findRelation_shouldBeUnsupported() {
+		// Action
+		entityDao.find(1l, Relation.class);
 	}
 
 	@Test(expected = UnsupportedOperationException.class)
-	public void findBound() {
-		entityDao.findBound(1l);
+	public void findBound_shouldBeUnsupported() {
+		// Action
+		entityDao.find(1l, Bound.class);
+	}
+
+	public class QueryBuilderMatcher extends BaseMatcher<QueryBuilder> {
+
+		private final QueryBuilder expected;
+
+		public QueryBuilderMatcher(QueryBuilder expected) {
+			this.expected = expected;
+		}
+
+		@Override
+		public boolean matches(Object item) {
+			if (expected == item) return true;
+			if (item == null) return false;
+			if (expected.getClass() != item.getClass()) return false;
+			QueryBuilder other = (QueryBuilder) item;
+			return expected.toString().equals(other.toString());
+		}
+
+		@Override
+		public void describeTo(Description description) {}
+
 	}
 
 }
