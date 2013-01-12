@@ -72,11 +72,11 @@ public class ElasticSearchWriterTask implements Sink {
 
 	@Override
 	public void complete() {
-		LOG.info("OSM index creation completed!\n" +
-				"total processed bounds: ...... " + boundProcessedCounter + "\n" +
+		LOG.info("OSM indexing completed!\n" +
 				"total processed nodes: ....... " + nodeProcessedCounter + "\n" +
 				"total processed ways: ........ " + wayProcessedCounter + "\n" +
-				"total processed relations: ... " + relationProcessedCounter);
+				"total processed relations: ... " + relationProcessedCounter + "\n" +
+				"total processed bounds: ...... " + boundProcessedCounter);
 		buildSpecializedIndex();
 	}
 
@@ -84,10 +84,10 @@ public class ElasticSearchWriterTask implements Sink {
 		for (SpecialiazedIndex index : specIndexes) {
 			try {
 				IndexBuilder indexBuilder = index.getIndexBuilderClass().newInstance();
-				LOG.info("Creating specialized index " + index.name());
+				LOG.info("Creating specialized index [" + index.name() + "]");
 				String indexName = entityDao.getIndexName() + "-" + indexBuilder.getIndexName();
 				indexAdminService.createIndex(indexName, indexBuilder.getIndexMapping());
-				LOG.info("Building specialized index " + index.name());
+				LOG.info("Building specialized index [" + index.name() + "]");
 				indexBuilder.buildIndex(indexAdminService);
 			} catch (Exception e) {
 				LOG.log(Level.SEVERE, "Unable to build index", e);
@@ -99,7 +99,7 @@ public class ElasticSearchWriterTask implements Sink {
 	public void release() {
 		float consumedMemoryMb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())
 				/ (float) Math.pow(1024, 2);
-		LOG.info(String.format("Estimated memory consumption: %.2f MB ", consumedMemoryMb));
+		LOG.info(String.format("Estimated memory consumption: %.2f MB", consumedMemoryMb));
 		indexAdminService.refresh();
 		indexAdminService.getClient().close();
 	}
