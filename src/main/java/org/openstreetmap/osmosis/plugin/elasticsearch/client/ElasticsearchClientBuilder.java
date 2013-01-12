@@ -28,7 +28,7 @@ public class ElasticsearchClientBuilder {
 		// Check the cluster health
 		ClusterHealthResponse health = client.admin().cluster()
 				.health(new ClusterHealthRequest()).actionGet();
-		if (health.getNumberOfDataNodes() == 0) throw new IllegalStateException("Unable to connect");
+		if (health.getNumberOfDataNodes() == 0) throw new RuntimeException("Unable to connect to elasticsearch");
 		LOG.info(String.format("Connected to %d data node(s) with cluster status %s",
 				health.getNumberOfDataNodes(), health.getStatus().name()));
 		return client;
