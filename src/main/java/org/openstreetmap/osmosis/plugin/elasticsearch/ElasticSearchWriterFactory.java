@@ -1,6 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import org.elasticsearch.client.Client;
@@ -11,7 +12,7 @@ import org.openstreetmap.osmosis.core.pipeline.v0_6.SinkManager;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.client.ElasticsearchClientBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.SpecialiazedIndex;
+import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
@@ -23,7 +24,7 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 	public static final String PARAM_PORT = "port";
 	public static final String PARAM_INDEX_NAME = "indexName";
 	public static final String PARAM_CREATE_INDEX = "createIndex";
-	public static final String PARAM_SPECIALIZED_INDEX = "specializedIndexex";
+	public static final String PARAM_INDEX_BUILDERS = "indexBuilders";
 
 	@Override
 	protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig) {
@@ -34,9 +35,9 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		// Build EntityDao
 		EntityDao entityDao = buildEntityDao(taskConfig, indexAdminService);
 		// Get specialized index to build
-		Set<SpecialiazedIndex> specIndexes = getWantedSpecializedIndexes(taskConfig);
+		Set<AbstractIndexBuilder> indexBuilders = getSelectedIndexBuilders(taskConfig);
 		// Return the SinkManager
-		Sink sink = new ElasticSearchWriterTask(indexAdminService, entityDao, specIndexes);
+		Sink sink = new ElasticSearchWriterTask(indexAdminService, entityDao, indexBuilders);
 		return new SinkManager(taskConfig.getId(), sink, taskConfig.getPipeArgs());
 	}
 
@@ -61,16 +62,33 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		return entityDao;
 	}
 
-	protected Set<SpecialiazedIndex> getWantedSpecializedIndexes(TaskConfiguration taskConfig) {
-		Set<SpecialiazedIndex> values = new HashSet<SpecialiazedIndex>();
-		String array = getStringArgument(taskConfig, PARAM_SPECIALIZED_INDEX,
+	protected Set<AbstractIndexBuilder> getSelectedIndexBuilders(TaskConfiguration taskConfig) {
+		Properties properties = getIndexBuilderProperties();
+		Set<AbstractIndexBuilder> set = new HashSet<AbstractIndexBuilder>();
+		String selectedIndexBuilders = getStringArgument(taskConfig, PARAM_INDEX_BUILDERS,
 				getDefaultStringArgument(taskConfig, ""));
-		for (String item : array.split(",")) {
-			try {
-				values.add(SpecialiazedIndex.valueOf(item.toUpperCase()));
-			} catch (Exception e) {}
+		for (String indexBuilderName : selectedIndexBuilders.split(",")) {
+			if (!properties.containsKey(indexBuilderName)) {
+				throw new RuntimeException("Unable to find IndexBuilder [" + indexBuilderName + "]");
+			} else try {
+				String indexBuilderClass = properties.getProperty(indexBuilderName);
+				AbstractIndexBuilder indexBuilder = (AbstractIndexBuilder) Class.forName(indexBuilderClass).newInstance();
+				set.add(indexBuilder);
+			} catch (Exception e) {
+				throw new RuntimeException("Unable to load IndexBuilder [" + indexBuilderName + "]");
+			}
 		}
-		return values;
+		return set;
+	}
+
+	protected Properties getIndexBuilderProperties() {
+		try {
+			Properties properties = new Properties();
+			properties.load(this.getClass().getClassLoader().getResourceAsStream("indexBuilder.properties"));
+			return properties;
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to load IndexBuilder list");
+		}
 	}
 
 }

@@ -10,7 +10,6 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.SpecialiazedIndex;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class ElasticSearchWriterTask implements Sink {
@@ -24,12 +23,12 @@ public class ElasticSearchWriterTask implements Sink {
 
 	private final IndexAdminService indexAdminService;
 	private final EntityDao entityDao;
-	private final Set<SpecialiazedIndex> specIndexes;
+	private final Set<AbstractIndexBuilder> indexBuilders;
 
-	public ElasticSearchWriterTask(IndexAdminService indexAdminService, EntityDao entityDao, Set<SpecialiazedIndex> specIndexes) {
+	public ElasticSearchWriterTask(IndexAdminService indexAdminService, EntityDao entityDao, Set<AbstractIndexBuilder> indexBuilders) {
 		this.indexAdminService = indexAdminService;
 		this.entityDao = entityDao;
-		this.specIndexes = specIndexes;
+		this.indexBuilders = indexBuilders;
 	}
 
 	@Override
@@ -74,14 +73,16 @@ public class ElasticSearchWriterTask implements Sink {
 	}
 
 	private void buildSpecializedIndex() {
-		for (SpecialiazedIndex index : specIndexes) {
+		for (AbstractIndexBuilder indexBuilder : indexBuilders) {
 			try {
-				AbstractIndexBuilder indexBuilder = index.getIndexBuilderClass().newInstance();
-				LOG.info("Creating specialized index [" + index.name() + "]");
 				String indexName = indexBuilder.getSpecializedIndexName();
+				LOG.info("Creating selected index [" + indexName + "]");
 				indexAdminService.createIndex(indexName, indexBuilder.getIndexMapping());
-				LOG.info("Building specialized index [" + index.name() + "]");
+				LOG.info("Building selected index [" + indexName + "]");
+				long time = System.currentTimeMillis();
 				indexBuilder.buildIndex();
+				time = System.currentTimeMillis() - time;
+				LOG.info("Index [" + indexName + "] successfully built in " + time + " milliseconds!");
 			} catch (Exception e) {
 				LOG.log(Level.SEVERE, "Unable to build index", e);
 			}
