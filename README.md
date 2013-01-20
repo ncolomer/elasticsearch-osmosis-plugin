@@ -1,6 +1,7 @@
 # elasticsearch-osmosis-plugin
 
-An Osmosis plugin that inserts OpenStreetMap data into an elasticsearch cluster
+elasticsearch-osmosis-plugin is an Osmosis plugin that allows insert OpenStreetMap data into an elasticsearch cluster.
+Its main purpose is to index the world, literally :-)
 
 - - -
 
@@ -82,14 +83,14 @@ Available options are:
 Connect to cluster **elasticsearch** as <code>NodeClient</code> through <code>localhost:9300</code>:
 
     osmosis \
-        --read-pbf ~/osm/extract/ile-de-france.osm.pbf \
+        --read-pbf ~/osm/extract/guyane.osm.pbf \
         --write-elasticsearch
 
 Connect to cluster **openstreetmap** as <code>TransportClient</code> through <code>10.0.0.1:9300</code> 
 and (re)create index **osm** prior to insert data:
 
     osmosis \
-    	--read-pbf ~/osm/extract/ile-de-france.osm.pbf \
+    	--read-pbf ~/osm/extract/guyane.osm.pbf \
     	--wes isNodeClient="false" host="10.0.0.1" clustername="openstreetmap" createIndex="true"
 
 ## 3. Mapping
@@ -160,10 +161,10 @@ curl -XGET 'http://localhost:9200/osm/way/40849832'
 
 You can get OSM files (planet, extract) from various location. OpenStreetMap have some listed on their dedicated 
 [Planet.osm](http://wiki.openstreetmap.org/wiki/Planet.osm) wiki page.
-Here is an example for the <code>ile-de-france.osm.pbf</code> extract by [Geofabrik.de](http://www.geofabrik.de/):
+Here is an example on how to get the <code>guyane.osm.pbf</code> extract by [Geofabrik.de](http://www.geofabrik.de/):
 
     mkdir -p ~/osm/extract ~/osm/planet ~/osm/output
-    wget -P ~/osm/extract http://download.geofabrik.de/openstreetmap/europe/france/ile-de-france.osm.pbf
+    wget -P ~/osm/extract http://download.geofabrik.de/openstreetmap/europe/france/guyane.osm.pbf
 
 ### 4.2. Useful elasticsearch HTTP commands
 
