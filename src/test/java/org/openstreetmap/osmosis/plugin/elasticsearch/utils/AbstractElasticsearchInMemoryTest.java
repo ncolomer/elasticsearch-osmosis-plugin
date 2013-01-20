@@ -20,7 +20,7 @@ import org.junit.BeforeClass;
  * 
  * @author Nicolas Colomer
  */
-public abstract class AbstractElasticsearchInMemoryTest {
+public abstract class AbstractElasticSearchInMemoryTest {
 
 	private static File tmpFolder;
 	private static Node node;

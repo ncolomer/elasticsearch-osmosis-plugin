@@ -23,7 +23,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
-public class ElasticSearchWriterTaskTest {
+public class ElasticSearchWriterTaskUTest {
 
 	private IndexAdminService indexAdminServiceMocked;
 	private EntityDao entityDaoMocked;

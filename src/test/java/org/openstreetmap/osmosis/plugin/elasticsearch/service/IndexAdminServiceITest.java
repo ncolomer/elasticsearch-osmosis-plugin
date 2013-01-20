@@ -13,9 +13,9 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticsearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
 
-public class IndexAdminServiceITest extends AbstractElasticsearchInMemoryTest {
+public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 
 	IndexAdminService indexAdminService;
 

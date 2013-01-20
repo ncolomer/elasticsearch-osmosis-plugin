@@ -16,10 +16,10 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticsearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
 
-public class EntityDaoITest extends AbstractElasticsearchInMemoryTest {
+public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 	private static final String INDEX_NAME = "osm-test";
 
