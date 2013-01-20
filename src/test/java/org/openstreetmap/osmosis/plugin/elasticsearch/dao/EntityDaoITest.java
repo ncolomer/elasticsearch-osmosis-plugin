@@ -1,8 +1,9 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import junit.framework.Assert;
 
@@ -17,6 +18,7 @@ import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AssertUtils;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
 
 public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
@@ -37,6 +39,8 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		delete();
 		refresh();
 	}
+
+	/* save */
 
 	@Test
 	public void saveNode() {
@@ -72,12 +76,14 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertEquals(expected, actual);
 	}
 
+	/* find */
+
 	@Test
 	public void findNode() throws Exception {
 		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
+		Node expected = OsmDataBuilder.buildSampleNode();
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(node))
+				.setSource(new EntityMapper().marshallNode(expected))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
@@ -85,12 +91,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		Node actual = entityDao.find(1l, Node.class);
 
 		// Assert
-		Assert.assertEquals(1l, actual.getId());
-		Assert.assertEquals(1.0d, actual.getLatitude());
-		Assert.assertEquals(2.0d, actual.getLongitude());
-		Tag tag = actual.getTags().iterator().next();
-		Assert.assertEquals("highway", tag.getKey());
-		Assert.assertEquals("traffic_signals", tag.getValue());
+		AssertUtils.assertEquals(expected, actual);
 	}
 
 	@Test
@@ -146,6 +147,181 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertNull(actual);
 	}
 
+	/* findAll */
+
+	@Test
+	public void findAllNodes_stressTest() throws Exception {
+		// Setup
+
+		int SIZE = 100;
+
+		long[] ids = new long[SIZE];
+		List<Node> expected = new ArrayList<Node>(SIZE);
+
+		for (int i = 0; i < SIZE; i++) {
+			Node node = OsmDataBuilder.buildSampleNode();
+			node.setId(i);
+			expected.add(node);
+			ids[i] = i;
+			client().prepareIndex(INDEX_NAME, "node", String.valueOf(i))
+					.setSource(new EntityMapper().marshallNode(node))
+					.execute().actionGet();
+		}
+		refresh(INDEX_NAME);
+
+		// Action
+		List<Node> actual = entityDao.findAll(Node.class, ids);
+
+		// Assert
+		AssertUtils.assertNodesEquals(expected, actual);
+	}
+
+	@Test
+	public void findAllNodes() throws Exception {
+		// Setup
+		Node node1 = OsmDataBuilder.buildSampleNode();
+		node1.setId(1);
+		Node node2 = OsmDataBuilder.buildSampleNode();
+		node2.setId(2);
+		List<Node> expected = Arrays.asList(new Node[] { node1, node2 });
+
+		client().prepareIndex(INDEX_NAME, "node", "1")
+				.setSource(new EntityMapper().marshallNode(node1))
+				.execute().actionGet();
+		client().prepareIndex(INDEX_NAME, "node", "2")
+				.setSource(new EntityMapper().marshallNode(node2))
+				.execute().actionGet();
+		refresh(INDEX_NAME);
+
+		// Action
+		List<Node> actual = entityDao.findAll(Node.class, 1l, 2l);
+
+		// Assert
+		AssertUtils.assertNodesEquals(expected, actual);
+	}
+
+	@Test
+	public void findAllNodes_withSubset() throws Exception {
+		// Setup
+		Node node1 = OsmDataBuilder.buildSampleNode();
+		node1.setId(1);
+		Node node2 = OsmDataBuilder.buildSampleNode();
+		node2.setId(2);
+		List<Node> expected = Arrays.asList(new Node[] { node2 });
+
+		client().prepareIndex(INDEX_NAME, "node", "1")
+				.setSource(new EntityMapper().marshallNode(node1))
+				.execute().actionGet();
+		client().prepareIndex(INDEX_NAME, "node", "2")
+				.setSource(new EntityMapper().marshallNode(node2))
+				.execute().actionGet();
+		refresh(INDEX_NAME);
+
+		// Action
+		List<Node> actual = entityDao.findAll(Node.class, 2l);
+
+		// Assert
+		AssertUtils.assertNodesEquals(expected, actual);
+	}
+
+	@Test
+	public void findAllNodes_keepOrder() throws Exception {
+		// Setup
+		Node node1 = OsmDataBuilder.buildSampleNode();
+		node1.setId(1);
+		Node node2 = OsmDataBuilder.buildSampleNode();
+		node2.setId(2);
+		List<Node> expected = Arrays.asList(new Node[] { node2, node1 });
+
+		client().prepareIndex(INDEX_NAME, "node", "1")
+				.setSource(new EntityMapper().marshallNode(node1))
+				.execute().actionGet();
+		client().prepareIndex(INDEX_NAME, "node", "2")
+				.setSource(new EntityMapper().marshallNode(node2))
+				.execute().actionGet();
+		refresh(INDEX_NAME);
+
+		// Action
+		List<Node> actual = entityDao.findAll(Node.class, 2l, 1l);
+
+		// Assert
+		AssertUtils.assertNodesEquals(expected, actual);
+	}
+
+	@Test
+	public void findAllWays() throws Exception {
+		// Setup
+		Way way1 = OsmDataBuilder.buildSampleWay();
+		way1.setId(1);
+		Way way2 = OsmDataBuilder.buildSampleWay();
+		way2.setId(2);
+		List<Way> expected = Arrays.asList(new Way[] { way1, way2 });
+
+		client().prepareIndex(INDEX_NAME, "way", "1")
+				.setSource(new EntityMapper().marshallWay(way1))
+				.execute().actionGet();
+		client().prepareIndex(INDEX_NAME, "way", "2")
+				.setSource(new EntityMapper().marshallWay(way2))
+				.execute().actionGet();
+		refresh(INDEX_NAME);
+
+		// Action
+		List<Way> actual = entityDao.findAll(Way.class, 1l, 2l);
+
+		// Assert
+		AssertUtils.assertWaysEquals(expected, actual);
+	}
+
+	@Test
+	public void findAllWays_withSubset() throws Exception {
+		// Setup
+		Way way1 = OsmDataBuilder.buildSampleWay();
+		way1.setId(1);
+		Way way2 = OsmDataBuilder.buildSampleWay();
+		way2.setId(2);
+		List<Way> expected = Arrays.asList(new Way[] { way2 });
+
+		client().prepareIndex(INDEX_NAME, "way", "1")
+				.setSource(new EntityMapper().marshallWay(way1))
+				.execute().actionGet();
+		client().prepareIndex(INDEX_NAME, "way", "2")
+				.setSource(new EntityMapper().marshallWay(way2))
+				.execute().actionGet();
+		refresh(INDEX_NAME);
+
+		// Action
+		List<Way> actual = entityDao.findAll(Way.class, 2l);
+
+		// Assert
+		AssertUtils.assertWaysEquals(expected, actual);
+	}
+
+	@Test
+	public void findAllWays_keepOrder() throws Exception {
+		// Setup
+		Way way1 = OsmDataBuilder.buildSampleWay();
+		way1.setId(1);
+		Way way2 = OsmDataBuilder.buildSampleWay();
+		way2.setId(2);
+		List<Way> expected = Arrays.asList(new Way[] { way2, way1 });
+
+		client().prepareIndex(INDEX_NAME, "way", "1")
+				.setSource(new EntityMapper().marshallWay(way1))
+				.execute().actionGet();
+		client().prepareIndex(INDEX_NAME, "way", "2")
+				.setSource(new EntityMapper().marshallWay(way2))
+				.execute().actionGet();
+		refresh(INDEX_NAME);
+
+		// Action
+		List<Way> actual = entityDao.findAll(Way.class, 2l, 1l);
+
+		// Assert
+		AssertUtils.assertWaysEquals(expected, actual);
+	}
+
+	/* delete */
+
 	@Test
 	public void deleteNode() throws Exception {
 		// Setup
@@ -159,7 +335,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		boolean actual = entityDao.delete(1l, Node.class);
 
 		// Assert
-		assertEquals(true, actual);
+		Assert.assertEquals(true, actual);
 	}
 
 	@Test
@@ -175,7 +351,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		boolean actual = entityDao.delete(2l, Node.class);
 
 		// Assert
-		assertEquals(false, actual);
+		Assert.assertEquals(false, actual);
 	}
 
 	@Test
@@ -191,7 +367,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		boolean actual = entityDao.delete(1l, Way.class);
 
 		// Assert
-		assertEquals(true, actual);
+		Assert.assertEquals(true, actual);
 	}
 
 	@Test
@@ -207,7 +383,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		boolean actual = entityDao.delete(2l, Way.class);
 
 		// Assert
-		assertEquals(false, actual);
+		Assert.assertEquals(false, actual);
 	}
 
 }

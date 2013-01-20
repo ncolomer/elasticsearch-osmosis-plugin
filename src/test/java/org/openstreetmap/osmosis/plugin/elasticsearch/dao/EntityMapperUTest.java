@@ -11,15 +11,15 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
 import org.junit.Before;
 import org.junit.Test;
-import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
+import org.mockito.Mockito;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
-import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AssertUtils;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
 
 public class EntityMapperUTest {
 
@@ -33,13 +33,7 @@ public class EntityMapperUTest {
 	@Test
 	public void marshallNode() throws IOException {
 		// Setup
-		Node node = mock(Node.class);
-		when(node.getType()).thenReturn(EntityType.Node);
-		when(node.getId()).thenReturn(1l);
-		when(node.getLatitude()).thenReturn(1.0d);
-		when(node.getLongitude()).thenReturn(2.0d);
-		List<Tag> tags = Arrays.asList(new Tag[] { new Tag("highway", "traffic_signals") });
-		when(node.getTags()).thenReturn(tags);
+		Node node = OsmDataBuilder.buildSampleNode();
 
 		// Action
 		String actual = entityMapper.marshallNode(node).string();
@@ -50,36 +44,30 @@ public class EntityMapperUTest {
 	}
 
 	@Test
-	public void unmarshallNode() throws IOException {
+	public void unmarshallNode_searchHit() throws IOException {
 		// Setup
-		SearchHit hit = mock(SearchHit.class);
+		Node expected = OsmDataBuilder.buildSampleNode();
+
+		SearchHit hit = mock(SearchHit.class, Mockito.RETURNS_DEEP_STUBS);
 		when(hit.getType()).thenReturn("node");
 		when(hit.getId()).thenReturn("1");
 
-		SearchHitField tagsHitField = mock(SearchHitField.class);
 		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("highway", "traffic_signals");
-		when(tagsHitField.getValue()).thenReturn(tags);
-		when(hit.field("tags")).thenReturn(tagsHitField);
+		when(hit.field("tags").getValue()).thenReturn(tags);
 
-		SearchHitField locationHitField = mock(SearchHitField.class);
-		when(locationHitField.getValue()).thenReturn(Arrays.asList(new Double[] { 2.0d, 1.0d }));
-		when(hit.field("location")).thenReturn(locationHitField);
+		List<Double> location = Arrays.asList(new Double[] { 2.0d, 1.0d });
+		when(hit.field("location").getValue()).thenReturn(location);
 
 		// Action
-		Node node = entityMapper.unmarshallNode(hit);
+		Node actual = entityMapper.unmarshallNode(hit);
 
 		// Assert
-		Assert.assertEquals(1l, node.getId());
-		Tag actualTag = node.getTags().iterator().next();
-		Assert.assertEquals("highway", actualTag.getKey());
-		Assert.assertEquals("traffic_signals", actualTag.getValue());
-		Assert.assertEquals(1.0, node.getLatitude());
-		Assert.assertEquals(2.0, node.getLongitude());
+		AssertUtils.assertEquals(expected, actual);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void unmarshallNode_withWrongType() throws IOException {
+	public void unmarshallNode_searchHit_withWrongType() throws IOException {
 		// Setup
 		SearchHit hit = mock(SearchHit.class);
 		when(hit.getType()).thenReturn("way");
@@ -89,15 +77,42 @@ public class EntityMapperUTest {
 	}
 
 	@Test
+	public void unmarshallNode_getResponse() throws IOException {
+		// Setup
+		Node expected = OsmDataBuilder.buildSampleNode();
+
+		GetResponse get = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		when(get.getType()).thenReturn("node");
+		when(get.getId()).thenReturn("1");
+
+		Map<String, String> tags = new HashMap<String, String>();
+		tags.put("highway", "traffic_signals");
+		when(get.field("tags").getValue()).thenReturn(tags);
+
+		List<Double> location = Arrays.asList(new Double[] { 2.0d, 1.0d });
+		when(get.field("location").getValue()).thenReturn(location);
+
+		// Action
+		Node actual = entityMapper.unmarshallNode(get);
+
+		// Assert
+		AssertUtils.assertEquals(expected, actual);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unmarshallNode_getResponse_withWrongType() throws IOException {
+		// Setup
+		GetResponse get = mock(GetResponse.class);
+		when(get.getType()).thenReturn("way");
+
+		// Action
+		entityMapper.unmarshallNode(get);
+	}
+
+	@Test
 	public void marshallWay() throws IOException {
 		// Setup
-		Way way = mock(Way.class);
-		when(way.getType()).thenReturn(EntityType.Way);
-		when(way.getId()).thenReturn(1l);
-		List<WayNode> nodes = Arrays.asList(new WayNode[] { new WayNode(1l) });
-		when(way.getWayNodes()).thenReturn(nodes);
-		List<Tag> tags = Arrays.asList(new Tag[] { new Tag("highway", "residential") });
-		when(way.getTags()).thenReturn(tags);
+		Way way = OsmDataBuilder.buildSampleWay();
 
 		// Action
 		String actual = entityMapper.marshallWay(way).string();
@@ -108,38 +123,65 @@ public class EntityMapperUTest {
 	}
 
 	@Test
-	public void unmarshallWay() throws IOException {
+	public void unmarshallWay_searchHit() throws IOException {
 		// Setup
-		SearchHit hit = mock(SearchHit.class);
+		Way expected = OsmDataBuilder.buildSampleWay();
+
+		SearchHit hit = mock(SearchHit.class, Mockito.RETURNS_DEEP_STUBS);
 		when(hit.getType()).thenReturn("way");
 		when(hit.getId()).thenReturn("1");
 
-		SearchHitField tagsHitField = mock(SearchHitField.class);
 		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("highway", "residential");
-		when(tagsHitField.getValue()).thenReturn(tags);
-		when(hit.field("tags")).thenReturn(tagsHitField);
+		when(hit.field("tags").getValue()).thenReturn(tags);
 
-		SearchHitField nodesHitField = mock(SearchHitField.class);
-		when(nodesHitField.getValues()).thenReturn(Arrays.asList(new Object[] { 1l, 2l }));
-		when(hit.field("nodes")).thenReturn(nodesHitField);
+		List<Object> nodes = Arrays.asList(new Object[] { 1l });
+		when(hit.field("nodes").getValues()).thenReturn(nodes);
 
 		// Action
-		Way way = entityMapper.unmarshallWay(hit);
+		Way actual = entityMapper.unmarshallWay(hit);
 
 		// Assert
-		Assert.assertEquals(1l, way.getId());
-		Tag actualTag = way.getTags().iterator().next();
-		Assert.assertEquals("highway", actualTag.getKey());
-		Assert.assertEquals("residential", actualTag.getValue());
-		Assert.assertEquals(1l, way.getWayNodes().get(0).getNodeId());
-		Assert.assertEquals(2l, way.getWayNodes().get(1).getNodeId());
+		AssertUtils.assertEquals(expected, actual);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void unmarshallWay_withWrongType() throws IOException {
+	public void unmarshallWay_searchHit_withWrongType() throws IOException {
 		// Setup
 		SearchHit hit = mock(SearchHit.class);
+		when(hit.getType()).thenReturn("node");
+
+		// Action
+		entityMapper.unmarshallWay(hit);
+	}
+
+	@Test
+	public void unmarshallWay_getResponse() throws IOException {
+		// Setup
+		Way expected = OsmDataBuilder.buildSampleWay();
+
+		GetResponse get = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		when(get.getType()).thenReturn("way");
+		when(get.getId()).thenReturn("1");
+
+		Map<String, String> tags = new HashMap<String, String>();
+		tags.put("highway", "residential");
+		when(get.field("tags").getValue()).thenReturn(tags);
+
+		List<Object> nodes = Arrays.asList(new Object[] { 1l });
+		when(get.field("nodes").getValue()).thenReturn(nodes);
+
+		// Action
+		Way actual = entityMapper.unmarshallWay(get);
+
+		// Assert
+		AssertUtils.assertEquals(expected, actual);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void unmarshallWay_getResponse_withWrongType() throws IOException {
+		// Setup
+		GetResponse hit = mock(GetResponse.class);
 		when(hit.getType()).thenReturn("node");
 
 		// Action
