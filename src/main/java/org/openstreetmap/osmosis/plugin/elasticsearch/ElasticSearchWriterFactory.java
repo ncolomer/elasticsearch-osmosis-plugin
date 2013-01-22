@@ -12,7 +12,7 @@ import org.openstreetmap.osmosis.core.pipeline.common.TaskManager;
 import org.openstreetmap.osmosis.core.pipeline.common.TaskManagerFactory;
 import org.openstreetmap.osmosis.core.pipeline.v0_6.SinkManager;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
-import org.openstreetmap.osmosis.plugin.elasticsearch.client.ElasticsearchClientBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.client.ElasticSearchClientBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
@@ -21,9 +21,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 public class ElasticSearchWriterFactory extends TaskManagerFactory {
 
 	public static final String PARAM_CLUSTER_NAME = "clusterName";
-	public static final String PARAM_IS_NODE_CLIENT = "isNodeClient";
-	public static final String PARAM_HOST = "host";
-	public static final String PARAM_PORT = "port";
+	public static final String PARAM_HOSTS = "hosts";
 	public static final String PARAM_INDEX_NAME = "indexName";
 	public static final String PARAM_CREATE_INDEX = "createIndex";
 	public static final String PARAM_INDEX_BUILDERS = "indexBuilders";
@@ -49,26 +47,21 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		Properties params = new Properties();
 		params.put(PARAM_CLUSTER_NAME, getStringArgument(taskConfig, PARAM_CLUSTER_NAME,
 				getDefaultStringArgument(taskConfig, "elasticsearch")));
-		params.put(PARAM_IS_NODE_CLIENT, getBooleanArgument(taskConfig, PARAM_IS_NODE_CLIENT, true));
-		params.put(PARAM_HOST, getStringArgument(taskConfig, PARAM_HOST,
+		params.put(PARAM_HOSTS, getStringArgument(taskConfig, PARAM_HOSTS,
 				getDefaultStringArgument(taskConfig, "localhost")));
-		params.put(PARAM_PORT, getIntegerArgument(taskConfig, PARAM_PORT,
-				getDefaultIntegerArgument(taskConfig, 9300)));
 		params.put(PARAM_INDEX_NAME, getStringArgument(taskConfig, PARAM_INDEX_NAME,
 				getDefaultStringArgument(taskConfig, "osm")));
-		params.put(PARAM_CREATE_INDEX, getBooleanArgument(taskConfig, PARAM_CREATE_INDEX, false));
+		params.put(PARAM_CREATE_INDEX, getBooleanArgument(taskConfig, PARAM_CREATE_INDEX, true));
 		params.put(PARAM_INDEX_BUILDERS, getStringArgument(taskConfig, PARAM_INDEX_BUILDERS,
 				getDefaultStringArgument(taskConfig, "")));
 		return params;
 	}
 
 	protected Client buildElasticsearchClient(Properties params) {
-		ElasticsearchClientBuilder clientBuilder = new ElasticsearchClientBuilder();
-		clientBuilder.clusterName = (String) params.get(PARAM_CLUSTER_NAME);
-		clientBuilder.isNodeClient = (Boolean) params.get(PARAM_IS_NODE_CLIENT);
-		clientBuilder.host = (String) params.get(PARAM_HOST);
-		clientBuilder.port = (Integer) params.get(PARAM_PORT);
-		return clientBuilder.build();
+		return ElasticSearchClientBuilder.newClient()
+				.setClusterName((String) params.get(PARAM_CLUSTER_NAME))
+				.setHosts((String) params.get(PARAM_HOSTS))
+				.build();
 	}
 
 	protected EntityDao buildEntityDao(IndexAdminService indexAdminService, Properties params) {

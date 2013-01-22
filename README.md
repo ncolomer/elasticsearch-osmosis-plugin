@@ -1,14 +1,13 @@
 # elasticsearch-osmosis-plugin
 
-elasticsearch-osmosis-plugin is an Osmosis plugin that allows insert OpenStreetMap data into an elasticsearch cluster.
-Its main purpose is to index the world, literally :-)
+elasticsearch-osmosis-plugin is an Osmosis plugin that aims to insert OpenStreetMap data into an elasticsearch cluster.
 
 - - -
 
 ## 1. Installation
 
 Osmosis installation is really easy and should not take you more than 5 minutes. Just follow/adapt the few shell commands below :-)
-You could also be interested in the [osmosis-chef-cookbook](https://github.com/ncolomer/osmosis-chef-cookbook) that automates the osmosis installation on any Chef-managed node.
+You might also be interested in the [osmosis-chef-cookbook](https://github.com/ncolomer/osmosis-chef-cookbook) that automates the osmosis installation on any Chef-managed node.
 
 ### 1.1. Install Osmosis
 
@@ -61,26 +60,23 @@ Available options are:
 		<td>clusterName</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
 	</tr>
 	<tr>
-		<td>isNodeClient</td><td>Boolean</td><td>true</td><td>Join as NodeClient or TransportClient 
-			(See <a href="http://www.elasticsearch.org/guide/reference/java-api/client.html">here</a> for the difference)</td>
-	</tr>
-	<tr>
-		<td>host</td><td>String</td><td>localhost</td><td>Hostname or IP of the elasticsearch node to join</td>
-	</tr>
-	<tr>
-		<td>port</td><td>Integer</td><td>9300</td><td>Transport port of the elasticsearch node to join</td>
+		<td>hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join. 
+			Valid syntax for a node is <code>host1</code>, <code>host2:port</code> or <code>host3[portX-portY]</code></td>
 	</tr>
 	<tr>
 		<td>indexName</td><td>String</td><td>osm</td><td>Name of the index that will be filled with data</td>
 	</tr>
 	<tr>
-		<td>createIndex</td><td>Boolean</td><td>false</td><td>(Re)create (delete if exists!) the index before inserts</td>
-	</tr>	
+		<td>createIndex</td><td>Boolean</td><td>true</td><td>(Re)create the main index (delete if exists!) and its mapping prior inserting data</td>
+	</tr>
+	<tr>
+		<td>indexBuilders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index to build (see below)</td>
+	</tr>
 </table>
 
 ### 2.3. Examples
 
-Connect to cluster **elasticsearch** as <code>NodeClient</code> through <code>localhost:9300</code>:
+Connect to cluster **elasticsearch** via default node <code>localhost</code>:
 
     osmosis \
         --read-pbf ~/osm/extract/guyane.osm.pbf \
@@ -100,7 +96,7 @@ OSM data is organized in a relational model composed of [data primitives](https:
 The Osmosis tool is able to read both XML and PBF formats: it deserializes data into Java objects that can be processed through plugins.
 In our case, the *elasticsearch-osmosis-plugin* will convert these Java objects into their JSON equivalent prior to be inserted into elasticsearch.
 
-Please note that all user and version metadata are not inserted into elasticsearch for the moment.
+Please note that both user and version metadata are not inserted into elasticsearch for the moment.
 
 Given the following <code>sample.osm</code> file:
 
