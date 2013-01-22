@@ -1,5 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -28,51 +30,70 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 
 	@Override
 	protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig) {
+		// Retrieve parameters
+		Properties params = getParameters(taskConfig);
 		// Build ElasticSearch client
-		Client client = buildElasticsearchClient(taskConfig);
+		Client client = buildElasticsearchClient(params);
 		// Build indexAdminService
 		IndexAdminService indexAdminService = new IndexAdminService(client);
 		// Build EntityDao
-		EntityDao entityDao = buildEntityDao(taskConfig, indexAdminService);
+		EntityDao entityDao = buildEntityDao(indexAdminService, params);
 		// Get specialized index to build
-		Set<AbstractIndexBuilder> indexBuilders = getSelectedIndexBuilders(taskConfig);
+		Set<AbstractIndexBuilder> indexBuilders = getSelectedIndexBuilders(client, entityDao, params);
 		// Return the SinkManager
 		Sink sink = new ElasticSearchWriterTask(indexAdminService, entityDao, indexBuilders);
 		return new SinkManager(taskConfig.getId(), sink, taskConfig.getPipeArgs());
 	}
 
-	protected Client buildElasticsearchClient(TaskConfiguration taskConfig) {
+	protected Properties getParameters(TaskConfiguration taskConfig) {
+		Properties params = new Properties();
+		params.put(PARAM_CLUSTER_NAME, getStringArgument(taskConfig, PARAM_CLUSTER_NAME,
+				getDefaultStringArgument(taskConfig, "elasticsearch")));
+		params.put(PARAM_IS_NODE_CLIENT, getBooleanArgument(taskConfig, PARAM_IS_NODE_CLIENT, true));
+		params.put(PARAM_HOST, getStringArgument(taskConfig, PARAM_HOST,
+				getDefaultStringArgument(taskConfig, "localhost")));
+		params.put(PARAM_PORT, getIntegerArgument(taskConfig, PARAM_PORT,
+				getDefaultIntegerArgument(taskConfig, 9300)));
+		params.put(PARAM_INDEX_NAME, getStringArgument(taskConfig, PARAM_INDEX_NAME,
+				getDefaultStringArgument(taskConfig, "osm")));
+		params.put(PARAM_CREATE_INDEX, getBooleanArgument(taskConfig, PARAM_CREATE_INDEX, false));
+		params.put(PARAM_INDEX_BUILDERS, getStringArgument(taskConfig, PARAM_INDEX_BUILDERS,
+				getDefaultStringArgument(taskConfig, "")));
+		return params;
+	}
+
+	protected Client buildElasticsearchClient(Properties params) {
 		ElasticsearchClientBuilder clientBuilder = new ElasticsearchClientBuilder();
-		clientBuilder.clusterName = getStringArgument(taskConfig, PARAM_CLUSTER_NAME,
-				getDefaultStringArgument(taskConfig, "elasticsearch"));
-		clientBuilder.isNodeClient = getBooleanArgument(taskConfig, PARAM_IS_NODE_CLIENT, true);
-		clientBuilder.host = getStringArgument(taskConfig, PARAM_HOST,
-				getDefaultStringArgument(taskConfig, "localhost"));
-		clientBuilder.port = getIntegerArgument(taskConfig, PARAM_PORT,
-				getDefaultIntegerArgument(taskConfig, 9300));
+		clientBuilder.clusterName = (String) params.get(PARAM_CLUSTER_NAME);
+		clientBuilder.isNodeClient = (Boolean) params.get(PARAM_IS_NODE_CLIENT);
+		clientBuilder.host = (String) params.get(PARAM_HOST);
+		clientBuilder.port = (Integer) params.get(PARAM_PORT);
 		return clientBuilder.build();
 	}
 
-	protected EntityDao buildEntityDao(TaskConfiguration taskConfig, IndexAdminService indexAdminService) {
-		String indexName = getStringArgument(taskConfig, PARAM_INDEX_NAME,
-				getDefaultStringArgument(taskConfig, "osm"));
-		Boolean createIndex = getBooleanArgument(taskConfig, PARAM_CREATE_INDEX, false);
+	protected EntityDao buildEntityDao(IndexAdminService indexAdminService, Properties params) {
+		String indexName = (String) params.get(PARAM_INDEX_NAME);
+		Boolean createIndex = (Boolean) params.get(PARAM_CREATE_INDEX);
 		if (createIndex) indexAdminService.createIndex(indexName, new OsmIndexBuilder().getIndexMapping());
 		EntityDao entityDao = new EntityDao(indexName, indexAdminService.getClient());
 		return entityDao;
 	}
 
-	protected Set<AbstractIndexBuilder> getSelectedIndexBuilders(TaskConfiguration taskConfig) {
+	protected Set<AbstractIndexBuilder> getSelectedIndexBuilders(Client client, EntityDao entityDao, Properties params) {
 		Properties properties = getIndexBuilderProperties();
 		Set<AbstractIndexBuilder> set = new HashSet<AbstractIndexBuilder>();
-		String selectedIndexBuilders = getStringArgument(taskConfig, PARAM_INDEX_BUILDERS,
-				getDefaultStringArgument(taskConfig, ""));
+		String indexName = (String) params.get(PARAM_INDEX_NAME);
+		String selectedIndexBuilders = (String) params.get(PARAM_INDEX_BUILDERS);
+		if (selectedIndexBuilders.isEmpty()) return set;
 		for (String indexBuilderName : selectedIndexBuilders.split(",")) {
 			if (!properties.containsKey(indexBuilderName)) {
 				throw new RuntimeException("Unable to find IndexBuilder [" + indexBuilderName + "]");
 			} else try {
 				String indexBuilderClass = properties.getProperty(indexBuilderName);
-				AbstractIndexBuilder indexBuilder = (AbstractIndexBuilder) Class.forName(indexBuilderClass).newInstance();
+				@SuppressWarnings("unchecked")
+				Class<AbstractIndexBuilder> _class = (Class<AbstractIndexBuilder>) Class.forName(indexBuilderClass);
+				Constructor<AbstractIndexBuilder> _const = _class.getDeclaredConstructor(Client.class, EntityDao.class, String.class);
+				AbstractIndexBuilder indexBuilder = _const.newInstance(client, entityDao, indexName);
 				set.add(indexBuilder);
 			} catch (Exception e) {
 				throw new RuntimeException("Unable to load IndexBuilder [" + indexBuilderName + "]");
@@ -84,7 +105,9 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 	protected Properties getIndexBuilderProperties() {
 		try {
 			Properties properties = new Properties();
-			properties.load(this.getClass().getClassLoader().getResourceAsStream("indexBuilder.properties"));
+			InputStream inputStream = getClass().getClassLoader()
+					.getResourceAsStream("indexBuilder.properties");
+			properties.load(inputStream);
 			return properties;
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to load IndexBuilder list");
