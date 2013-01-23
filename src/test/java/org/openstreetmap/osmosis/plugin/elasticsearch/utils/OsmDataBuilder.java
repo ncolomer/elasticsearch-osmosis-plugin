@@ -25,4 +25,14 @@ public class OsmDataBuilder {
 		return new Way(entityData, Arrays.asList(new WayNode[] { new WayNode(1l) }));
 	}
 
+	public static Node buildNode(long id, double latitude, double longitude, List<Tag> tags) {
+		CommonEntityData entityData = new CommonEntityData(id, 0, new Date(), new OsmUser(1, "nco"), 1l, tags);
+		return new Node(entityData, latitude, longitude);
+	}
+
+	public static Way buildWay(long id, List<Tag> tags, List<WayNode> wayNodes) {
+		CommonEntityData entityData = new CommonEntityData(id, 0, new Date(), new OsmUser(1, "nco"), 1l, tags);
+		return new Way(entityData, wayNodes);
+	}
+
 }
