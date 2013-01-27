@@ -14,7 +14,6 @@ import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.index.query.GeoShapeFilterBuilder;
 import org.elasticsearch.index.query.GeoShapeQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -49,12 +48,6 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 		IndexAdminService indexService = new IndexAdminService(client());
 		indexService.createIndex(INDEX_NAME, new OsmIndexBuilder().getIndexMapping());
 		indexService.createIndex(indexBuilder.getSpecializedIndexName(), indexBuilder.getIndexMapping());
-	}
-
-	@After
-	public void tearDown() {
-		delete();
-		refresh();
 	}
 
 	@Test

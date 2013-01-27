@@ -17,6 +17,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**
@@ -54,6 +55,11 @@ public abstract class AbstractElasticSearchInMemoryTest {
 	public static void tearDownAfterClass() throws IOException {
 		node.close();
 		FileUtils.deleteQuietly(tmpFolder);
+	}
+
+	@Before
+	public void setUpTest() {
+		delete();
 	}
 
 	protected Client client() {
