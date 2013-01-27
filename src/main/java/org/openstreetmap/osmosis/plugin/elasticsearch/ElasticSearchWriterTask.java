@@ -69,6 +69,7 @@ public class ElasticSearchWriterTask implements Sink {
 				"total processed ways: ........ " + wayProcessedCounter + "\n" +
 				"total processed relations: ... " + relationProcessedCounter + "\n" +
 				"total processed bounds: ...... " + boundProcessedCounter);
+		indexAdminService.refresh();
 		buildSpecializedIndex();
 	}
 
