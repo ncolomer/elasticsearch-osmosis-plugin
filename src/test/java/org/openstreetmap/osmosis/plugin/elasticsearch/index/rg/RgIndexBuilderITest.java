@@ -145,6 +145,9 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertTrue(searchResponse.hits().hits().length == 0);
 	}
 
+	/**
+	 * Throws TooManyClauses exception
+	 */
 	@Test
 	@Ignore
 	public void geoShapeQuerySearch_shouldMatch() {
@@ -168,6 +171,9 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertTrue(searchResponse.hits().hits().length == 1);
 	}
 
+	/**
+	 * Throws TooManyClauses exception
+	 */
 	@Test
 	@Ignore
 	public void geoShapeQuerySearch_shouldNotMatch() {

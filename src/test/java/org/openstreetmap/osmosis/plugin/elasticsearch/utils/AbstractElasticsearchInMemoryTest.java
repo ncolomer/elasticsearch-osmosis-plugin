@@ -5,8 +5,12 @@ import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilde
 
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.settings.Settings;
@@ -22,34 +26,34 @@ import org.junit.BeforeClass;
  */
 public abstract class AbstractElasticSearchInMemoryTest {
 
+	private static final String CLUSTER_NAME = "osm_test_cluster";
+
 	private static File tmpFolder;
 	private static Node node;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws IOException {
 		tmpFolder = new File("tmp");
-		String tmpFolderName = tmpFolder.getCanonicalPath();
-		if (tmpFolder.exists()) FileUtils.deleteDirectory(tmpFolder);
-		if (!tmpFolder.mkdir()) fail("Could not create a temporary folder [" + tmpFolderName + "]");
+		String tmpFolderPath = tmpFolder.getCanonicalPath();
+		FileUtils.deleteQuietly(tmpFolder);
+		if (!tmpFolder.mkdir()) fail("Could not create a temporary folder [" + tmpFolderPath + "]");
 		Settings settings = settingsBuilder()
-				.put("index.store.type", "memory")
+				.put("cluster.name", CLUSTER_NAME)
 				.put("gateway.type", "none")
-				.put("path.data", tmpFolderName)
+				.put("index.store.type", "memory")
+				.put("index.number_of_shards", 1)
+				.put("index.number_of_replicas", 0)
+				.put("path.data", tmpFolderPath)
 				.build();
 		node = NodeBuilder.nodeBuilder()
 				.settings(settings)
-				.local(true)
 				.node();
 	}
 
 	@AfterClass
 	public static void tearDownAfterClass() throws IOException {
 		node.close();
-		if (tmpFolder.exists()) FileUtils.deleteDirectory(tmpFolder);
-	}
-
-	protected Node node() {
-		return node;
+		FileUtils.deleteQuietly(tmpFolder);
 	}
 
 	protected Client client() {
@@ -62,6 +66,18 @@ public abstract class AbstractElasticSearchInMemoryTest {
 
 	protected void refresh(String... indices) {
 		client().admin().indices().refresh(Requests.refreshRequest(indices)).actionGet();
+	}
+
+	protected String clusterName() {
+		return CLUSTER_NAME;
+	}
+
+	protected String nodeAddress() {
+		NodesInfoResponse nodesInfo = client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
+		String transportAddress = nodesInfo.nodes()[0].node().address().toString();
+		Matcher matcher = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d{1,5})?").matcher(transportAddress);
+		matcher.find();
+		return matcher.group();
 	}
 
 }
