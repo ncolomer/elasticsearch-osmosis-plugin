@@ -26,14 +26,14 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder
 
 public class RgIndexBuilder extends AbstractIndexBuilder {
 
+	private static final Logger LOG = Logger.getLogger(RgIndexBuilder.class.getName());
+
 	private static final int SCROLL_TIMEOUT = 60000;
 	private static final int BULK_SIZE = 100;
 
 	public RgIndexBuilder(Client client, EntityDao entityDao, String indexName) {
 		super(client, entityDao, indexName);
 	}
-
-	private static final Logger LOG = Logger.getLogger(RgIndexBuilder.class.getName());
 
 	@Override
 	public String getSpecializedIndexSuffix() {

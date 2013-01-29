@@ -33,8 +33,8 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().exists());
-		assertEquals(480, client().count(new CountRequest(INDEX_NAME).types(EntityDao.NODE)).actionGet().count());
-		assertEquals(110, client().count(new CountRequest(INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
+		assertEquals(7738, client().count(new CountRequest(INDEX_NAME).types(EntityDao.NODE)).actionGet().count());
+		assertEquals(225, client().count(new CountRequest(INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
 	}
 
 	@Test
@@ -54,11 +54,11 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		String RG_INDEX_NAME = INDEX_NAME + "-rg";
 		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(RG_INDEX_NAME)).actionGet().exists());
-		assertEquals(14, client().count(new CountRequest(RG_INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
+		assertEquals(57, client().count(new CountRequest(RG_INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
 	}
 
 	private File getOsmExtractFile() throws URISyntaxException {
-		URL url = this.getClass().getResource("/extract.osm");
+		URL url = this.getClass().getResource("/mondeville-20130123.osm");
 		return new File(url.toURI());
 	}
 

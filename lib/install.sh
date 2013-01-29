@@ -18,7 +18,7 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-# Install osmosis-core
+# Install osmosis-xml
 echo "Installing osmosis-xml library into the local Maven repository"
 mvn install:install-file \
 	-Dfile=osmosis-xml-0.41.jar \
