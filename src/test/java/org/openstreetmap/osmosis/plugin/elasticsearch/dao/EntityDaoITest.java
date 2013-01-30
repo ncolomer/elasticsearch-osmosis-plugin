@@ -8,7 +8,6 @@ import java.util.List;
 import junit.framework.Assert;
 
 import org.elasticsearch.action.get.GetResponse;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
@@ -32,12 +31,6 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		IndexAdminService indexService = new IndexAdminService(client());
 		indexService.createIndex(INDEX_NAME, new OsmIndexBuilder().getIndexMapping());
 		entityDao = new EntityDao(INDEX_NAME, client());
-	}
-
-	@After
-	public void tearDown() {
-		delete();
-		refresh();
 	}
 
 	/* save */
