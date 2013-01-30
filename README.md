@@ -2,20 +2,18 @@
 
 elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/Osmosis) plugin that inserts [OpenStreetMap](http://www.openstreetmap.org) data into an [elasticsearch](http://www.elasticsearch.org) cluster. It aims to help indexing the world, no more, no less :)
 
-<p align="center">
-  <a href="http://www.openstreetmap.org" target="_blank"><img src="http://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Openstreetmap_logo.svg/100px-Openstreetmap_logo.svg.png" alt="OpenStreetMap" height="60px"/></a>
-  <a href="http://www.elasticsearch.org" target="_blank"><img src="http://www.elasticsearch.org/images/header.png" alt="elasticsearch" height="60px"/></a>
-</p>
+[![OpenStreetMap](/assets/openstreetmap.png)](http://www.openstreetmap.org)
+[![elasticsearch](/assets/elasticsearch.png)](http://www.elasticsearch.org)
 
-## Motivations
+### Motivations
 
 OpenStreetMap contributors are working hard to collect, store and maintain gigabytes of valuable geographical data (look at [there](http://live.openstreetmap.fr/) if you're not yet convinced!).
-Among the tools created to serve this common goal, Osmosis is a powerful ETL-like Java application that eases importing / exporting / manipulate these data in a PostgreSQL relational database.
+Among the tools created to serve these common goals, Osmosis is a powerful ETL-like Java application that eases importing / exporting / manipulate these data in a PostgreSQL relational database.
 
 However, problems may appear when you want to query such large datasets under high load: RDBMS are known to not scale very well in such scenarios.
-In addition, you are probably not interested in the richness of the OSM data model or your needs are simply simpler than what it offers.
+In addition, you are probably not interested in the richness of the OpenStreetMap data model or your needs are just simpler than what it offers.
 
-Fortunately, since the rise of NoSQL databases, you now have other storage options. elasticsearch is one of these.
+Fortunately, since the rise of NoSQL databases, we now have other storage options. elasticsearch is one of these.
 This promising search engine leverages the Java Lucene API to offer fast data indexing and querying over a distributed cluster.
 In addition - and that's why we are here - it offers some greatful geo search features.
 
@@ -23,15 +21,26 @@ I started this project with the initial feeling of a natural combination between
 This feeling remains to be demonstrated but first benchs makes me quite confident for the future :)
 
 Here are the plugin's features:
-* Create a general purpose index from OSM data [core elements](http://wiki.openstreetmap.org/wiki/Elements) benefiting Osmosis [filtering capabilities](http://wiki.openstreetmap.org/wiki/Osmosis/Detailed_Usage)
-* Create specialized indexes such as Reverse-Geocoding index (i.e. retrieve ways near a location) or Bounds index (i.e. retrieve the city/region/country of a location)
+* Create a general purpose index from OpenStreetMap data [core elements](http://wiki.openstreetmap.org/wiki/Elements) benefiting Osmosis [filtering capabilities](http://wiki.openstreetmap.org/wiki/Osmosis/Detailed_Usage)
+* Create specialized indexes such as Reverse-Geocoding index (i.e. retrieve ways from a location) or Bounds index (i.e. retrieve the city/region/country from a location - still working on)
 
-## Want to contribute? Things that would be great to have...
+### Want to contribute? Things that would be great...
 
-* Review elasticsearch mapping and modelling: I made choices, there's probably betters
+* Review elasticsearch mapping: I made choices, there's probably betters
 * Implement new specialized index builders
-* Handle OSM changesets to update already indexed dumps
+* Handle OpenStreetMap changesets to update already indexed dumps
 * And all the rest... any idea, issue report, bugfix or contribution is appreciated :)
+
+### The dev's corner
+
+The project is fully Mavenized. If you want to dig into the code, follow these 4 steps:
+
+* ensure you have [Maven](http://maven.apache.org/) and [Git](http://git-scm.com/) installed
+* clone the project somewhere locally
+* run the `lib/install.sh` script. It will install `osmosis-core-0.41.jar` and `osmosis-xml-0.41.jar` in your local Maven repository as these artifacts are not available on the central
+* import the project into your favorite Java editor 
+
+From here, you can also run the test suite using `mvn clean test`: it includes inevitable unit tests and some portable (full in-memory) integration tests.
 
 - - -
 
@@ -50,7 +59,7 @@ Untar the choosen build into the `/opt` directory (you can download them from th
 # Osmosis 0.41 installation
 wget -P /tmp http://dev.openstreetmap.org/~bretth/osmosis-build/osmosis-0.41.tgz
 tar -zxvf /tmp/osmosis-0.41.tgz -C /opt
-echo "JAVACMD_OPTIONS=\"-server -Xmx2G\"" > /etc/osmosis
+echo "JAVACMD_OPTIONS=\"-server -Xmx2G\"" > /etc/osmosis # Put your JVM params there
 export OSMOSIS_HOME=/opt/osmosis-0.41
 export PATH=$PATH:$OSMOSIS_HOME/bin
 ```
@@ -90,11 +99,11 @@ Available options are:
 		<th>Name</th><th>Type</th><th>Default value</th><th>Description</th>
 	</tr>
 	<tr>
-		<td>clusterName</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
-	</tr>
-	<tr>
 		<td>hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join. 
 			Valid syntax for a single node is <code>host1</code>, <code>host2:port</code> or <code>host3[portX-portY]</code></td>
+	</tr>
+	<tr>
+		<td>clusterName</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
 	</tr>
 	<tr>
 		<td>indexName</td><td>String</td><td>osm</td><td>Name of the index that will be filled with data</td>
@@ -103,13 +112,28 @@ Available options are:
 		<td>createIndex</td><td>Boolean</td><td>true</td><td>(Re)create the main index (delete if exists!) and its mapping prior inserting data</td>
 	</tr>
 	<tr>
-		<td>indexBuilders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index to build (see below)</td>
+		<td>indexBuilders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index builder id (see below)</td>
 	</tr>
 </table>
 
-### 2.3. Examples
+### 2.3. Specialized index builders
 
-Connect to cluster **elasticsearch** via default node `localhost`:
+Specialized indexes are custom and optimized representations of OpenStreetMap data. They allow you to execute queries that were not possible using the main index - the one that contains raw OpenStreetMap entities. Specialized indexe mapping takes advantage of elasticsearch advanced geo capabilities such as the [GeoShape type](http://www.elasticsearch.org/guide/reference/mapping/geo-shape-type.html). Each built specialized index is accessible via its compound name `{indexName}-{indexBuilderId}`.
+
+Available builders are:
+
+<table>
+	<tr>
+		<th>Id</th><th>Name</th><th>Description</th>
+	</tr>
+	<tr>
+		<td>rg</td><td>Reverse-Geocoding</td><td>This builder extracts all Ways containing the <code>highway</code> tag (whatever its value) from the main index. For each way, it gathers all its ordered nodes and finally map their locations into a <code>geo_shape</code> field as a <code>linestring</code>. Thus, you can use either GeoShape queries or GeoShape filters to retrieve any related Way from a location.</td>
+	</tr>
+</table>
+
+### 2.4. Examples
+
+Connect to cluster **elasticsearch** using default configuration:
 
 ```
 osmosis \
@@ -117,20 +141,20 @@ osmosis \
 	--write-elasticsearch
 ```
 
-Connect to cluster **openstreetmap** as `TransportClient` through `10.0.0.1:9300` 
+Connect to cluster named **openstreetmap** via Node `10.0.0.1:9310` 
 and (re)create index **osm** prior to insert data:
 
 ```
 osmosis \
 	--read-pbf ~/osm/extract/guyane.osm.pbf \
-	--wes isNodeClient="false" host="10.0.0.1" clustername="openstreetmap" createIndex="true"
+	--wes hosts="10.0.0.1:9310" clustername="openstreetmap" createIndex="true"
 ```
 
 ## 3. Mapping
 
 OSM data is organized in a relational model composed of [data primitives](https://wiki.openstreetmap.org/wiki/Data_Primitives) - mainly `node`, `way` and `relation` - linked each other by their `osmid`. As relational, this model fits well in a RDBMS (commonly PostgreSQL + Postgis) and is exportable. Even though XML is the official representation, OpenStreetMap also supports other compressed formats such as PBF (Protocol Buffers) or BZ2 (compressed XML). These files can be easily found on the Internet (see [4.1. Get some OSM test data](#41-get-some-osm-test-data)).
 
-The Osmosis tool is able to read both XML and PBF formats: it deserializes data into Java objects that can be processed through plugins.
+Osmosis is able to read both XML and PBF formats: it deserializes data into Java objects that can be processed through plugins.
 In our case, the *elasticsearch-osmosis-plugin* will convert these Java objects into their JSON equivalent prior to be inserted into elasticsearch.
 
 Please note that both user and version metadata are not inserted into elasticsearch for the moment.
@@ -168,22 +192,10 @@ The *elasticsearch-osmosis-plugin* will convert and insert these data into elast
 {"id":497017647,"location":[2.3795936,48.6755728],"tags":{}}
 ```
 
-Execute the following command to retrieve the first node above:
-
-```shell
-curl -XGET 'http://localhost:9200/osm/node/343866517'
-```
-
 * All **ways** will be store into the `way` type, with its `osmid` as elasticsearch `id`
 
 ```json
 {"id":40849832,"tags":{"highway":"residential","name":"Avenue Marc Sangnier"},"nodes":[497017646,497017647,343866517]}
-```
-
-Execute the following command to retrieve the way above:
-
-```shell
-curl -XGET 'http://localhost:9200/osm/way/40849832'
 ```
 
 * All **relations** and **bounds** (not present in this exmaple) are ignored because not yet implemented.
@@ -205,13 +217,21 @@ wget -P ~/osm/extract http://download.geofabrik.de/openstreetmap/europe/france/g
 ### 4.2. Useful elasticsearch HTTP commands
 
 ```shell
-# Reset the whole osm index created by this plugin
+# Delete the whole osm index created by this plugin
 curl -XDELETE 'http://localhost:9200/osm/'
+# Retrieve a Node by id
+curl -XGET 'http://localhost:9200/osm/node/343866517'
+# Retrieve a Way by id
+curl -XGET 'http://localhost:9200/osm/way/40849832'
 ```
 
-## 5. Resources
+## 5. External links
 
-### 5.1. Osmosis related
+### 5.1. OpenStreetMap related
+
+* [Statistics](http://wiki.openstreetmap.org/wiki/Stats) about OpenStreetMap database (number of users, amount of data, etc)
+
+### 5.2. Osmosis related
 
 * Osmosis detailed usage wiki [page](http://wiki.openstreetmap.org/wiki/Osmosis/Detailed_Usage)
 * Self-Updating Local OpenStreetMap Extract [tutorial](https://docs.google.com/document/pub?id=1paaYsOakgJEYP380R70s4SGYq8ME3ASl-mweVi1DlQ4)
@@ -219,10 +239,10 @@ curl -XDELETE 'http://localhost:9200/osm/'
   * Mapsforge's [mapsforge-map-writer](http://code.google.com/p/mapsforge/source/browse/trunk/mapsforge-map-writer/) plugin
   * Neo4j's [neo4j-osmosis-plugin](https://github.com/svzdvd/neo4j-osmosis-plugin/) plugin
 
-### 5.2. elasticsearch related
+### 5.3. elasticsearch related
 
 * [cookbook-elasticsearch](https://github.com/karmi/cookbook-elasticsearch) by [karmi](https://github.com/karmi/)
-* Documentation about geospatial capabilities
+* Advanced geospatial capabilities
   * Geo Location and Search [article](http://www.elasticsearch.org/blog/2010/08/16/geo_location_and_search.html)
   * Geo Point [Type](http://www.elasticsearch.org/guide/reference/mapping/geo-point-type.html), 
 	[Distance Filter](http://www.elasticsearch.org/guide/reference/query-dsl/geo-distance-filter.html), 
