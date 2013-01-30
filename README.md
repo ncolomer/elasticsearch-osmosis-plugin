@@ -2,8 +2,8 @@
 
 elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/Osmosis) plugin that inserts [OpenStreetMap](http://www.openstreetmap.org) data into an [elasticsearch](http://www.elasticsearch.org) cluster. It aims to help indexing the world, no more, no less :)
 
-[![OpenStreetMap](/assets/openstreetmap.png)](http://www.openstreetmap.org)
-[![elasticsearch](/assets/elasticsearch.png)](http://www.elasticsearch.org)
+[![OpenStreetMap](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/openstreetmap.png)](http://www.openstreetmap.org)
+[![elasticsearch](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/elasticsearch.png)](http://www.elasticsearch.org)
 
 ### Motivations
 
@@ -118,7 +118,9 @@ Available options are:
 
 ### 2.3. Specialized index builders
 
-Specialized indexes are custom and optimized representations of OpenStreetMap data. They allow you to execute queries that were not possible using the main index - the one that contains raw OpenStreetMap entities. Specialized indexe mapping takes advantage of elasticsearch advanced geo capabilities such as the [GeoShape type](http://www.elasticsearch.org/guide/reference/mapping/geo-shape-type.html). Each built specialized index is accessible via its compound name `{indexName}-{indexBuilderId}`.
+Specialized indexes are custom and optimized representations of OpenStreetMap data. They allow you to execute queries that were not possible using the main index - the one that contains raw OpenStreetMap entities. Specialized indexe mapping takes advantage of elasticsearch advanced geo capabilities such as the [Geo Shape Type](http://www.elasticsearch.org/guide/reference/mapping/geo-shape-type.html).
+
+Each built specialized index is accessible via its compound name `{indexName}-{indexBuilderId}`.
 
 Available builders are:
 
