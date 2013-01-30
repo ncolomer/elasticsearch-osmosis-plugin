@@ -71,9 +71,9 @@ Put the latest jar into `$OSMOSIS_HOME/lib/default` directory (see the [download
 3-shell-command procedure:
 
 ```shell
-# elasticsearch-osmosis-plugin 1.1.0 installation
-wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-1.1.0.jar
-cp /tmp/elasticsearch-osmosis-plugin-1.1.0.jar $OSMOSIS_HOME/lib/default/
+# latest elasticsearch-osmosis-plugin 1.2.0 installation
+wget -P /tmp https://github.com/downloads/ncolomer/elasticsearch-osmosis-plugin/elasticsearch-osmosis-plugin-1.2.0.jar
+cp /tmp/elasticsearch-osmosis-plugin-1.2.0.jar $OSMOSIS_HOME/lib/default/
 echo "org.openstreetmap.osmosis.plugin.elasticsearch.ElasticSearchWriterPluginLoader" > $OSMOSIS_HOME/config/osmosis-plugins.conf
 ```
 
