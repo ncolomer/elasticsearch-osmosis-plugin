@@ -10,7 +10,6 @@ import junit.framework.Assert;
 
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
@@ -22,12 +21,6 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 	@Before
 	public void setUp() {
 		indexAdminService = new IndexAdminService(client());
-	}
-
-	@After
-	public void tearDown() {
-		delete();
-		refresh();
 	}
 
 	@Test
