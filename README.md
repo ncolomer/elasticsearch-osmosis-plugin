@@ -37,7 +37,7 @@ The project is fully Mavenized. If you want to dig into the code, follow these 4
 
 * ensure you have [Maven](http://maven.apache.org/) and [Git](http://git-scm.com/) installed
 * clone the project somewhere locally
-* run the `lib/install.sh` script. It will install `osmosis-core-0.41.jar` and `osmosis-xml-0.41.jar` in your local Maven repository as these artifacts are not available on the central
+* run the `lib/install.sh` script. It will install `osmosis-core-0.42.jar` and `osmosis-xml-0.42.jar` in your local Maven repository as these artifacts are not available on the central
 * import the project into your favorite Java editor 
 
 From here, you can also run the test suite using `mvn clean test`: it includes inevitable unit tests and some portable (full in-memory) integration tests.
@@ -56,11 +56,11 @@ Untar the choosen build into the `/opt` directory (you can download them from th
 5-shell-command procedure:
 
 ```shell
-# Osmosis 0.41 installation
-wget -P /tmp http://dev.openstreetmap.org/~bretth/osmosis-build/osmosis-0.41.tgz
-tar -zxvf /tmp/osmosis-0.41.tgz -C /opt
+# Osmosis 0.42 installation
+wget -P /tmp http://dev.openstreetmap.org/~bretth/osmosis-build/osmosis-0.42.tgz
+tar -zxvf /tmp/osmosis-0.42.tgz -C /opt
 echo "JAVACMD_OPTIONS=\"-server -Xmx2G\"" > /etc/osmosis # Put your JVM params there
-export OSMOSIS_HOME=/opt/osmosis-0.41
+export OSMOSIS_HOME=/opt/osmosis-0.42
 export PATH=$PATH:$OSMOSIS_HOME/bin
 ```
 
@@ -81,8 +81,8 @@ echo "org.openstreetmap.osmosis.plugin.elasticsearch.ElasticSearchWriterPluginLo
 
 ### 2.1. Prerequisites
 
-This plugin was built using elasticsearch 0.20.2 and Osmosis 0.41. It is not guaranteed to work with older version.
-You must have an elasticsearch cluster up and running and reachable to make it running.
+This plugin is built using elasticsearch 0.20.5 and Osmosis 0.42 frameworks. It is not guaranteed to work with older version.
+You must have an elasticsearch cluster up and running and reachable to make the plugin runs correctly.
 
 ### 2.2. Plugin usage
 
