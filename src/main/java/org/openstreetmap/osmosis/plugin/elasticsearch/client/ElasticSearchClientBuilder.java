@@ -5,8 +5,10 @@ import java.util.logging.Logger;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
@@ -43,7 +45,8 @@ public class ElasticSearchClientBuilder {
 
 	public Client build() {
 		// Build the elasticsearch client
-		Client client = buildNodeClient();
+		// Client client = buildNodeClient();
+		Client client = buildTransportClient();
 		// Ensure client is connected
 		ClusterHealthResponse health = client.admin().cluster()
 				.health(new ClusterHealthRequest()).actionGet();
@@ -79,4 +82,22 @@ public class ElasticSearchClientBuilder {
 		return node.client();
 	}
 
+	protected Client buildTransportClient() {
+		LOG.info(String.format("Connecting to elasticsearch cluster '%s' via [%s]" +
+				" using TransportClient", clusterName, hosts));
+		// Connect as TransportClient (proxy of the cluster)
+		Settings settings = ImmutableSettings.settingsBuilder()
+				.put("cluster.name", clusterName)
+				.put("client.transport.sniff", true)
+				.build();
+		TransportClient transportClient = new TransportClient(settings);
+		// Add specified TransportAddresses
+		for (String host : hosts.split(",")) {
+			String[] params = host.split(":");
+			String hostname = params[0];
+			int port = (params.length == 2) ? Integer.valueOf(params[1]) : 9300;
+			transportClient.addTransportAddress(new InetSocketTransportAddress(hostname, port));
+		}
+		return transportClient;
+	}
 }

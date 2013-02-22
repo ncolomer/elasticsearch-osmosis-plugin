@@ -99,8 +99,8 @@ Available options are:
 		<th>Name</th><th>Type</th><th>Default value</th><th>Description</th>
 	</tr>
 	<tr>
-		<td>hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join. 
-			Valid syntax for a single node is <code>host1</code>, <code>host2:port</code> or <code>host3[portX-portY]</code></td>
+		<td>hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join (one is enough as the cluster will be discovered automatically). 
+			Valid syntax for a single node is <code>host1</code> or <code>host2:port</code></td>
 	</tr>
 	<tr>
 		<td>clusterName</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
