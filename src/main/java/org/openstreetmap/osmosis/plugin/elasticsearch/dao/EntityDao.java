@@ -3,15 +3,19 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest.Item;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
@@ -20,6 +24,8 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 
 public class EntityDao {
+
+	private static final Logger LOG = Logger.getLogger(EntityDao.class.getName());
 
 	public static final String NODE = "node";
 	public static final String WAY = "way";
@@ -39,58 +45,72 @@ public class EntityDao {
 	 * <p>
 	 * <b>Warning:</b> please note that saving {@link Relation} and
 	 * {@link Bound} is not yet supported. Trying to save such {@link Entity}
-	 * causes this method to throw an {@link UnsupportedOperationException}.
+	 * causes this method to throw an {@link DaoException}.
 	 * 
 	 * @param entity
 	 *            the Entity object to save
-	 * @return The Entity index id (actually its OSM id) as String
 	 * @throws DaoException
-	 *             if something was wrong during the elasticsearch request
+	 *             if something was wrong during the save process
 	 */
-	public String save(Entity entity) {
-		if (entity == null) throw new IllegalArgumentException("You must provide an Entity");
+	public void save(Entity entity) {
+		try {
+			buildIndexRequest(entity).execute().actionGet();
+		} catch (Exception e) {
+			throw new DaoException("Unable to save Entity [" + entity + "]", e);
+		}
+	}
+
+	/**
+	 * Save (index) all OSM Entities using a bulk request.
+	 * <p>
+	 * All errors caught during the bulk request building or entities indexing
+	 * are handled silently, i.e. logged and ignored.
+	 * <p>
+	 * <b>Warning:</b> please note that saving {@link Relation} and
+	 * {@link Bound} is not yet supported. Trying to save such {@link Entity}
+	 * causes this method to ignore it silently.
+	 * 
+	 * @param entities
+	 *            the List of Entity objects to save
+	 */
+	public void saveAll(List<Entity> entities) {
+		if (entities == null || entities.isEmpty()) return;
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		for (Entity entity : entities) {
+			try {
+				bulkRequest.add(buildIndexRequest(entity));
+			} catch (Exception exception) {
+				LOG.warning("Unable to add Entity [" + entity + "] to bulk request: " + exception.getMessage());
+			}
+		}
+		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+		if (bulkResponse.hasFailures()) {
+			for (BulkItemResponse response : bulkResponse.items()) {
+				if (response.failed()) {
+					LOG.warning("Unable to index Entity [index=" + response.getIndex() +
+							", type=" + response.getType() + ", id=" + response.getId() + "]: " +
+							response.getFailureMessage());
+				}
+			}
+		}
+	}
+
+	protected IndexRequestBuilder buildIndexRequest(Entity entity) throws Exception {
+		if (entity == null) throw new IllegalArgumentException("You must provide a non-null Entity");
 		switch (entity.getType()) {
 		case Node:
-			return saveNode((Node) entity);
+			return client.prepareIndex(indexName, EntityDao.NODE, Long.toString(entity.getId()))
+					.setSource(entityMapper.marshallNode((Node) entity));
 		case Way:
-			return saveWay((Way) entity);
+			return client.prepareIndex(indexName, EntityDao.WAY, Long.toString(entity.getId()))
+					.setSource(entityMapper.marshallWay((Way) entity));
 		case Relation:
-			return saveRelation((Relation) entity);
+			throw new UnsupportedOperationException("Save Relation is not yet supported");
 		case Bound:
-			return saveBound((Bound) entity);
+			throw new UnsupportedOperationException("Save Bound is not yet supported");
 		default:
-			return null;
+			throw new IllegalArgumentException("Unknown Entity: " + entity.toString());
 		}
-	}
-
-	protected String saveNode(Node node) {
-		try {
-			XContentBuilder xContentBuilder = entityMapper.marshallNode(node);
-			return client.prepareIndex(indexName, EntityDao.NODE, Long.toString(node.getId()))
-					.setSource(xContentBuilder)
-					.execute().actionGet().getId();
-		} catch (Exception e) {
-			throw new DaoException("Unable to save Node: " + node.toString(), e);
-		}
-	}
-
-	protected String saveWay(Way way) {
-		try {
-			XContentBuilder xContentBuilder = entityMapper.marshallWay(way);
-			return client.prepareIndex(indexName, EntityDao.WAY, Long.toString(way.getId()))
-					.setSource(xContentBuilder)
-					.execute().actionGet().getId();
-		} catch (Exception e) {
-			throw new DaoException("Unable to save Way: " + way.toString(), e);
-		}
-	}
-
-	protected String saveRelation(Relation relation) {
-		throw new UnsupportedOperationException("Save Relation is not yet supported");
-	}
-
-	protected String saveBound(Bound bound) {
-		throw new UnsupportedOperationException("Save Bound is not yet supported");
 	}
 
 	/**
