@@ -29,7 +29,7 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 	@Override
 	protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig) {
 		// Retrieve parameters
-		Properties params = getParameters(taskConfig);
+		Properties params = getPluginProperties(taskConfig);
 		// Build ElasticSearch client
 		Client client = buildElasticsearchClient(params);
 		// Build indexAdminService
@@ -43,7 +43,7 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		return new SinkManager(taskConfig.getId(), sink, taskConfig.getPipeArgs());
 	}
 
-	protected Properties getParameters(TaskConfiguration taskConfig) {
+	protected Properties getPluginProperties(TaskConfiguration taskConfig) {
 		Properties params = new Properties();
 		params.put(PARAM_CLUSTER_NAME, getStringArgument(taskConfig, PARAM_CLUSTER_NAME,
 				getDefaultStringArgument(taskConfig, "elasticsearch")));

@@ -15,6 +15,7 @@ import java.util.Set;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.openstreetmap.osmosis.core.container.v0_6.EntityContainer;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
@@ -39,6 +40,7 @@ public class ElasticSearchWriterTaskUTest {
 	}
 
 	@Test
+	@Ignore
 	public void process() {
 		// Setup
 		Entity entityMocked = mock(Entity.class);

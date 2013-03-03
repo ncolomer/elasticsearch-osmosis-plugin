@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -185,6 +186,24 @@ public class EntityDaoUTest {
 		verify(bulkRequestBuilderMocked, times(1)).add(indexRequestBuilderMocked1);
 		verify(bulkRequestBuilderMocked, times(1)).execute();
 		verify(listenableActionFutureMocked, times(1)).actionGet();
+	}
+
+	@Test
+	public void saveAllEntities_withNullList() throws Exception {
+		// Action
+		entityDao.saveAll(null);
+
+		// Assert
+		verifyNoMoreInteractions(clientMocked);
+	}
+
+	@Test
+	public void saveAllEntities_withEmptyList() throws Exception {
+		// Action
+		entityDao.saveAll(new ArrayList<Entity>());
+
+		// Assert
+		verifyNoMoreInteractions(clientMocked);
 	}
 
 	@Test

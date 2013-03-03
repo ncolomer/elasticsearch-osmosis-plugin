@@ -75,6 +75,8 @@ public class EntityDao {
 	 * 
 	 * @param entities
 	 *            the List of Entity objects to save
+	 * @throws DaoException
+	 *             if something was wrong during the save process
 	 */
 	public void saveAll(List<Entity> entities) {
 		if (entities == null || entities.isEmpty()) return;

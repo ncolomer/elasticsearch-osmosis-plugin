@@ -7,28 +7,29 @@ import java.util.logging.Logger;
 
 import org.openstreetmap.osmosis.core.container.v0_6.EntityContainer;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
+import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityBuffer;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityCounter;
 
 public class ElasticSearchWriterTask implements Sink {
 
 	private static final Logger LOG = Logger.getLogger(ElasticSearchWriterTask.class.getName());
 
-	private int boundProcessedCounter = 0;
-	private int nodeProcessedCounter = 0;
-	private int wayProcessedCounter = 0;
-	private int relationProcessedCounter = 0;
-
 	private final IndexAdminService indexAdminService;
-	private final EntityDao entityDao;
 	private final Set<AbstractIndexBuilder> indexBuilders;
+
+	private final EntityBuffer entityBuffer;
+	private final EntityCounter entityCounter;
 
 	public ElasticSearchWriterTask(IndexAdminService indexAdminService, EntityDao entityDao, Set<AbstractIndexBuilder> indexBuilders) {
 		this.indexAdminService = indexAdminService;
-		this.entityDao = entityDao;
 		this.indexBuilders = indexBuilders;
+		this.entityBuffer = new EntityBuffer(entityDao, 5000);
+		this.entityCounter = new EntityCounter();
 	}
 
 	@Override
@@ -38,37 +39,19 @@ public class ElasticSearchWriterTask implements Sink {
 
 	@Override
 	public void process(EntityContainer entityContainer) {
-		try {
-			Entity entity = entityContainer.getEntity();
-			entityDao.save(entity);
-			switch (entity.getType()) {
-			case Node:
-				nodeProcessedCounter++;
-				break;
-			case Way:
-				wayProcessedCounter++;
-				break;
-			case Relation:
-				relationProcessedCounter++;
-				break;
-			case Bound:
-				boundProcessedCounter++;
-				break;
-			}
-		} catch (UnsupportedOperationException e) {
-			LOG.warning(e.getMessage());
-		} catch (Exception e) {
-			LOG.severe(e.getMessage());
-		}
+		Entity entity = entityContainer.getEntity();
+		entityCounter.increment(entity.getType());
+		entityBuffer.add(entity);
 	}
 
 	@Override
 	public void complete() {
+		entityBuffer.flush();
 		LOG.info("OSM indexing completed!\n" +
-				"total processed nodes: ....... " + nodeProcessedCounter + "\n" +
-				"total processed ways: ........ " + wayProcessedCounter + "\n" +
-				"total processed relations: ... " + relationProcessedCounter + "\n" +
-				"total processed bounds: ...... " + boundProcessedCounter);
+				"total processed nodes: ....... " + entityCounter.getCount(EntityType.Node) + "\n" +
+				"total processed ways: ........ " + entityCounter.getCount(EntityType.Way) + "\n" +
+				"total processed relations: ... " + entityCounter.getCount(EntityType.Relation) + "\n" +
+				"total processed bounds: ...... " + entityCounter.getCount(EntityType.Bound));
 		indexAdminService.refresh();
 		buildSpecializedIndex();
 	}
@@ -86,6 +69,7 @@ public class ElasticSearchWriterTask implements Sink {
 				LOG.info("Index [" + indexName + "] successfully built in " + time + " milliseconds!");
 			} catch (Exception e) {
 				LOG.log(Level.SEVERE, "Unable to build index", e);
+				break;
 			}
 		}
 	}
