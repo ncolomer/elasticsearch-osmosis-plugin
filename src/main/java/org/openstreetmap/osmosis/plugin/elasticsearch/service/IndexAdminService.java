@@ -50,7 +50,7 @@ public class IndexAdminService {
 	}
 
 	public void refresh(String... indices) {
-		client.admin().indices().refresh(Requests.refreshRequest(indices)).actionGet();
+		client.admin().indices().refresh(Requests.refreshRequest(indices));
 	}
 
 	public Client getClient() {

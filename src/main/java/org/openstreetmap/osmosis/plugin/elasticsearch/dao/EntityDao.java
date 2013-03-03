@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -64,7 +65,7 @@ public class EntityDao {
 	}
 
 	/**
-	 * Save (index) all OSM Entities using a bulk request.
+	 * Save (index) asynchronously all OSM Entities using a bulk request.
 	 * <p>
 	 * All errors caught during the bulk request building or entities indexing
 	 * are handled silently, i.e. logged and ignored.
@@ -85,19 +86,26 @@ public class EntityDao {
 			try {
 				bulkRequest.add(buildIndexRequest(entity));
 			} catch (Exception exception) {
-				LOG.warning("Unable to add Entity [" + entity + "] to bulk request: " + exception.getMessage());
+				LOG.warning(String.format("Unable to add Entity [%s] to bulk request, cause: %s",
+						entity, exception.getMessage()));
 			}
 		}
-		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-		if (bulkResponse.hasFailures()) {
-			for (BulkItemResponse response : bulkResponse.items()) {
-				if (response.failed()) {
-					LOG.warning("Unable to index Entity [index=" + response.getIndex() +
-							", type=" + response.getType() + ", id=" + response.getId() + "]: " +
-							response.getFailureMessage());
+		bulkRequest.execute(new ActionListener<BulkResponse>() {
+			@Override
+			public void onResponse(BulkResponse bulkResponse) {
+				if (!bulkResponse.hasFailures()) return;
+				for (BulkItemResponse response : bulkResponse.items()) {
+					if (!response.failed()) continue;
+					LOG.warning(String.format("Unable to index Entity [index=%s, type=%s, id=%s], cause: %s",
+							response.index(), response.type(), response.id(), response.failureMessage()));
 				}
 			}
-		}
+
+			@Override
+			public void onFailure(Throwable throwable) {
+				LOG.severe("Unable to save all entities, cause: " + throwable.getMessage());
+			}
+		});
 	}
 
 	protected IndexRequestBuilder buildIndexRequest(Entity entity) throws IOException {
