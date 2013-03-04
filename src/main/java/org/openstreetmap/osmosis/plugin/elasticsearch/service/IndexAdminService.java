@@ -1,10 +1,6 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 
-import java.util.Map;
-
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 public class IndexAdminService {
@@ -15,14 +11,13 @@ public class IndexAdminService {
 		this.client = client;
 	}
 
-	public void createIndex(String indexName, Map<String, XContentBuilder> map) {
+	public void createIndex(String indexName, String indexConfig) {
 		// Delete previous existing index
 		if (indexExists(indexName)) deleteIndex(indexName);
 		// Create the new index
-		CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(indexName);
-		for (String key : map.keySet())
-			builder.addMapping(key, map.get(key));
-		builder.execute().actionGet();
+		client.admin().indices().prepareCreate(indexName)
+				.setSource(indexConfig)
+				.execute().actionGet();
 	}
 
 	public boolean indexExists(String... indices) {
@@ -50,7 +45,8 @@ public class IndexAdminService {
 	}
 
 	public void refresh(String... indices) {
-		client.admin().indices().refresh(Requests.refreshRequest(indices));
+		client.admin().indices().prepareRefresh(indices)
+				.execute().actionGet();
 	}
 
 	public Client getClient() {

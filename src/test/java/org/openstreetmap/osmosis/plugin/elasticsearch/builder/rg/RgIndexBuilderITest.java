@@ -1,8 +1,9 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.index.rg;
+package org.openstreetmap.osmosis.plugin.elasticsearch.builder.rg;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Properties;
 
 import junit.framework.Assert;
 
@@ -21,9 +22,8 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
@@ -43,11 +43,13 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 
 	@Before
 	public void setUp() throws IOException {
+		Properties params = new Properties();
+		params.load(getClass().getClassLoader().getResourceAsStream("plugin.properties"));
 		entityDao = new EntityDao(INDEX_NAME, client());
-		indexBuilder = new RgIndexBuilder(client(), entityDao, INDEX_NAME);
+		indexBuilder = new RgIndexBuilder(client(), entityDao, INDEX_NAME, null);
 		IndexAdminService indexService = new IndexAdminService(client());
-		indexService.createIndex(INDEX_NAME, new OsmIndexBuilder().getIndexMapping());
-		indexService.createIndex(indexBuilder.getSpecializedIndexName(), indexBuilder.getIndexMapping());
+		indexService.createIndex(INDEX_NAME, (String) params.get("index.config"));
+		indexService.createIndex(indexBuilder.getSpecializedIndexName(), (String) params.get("rg.config"));
 	}
 
 	@Test

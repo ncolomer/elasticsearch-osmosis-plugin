@@ -153,6 +153,7 @@ public class EntityDaoUTest {
 		verify(bulkRequestBuilderMocked, times(1)).add(indexRequestBuilderMocked2);
 		verify(bulkRequestBuilderMocked, times(1)).execute();
 		verify(listenableActionFutureMocked, times(1)).actionGet();
+
 	}
 
 	@Test
@@ -186,6 +187,7 @@ public class EntityDaoUTest {
 		verify(bulkRequestBuilderMocked, times(1)).add(indexRequestBuilderMocked1);
 		verify(bulkRequestBuilderMocked, times(1)).execute();
 		verify(listenableActionFutureMocked, times(1)).actionGet();
+
 	}
 
 	@Test

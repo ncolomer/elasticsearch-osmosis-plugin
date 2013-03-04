@@ -2,7 +2,6 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.client;
 
 import java.util.logging.Logger;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
@@ -16,8 +15,9 @@ public class ElasticSearchClientBuilder {
 
 	private static final Logger LOG = Logger.getLogger(ElasticSearchClientBuilder.class.getName());
 
-	public String clusterName;
-	public String hosts;
+	private String clusterName;
+	private String hosts;
+	private boolean nodeClient;
 
 	private ElasticSearchClientBuilder() {}
 
@@ -43,16 +43,21 @@ public class ElasticSearchClientBuilder {
 		return this;
 	}
 
+	public boolean isNodeClient() {
+		return nodeClient;
+	}
+
+	public ElasticSearchClientBuilder setNodeClient(boolean nodeClient) {
+		this.nodeClient = nodeClient;
+		return this;
+	}
+
 	public Client build() {
 		// Build the elasticsearch client
-		// Client client = buildNodeClient();
-		Client client = buildTransportClient();
+		Client client = nodeClient ? buildNodeClient() : buildTransportClient();
 		// Ensure client is connected
-		ClusterHealthResponse health = client.admin().cluster()
-				.health(new ClusterHealthRequest()).actionGet();
-		if (health.getNumberOfDataNodes() == 0) throw new RuntimeException("Unable to connect to elasticsearch");
-		LOG.info(String.format("Connected to %d data node(s) with cluster status %s",
-				health.getNumberOfDataNodes(), health.getStatus().name()));
+		checkConnection(client);
+		// Return valid client
 		return client;
 	}
 
@@ -100,4 +105,13 @@ public class ElasticSearchClientBuilder {
 		}
 		return transportClient;
 	}
+
+	protected void checkConnection(Client client) {
+		ClusterHealthResponse health = client.admin().cluster()
+				.prepareHealth().execute().actionGet();
+		if (health.getNumberOfDataNodes() == 0) throw new RuntimeException("Unable to connect to elasticsearch");
+		LOG.info(String.format("Connected to %d data node(s) with cluster status %s",
+				health.getNumberOfDataNodes(), health.getStatus().name()));
+	}
+
 }

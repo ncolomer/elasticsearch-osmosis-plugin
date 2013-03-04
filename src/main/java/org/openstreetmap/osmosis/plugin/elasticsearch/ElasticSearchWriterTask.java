@@ -1,6 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -9,8 +10,8 @@ import org.openstreetmap.osmosis.core.container.v0_6.EntityContainer;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
+import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityBuffer;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityCounter;
@@ -21,14 +22,15 @@ public class ElasticSearchWriterTask implements Sink {
 
 	private final IndexAdminService indexAdminService;
 	private final Set<AbstractIndexBuilder> indexBuilders;
-
 	private final EntityBuffer entityBuffer;
 	private final EntityCounter entityCounter;
 
-	public ElasticSearchWriterTask(IndexAdminService indexAdminService, EntityDao entityDao, Set<AbstractIndexBuilder> indexBuilders) {
+	public ElasticSearchWriterTask(IndexAdminService indexAdminService, EntityDao entityDao,
+			Set<AbstractIndexBuilder> indexBuilders, Properties params) {
 		this.indexAdminService = indexAdminService;
 		this.indexBuilders = indexBuilders;
-		this.entityBuffer = new EntityBuffer(entityDao, 5000);
+		int bulkSize = Integer.valueOf(params.getProperty("index.bulk.size", "5000"));
+		this.entityBuffer = new EntityBuffer(entityDao, bulkSize);
 		this.entityCounter = new EntityCounter();
 	}
 
@@ -61,7 +63,7 @@ public class ElasticSearchWriterTask implements Sink {
 			try {
 				String indexName = indexBuilder.getSpecializedIndexName();
 				LOG.info("Creating selected index [" + indexName + "]");
-				indexAdminService.createIndex(indexName, indexBuilder.getIndexMapping());
+				indexAdminService.createIndex(indexName, indexBuilder.getIndexConfig());
 				LOG.info("Building selected index [" + indexName + "]");
 				long time = System.currentTimeMillis();
 				indexBuilder.buildIndex();

@@ -3,8 +3,6 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import junit.framework.Assert;
 
@@ -27,7 +25,7 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 	public void createIndex() {
 		// Setup
 		String indexName = "my_index";
-		Map<String, XContentBuilder> mapping = getDummyMapping();
+		String mapping = getDummyMapping();
 
 		// Action
 		indexAdminService.createIndex(indexName, mapping);
@@ -43,7 +41,7 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 		String indexName = "my_index";
 		client().admin().indices().prepareCreate(indexName).execute().actionGet();
 		client().admin().indices().refresh(Requests.refreshRequest()).actionGet();
-		Map<String, XContentBuilder> mapping = getDummyMapping();
+		String mapping = getDummyMapping();
 
 		// Action
 		indexAdminService.createIndex(indexName, mapping);
@@ -53,14 +51,12 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 				.execute().actionGet().exists());
 	}
 
-	private Map<String, XContentBuilder> getDummyMapping() {
+	private String getDummyMapping() {
 		try {
-			Map<String, XContentBuilder> mapping = new HashMap<String, XContentBuilder>();
 			XContentBuilder xContentBuilder = jsonBuilder()
 					.startObject().startObject("my_type").startObject("properties")
 					.endObject().endObject().endObject();
-			mapping.put("my_type", xContentBuilder);
-			return mapping;
+			return xContentBuilder.string();
 		} catch (IOException e) {
 			throw new IllegalStateException("Unable to create mapping", e);
 		}

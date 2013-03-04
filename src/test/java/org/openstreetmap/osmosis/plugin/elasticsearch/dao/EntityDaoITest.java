@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import junit.framework.Assert;
 
@@ -15,7 +16,6 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AssertUtils;
@@ -29,8 +29,11 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 	@Before
 	public void setUp() throws IOException {
+		Properties params = new Properties();
+		params.load(getClass().getClassLoader().getResourceAsStream("plugin.properties"));
 		IndexAdminService indexService = new IndexAdminService(client());
-		indexService.createIndex(INDEX_NAME, new OsmIndexBuilder().getIndexMapping());
+		indexService.createIndex(INDEX_NAME, (String) params.get("index.config"));
+		// Create tested objects
 		entityDao = new EntityDao(INDEX_NAME, client());
 	}
 
@@ -71,7 +74,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	}
 
 	@Test
-	public void saveAll() {
+	public void saveAll() throws InterruptedException {
 		// Setup
 		Node node = OsmDataBuilder.buildSampleNode();
 		Way way = OsmDataBuilder.buildSampleWay();

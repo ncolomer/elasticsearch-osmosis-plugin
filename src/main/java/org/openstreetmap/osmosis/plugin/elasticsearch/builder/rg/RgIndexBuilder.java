@@ -1,13 +1,11 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.index.rg;
+package org.openstreetmap.osmosis.plugin.elasticsearch.builder.rg;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.FilterBuilders.existsFilter;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -21,8 +19,8 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
+import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
 
 public class RgIndexBuilder extends AbstractIndexBuilder {
 
@@ -31,30 +29,13 @@ public class RgIndexBuilder extends AbstractIndexBuilder {
 	private static final int SCROLL_TIMEOUT = 60000;
 	private static final int BULK_SIZE = 100;
 
-	public RgIndexBuilder(Client client, EntityDao entityDao, String indexName) {
-		super(client, entityDao, indexName);
+	public RgIndexBuilder(Client client, EntityDao entityDao, String indexName, String indexConfig) {
+		super(client, entityDao, indexName, indexConfig);
 	}
 
 	@Override
 	public String getSpecializedIndexSuffix() {
 		return "rg";
-	}
-
-	@Override
-	public Map<String, XContentBuilder> getIndexMapping() {
-		try {
-			Map<String, XContentBuilder> mapping = new HashMap<String, XContentBuilder>();
-			XContentBuilder xContentBuilder = jsonBuilder()
-					.startObject()
-					.startObject("way").startObject("properties")
-					.startObject("line").field("type", "geo_shape").endObject()
-					.endObject().endObject()
-					.endObject();
-			mapping.put("way", xContentBuilder);
-			return mapping;
-		} catch (IOException e) {
-			throw new IllegalStateException("Unable to create mapping", e);
-		}
 	}
 
 	@Override

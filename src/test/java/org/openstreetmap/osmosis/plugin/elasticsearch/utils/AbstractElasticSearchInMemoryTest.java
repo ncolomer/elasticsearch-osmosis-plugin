@@ -12,7 +12,6 @@ import org.apache.commons.io.FileUtils;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
@@ -71,7 +70,7 @@ public abstract class AbstractElasticSearchInMemoryTest {
 	}
 
 	protected void refresh(String... indices) {
-		client().admin().indices().refresh(Requests.refreshRequest(indices)).actionGet();
+		client().admin().indices().prepareRefresh(indices).execute().actionGet();
 	}
 
 	protected String clusterName() {

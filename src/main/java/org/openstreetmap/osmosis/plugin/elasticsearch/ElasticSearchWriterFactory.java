@@ -1,8 +1,8 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
-import java.io.InputStream;
+import java.io.FileReader;
 import java.lang.reflect.Constructor;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
 
@@ -12,24 +12,25 @@ import org.openstreetmap.osmosis.core.pipeline.common.TaskManager;
 import org.openstreetmap.osmosis.core.pipeline.common.TaskManagerFactory;
 import org.openstreetmap.osmosis.core.pipeline.v0_6.SinkManager;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
+import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.client.ElasticSearchClientBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 
 public class ElasticSearchWriterFactory extends TaskManagerFactory {
 
-	public static final String PARAM_CLUSTER_NAME = "clusterName";
-	public static final String PARAM_HOSTS = "hosts";
-	public static final String PARAM_INDEX_NAME = "indexName";
-	public static final String PARAM_CREATE_INDEX = "createIndex";
-	public static final String PARAM_INDEX_BUILDERS = "indexBuilders";
+	public static final String PARAM_PROPERTIES_FILE = "properties.file";
+	public static final String PARAM_CLUSTER_HOSTS = "cluster.hosts";
+	public static final String PARAM_CLUSTER_NAME = "cluster.name";
+	public static final String PARAM_INDEX_NAME = "index.name";
+	public static final String PARAM_INDEX_CREATE = "index.create";
+	public static final String PARAM_INDEX_CONFIG = "index.config";
+	public static final String PARAM_INDEX_BUILDERS = "index.builders";
 
 	@Override
 	protected TaskManager createTaskManagerImpl(TaskConfiguration taskConfig) {
 		// Retrieve parameters
-		Properties params = getPluginProperties(taskConfig);
+		Properties params = buildPluginParameters(taskConfig);
 		// Build ElasticSearch client
 		Client client = buildElasticsearchClient(params);
 		// Build indexAdminService
@@ -39,72 +40,80 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		// Get specialized index to build
 		Set<AbstractIndexBuilder> indexBuilders = getSelectedIndexBuilders(client, entityDao, params);
 		// Return the SinkManager
-		Sink sink = new ElasticSearchWriterTask(indexAdminService, entityDao, indexBuilders);
+		Sink sink = new ElasticSearchWriterTask(indexAdminService, entityDao, indexBuilders, params);
 		return new SinkManager(taskConfig.getId(), sink, taskConfig.getPipeArgs());
 	}
 
-	protected Properties getPluginProperties(TaskConfiguration taskConfig) {
+	protected Properties buildPluginParameters(TaskConfiguration taskConfig) {
 		Properties params = new Properties();
-		params.put(PARAM_CLUSTER_NAME, getStringArgument(taskConfig, PARAM_CLUSTER_NAME,
-				getDefaultStringArgument(taskConfig, "elasticsearch")));
-		params.put(PARAM_HOSTS, getStringArgument(taskConfig, PARAM_HOSTS,
-				getDefaultStringArgument(taskConfig, "localhost")));
-		params.put(PARAM_INDEX_NAME, getStringArgument(taskConfig, PARAM_INDEX_NAME,
-				getDefaultStringArgument(taskConfig, "osm")));
-		params.put(PARAM_CREATE_INDEX, getBooleanArgument(taskConfig, PARAM_CREATE_INDEX, true));
-		params.put(PARAM_INDEX_BUILDERS, getStringArgument(taskConfig, PARAM_INDEX_BUILDERS,
-				getDefaultStringArgument(taskConfig, "")));
+		try {
+			params.load(getClass().getClassLoader().getResourceAsStream("plugin.properties"));
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to load internal plugin.properties");
+		}
+		if (doesArgumentExist(taskConfig, PARAM_PROPERTIES_FILE)) {
+			String fileName = getStringArgument(taskConfig, PARAM_PROPERTIES_FILE);
+			try {
+				params.load(new FileReader(fileName));
+			} catch (Exception e) {
+				throw new RuntimeException("Unable to load properties file " + fileName);
+			}
+		}
+		addArgumentIfExists(PARAM_CLUSTER_HOSTS, taskConfig, params);
+		addArgumentIfExists(PARAM_CLUSTER_NAME, taskConfig, params);
+		addArgumentIfExists(PARAM_INDEX_NAME, taskConfig, params);
+		addArgumentIfExists(PARAM_INDEX_CREATE, taskConfig, params);
+		addArgumentIfExists(PARAM_INDEX_CONFIG, taskConfig, params);
+		addArgumentIfExists(PARAM_INDEX_BUILDERS, taskConfig, params);
 		return params;
+	}
+
+	protected void addArgumentIfExists(String key, TaskConfiguration taskConfig, Properties properties) {
+		if (doesArgumentExist(taskConfig, key)) {
+			String value = getStringArgument(taskConfig, key);
+			properties.put(key, value);
+		}
 	}
 
 	protected Client buildElasticsearchClient(Properties params) {
 		return ElasticSearchClientBuilder.newClient()
-				.setClusterName((String) params.get(PARAM_CLUSTER_NAME))
-				.setHosts((String) params.get(PARAM_HOSTS))
+				.setClusterName(params.getProperty(PARAM_CLUSTER_NAME))
+				.setHosts(params.getProperty(PARAM_CLUSTER_HOSTS))
 				.build();
 	}
 
 	protected EntityDao buildEntityDao(IndexAdminService indexAdminService, Properties params) {
-		String indexName = (String) params.get(PARAM_INDEX_NAME);
-		Boolean createIndex = (Boolean) params.get(PARAM_CREATE_INDEX);
-		if (createIndex) indexAdminService.createIndex(indexName, new OsmIndexBuilder().getIndexMapping());
+		String indexName = params.getProperty(PARAM_INDEX_NAME);
+		Boolean createIndex = Boolean.valueOf(params.getProperty(PARAM_INDEX_CREATE));
+		if (createIndex) {
+			String indexConfig = params.getProperty(PARAM_INDEX_CONFIG);
+			indexAdminService.createIndex(indexName, indexConfig);
+		}
 		EntityDao entityDao = new EntityDao(indexName, indexAdminService.getClient());
 		return entityDao;
 	}
 
 	protected Set<AbstractIndexBuilder> getSelectedIndexBuilders(Client client, EntityDao entityDao, Properties params) {
-		Properties properties = getIndexBuilderProperties();
-		Set<AbstractIndexBuilder> set = new HashSet<AbstractIndexBuilder>();
-		String indexName = (String) params.get(PARAM_INDEX_NAME);
-		String selectedIndexBuilders = (String) params.get(PARAM_INDEX_BUILDERS);
+		Set<AbstractIndexBuilder> set = new LinkedHashSet<AbstractIndexBuilder>();
+		String entityIndexName = params.getProperty(PARAM_INDEX_NAME);
+		String selectedIndexBuilders = params.getProperty(PARAM_INDEX_BUILDERS);
 		if (selectedIndexBuilders.isEmpty()) return set;
 		for (String indexBuilderName : selectedIndexBuilders.split(",")) {
-			if (!properties.containsKey(indexBuilderName)) {
+			if (!params.containsKey(indexBuilderName)) {
 				throw new RuntimeException("Unable to find IndexBuilder [" + indexBuilderName + "]");
 			} else try {
-				String indexBuilderClass = properties.getProperty(indexBuilderName);
+				String indexBuilderClass = params.getProperty(indexBuilderName);
+				String indexConfig = params.getProperty(indexBuilderName + ".config");
 				@SuppressWarnings("unchecked")
 				Class<AbstractIndexBuilder> _class = (Class<AbstractIndexBuilder>) Class.forName(indexBuilderClass);
-				Constructor<AbstractIndexBuilder> _const = _class.getDeclaredConstructor(Client.class, EntityDao.class, String.class);
-				AbstractIndexBuilder indexBuilder = _const.newInstance(client, entityDao, indexName);
+				Constructor<AbstractIndexBuilder> _const = _class.getDeclaredConstructor(Client.class, EntityDao.class, String.class, String.class);
+				AbstractIndexBuilder indexBuilder = _const.newInstance(client, entityDao, entityIndexName, indexConfig);
 				set.add(indexBuilder);
 			} catch (Exception e) {
 				throw new RuntimeException("Unable to load IndexBuilder [" + indexBuilderName + "]");
 			}
 		}
 		return set;
-	}
-
-	protected Properties getIndexBuilderProperties() {
-		try {
-			Properties properties = new Properties();
-			InputStream inputStream = getClass().getClassLoader()
-					.getResourceAsStream("indexBuilder.properties");
-			properties.load(inputStream);
-			return properties;
-		} catch (Exception e) {
-			throw new RuntimeException("Unable to load IndexBuilder list");
-		}
 	}
 
 }

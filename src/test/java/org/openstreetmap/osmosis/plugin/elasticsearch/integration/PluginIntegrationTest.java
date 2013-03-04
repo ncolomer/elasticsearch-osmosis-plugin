@@ -25,10 +25,10 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 				"--read-xml",
 				getOsmExtractFile().getPath(),
 				"--write-elasticsearch",
-				"hosts=" + nodeAddress(),
-				"clusterName=" + clusterName(),
-				"indexName=" + INDEX_NAME,
-				"createIndex=true"
+				"cluster.hosts=" + nodeAddress(),
+				"cluster.name=" + clusterName(),
+				"index.name=" + INDEX_NAME,
+				"index.create=true"
 		});
 
 		// Assert
@@ -44,11 +44,11 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 				"--read-xml",
 				getOsmExtractFile().getPath(),
 				"--write-elasticsearch",
-				"hosts=" + nodeAddress(),
-				"clusterName=" + clusterName(),
-				"indexName=" + INDEX_NAME,
-				"createIndex=true",
-				"indexBuilders=rg"
+				"cluster.hosts=" + nodeAddress(),
+				"cluster.name=" + clusterName(),
+				"index.name=" + INDEX_NAME,
+				"index.create=true",
+				"index.builders=rg"
 		});
 
 		// Assert

@@ -99,22 +99,30 @@ Available options are:
 		<th>Name</th><th>Type</th><th>Default value</th><th>Description</th>
 	</tr>
 	<tr>
-		<td>hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join (one is enough as the cluster will be discovered automatically). 
+		<td>cluster.hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join (one is enough as the cluster will be discovered automatically). 
 			Valid syntax for a single node is <code>host1</code> or <code>host2:port</code></td>
 	</tr>
 	<tr>
-		<td>clusterName</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
+		<td>cluster.name</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
 	</tr>
 	<tr>
-		<td>indexName</td><td>String</td><td>osm</td><td>Name of the index that will be filled with data</td>
+		<td>index.name</td><td>String</td><td>osm</td><td>Name of the index that will be filled with data</td>
 	</tr>
 	<tr>
-		<td>createIndex</td><td>Boolean</td><td>true</td><td>(Re)create the main index (delete if exists!) and its mapping prior inserting data</td>
+		<td>index.create</td><td>Boolean</td><td>true</td><td>(Re)create the main index (delete if exists!) and its mapping prior inserting data</td>
 	</tr>
 	<tr>
-		<td>indexBuilders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index builder id (see below)</td>
+		<td>index.config</td><td>String</td><td>[see below]</td><td>The configuration (settings + mappings) used to create the entity index</td>
+	</tr>
+	<tr>
+		<td>index.builders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index builder id (see below)</td>
+	</tr>
+	<tr>
+		<td>properties.file</td><td>String</td><td>[empty]</td><td>The absolute path to a properties file containing a (sub)set of valid options</td>
 	</tr>
 </table>
+
+The default plugin configuration can be overridden by providing a properties file (see the `properties.file` option) and/or through the command-line options described above.
 
 ### 2.3. Specialized index builders
 
