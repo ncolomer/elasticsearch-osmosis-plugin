@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.utils;
+package org.openstreetmap.osmosis.plugin.elasticsearch.testutils;
 
 import java.util.Arrays;
 import java.util.Date;

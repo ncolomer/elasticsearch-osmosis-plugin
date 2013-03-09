@@ -25,8 +25,8 @@ import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
 
 import com.spatial4j.core.distance.DistanceUtils;
 import com.spatial4j.core.shape.Point;

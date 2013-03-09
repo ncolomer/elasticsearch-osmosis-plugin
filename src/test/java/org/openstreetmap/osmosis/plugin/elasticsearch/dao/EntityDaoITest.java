@@ -17,9 +17,9 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AssertUtils;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AssertUtils;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
 
 public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 

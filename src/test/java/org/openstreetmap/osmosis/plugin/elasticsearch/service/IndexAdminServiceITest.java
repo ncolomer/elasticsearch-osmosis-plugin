@@ -10,7 +10,7 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.junit.Before;
 import org.junit.Test;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
 public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 

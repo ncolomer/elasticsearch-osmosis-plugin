@@ -11,25 +11,25 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
-public class ElasticSearchClientBuilder {
+public class ElasticsearchClientBuilder {
 
-	private static final Logger LOG = Logger.getLogger(ElasticSearchClientBuilder.class.getName());
+	private static final Logger LOG = Logger.getLogger(ElasticsearchClientBuilder.class.getName());
 
 	private String clusterName;
 	private String hosts;
 	private boolean nodeClient;
 
-	private ElasticSearchClientBuilder() {}
+	private ElasticsearchClientBuilder() {}
 
-	public static ElasticSearchClientBuilder newClient() {
-		return new ElasticSearchClientBuilder();
+	public static ElasticsearchClientBuilder newClient() {
+		return new ElasticsearchClientBuilder();
 	}
 
 	public String getClusterName() {
 		return clusterName;
 	}
 
-	public ElasticSearchClientBuilder setClusterName(String clusterName) {
+	public ElasticsearchClientBuilder setClusterName(String clusterName) {
 		this.clusterName = clusterName;
 		return this;
 	}
@@ -38,7 +38,7 @@ public class ElasticSearchClientBuilder {
 		return hosts;
 	}
 
-	public ElasticSearchClientBuilder setHosts(String hosts) {
+	public ElasticsearchClientBuilder setHosts(String hosts) {
 		this.hosts = hosts;
 		return this;
 	}
@@ -47,7 +47,7 @@ public class ElasticSearchClientBuilder {
 		return nodeClient;
 	}
 
-	public ElasticSearchClientBuilder setNodeClient(boolean nodeClient) {
+	public ElasticsearchClientBuilder setNodeClient(boolean nodeClient) {
 		this.nodeClient = nodeClient;
 		return this;
 	}

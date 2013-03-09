@@ -49,7 +49,7 @@ import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
 
 @SuppressWarnings("unchecked")
 public class EntityDaoUTest {
@@ -66,8 +66,7 @@ public class EntityDaoUTest {
 	public void setUp() throws Exception {
 		clientMocked = mock(Client.class);
 		entityMapperMocked = mock(EntityMapper.class);
-		entityDao = new EntityDao(INDEX_NAME, clientMocked);
-		entityDao.entityMapper = entityMapperMocked;
+		entityDao = new EntityDao(INDEX_NAME, clientMocked, entityMapperMocked);
 		entityDao = Mockito.spy(entityDao);
 	}
 

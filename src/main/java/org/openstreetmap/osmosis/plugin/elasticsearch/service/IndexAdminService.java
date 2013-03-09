@@ -5,7 +5,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 
 public class IndexAdminService {
 
-	protected final Client client;
+	private final Client client;
 
 	public IndexAdminService(Client client) {
 		this.client = client;
@@ -47,10 +47,6 @@ public class IndexAdminService {
 	public void refresh(String... indices) {
 		client.admin().indices().prepareRefresh(indices)
 				.execute().actionGet();
-	}
-
-	public Client getClient() {
-		return client;
 	}
 
 }

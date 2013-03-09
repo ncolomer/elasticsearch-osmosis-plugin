@@ -1,7 +1,6 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,26 +10,25 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityBuffer;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityCounter;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
 public class ElasticSearchWriterTask implements Sink {
 
 	private static final Logger LOG = Logger.getLogger(ElasticSearchWriterTask.class.getName());
 
-	private final IndexAdminService indexAdminService;
+	private final Endpoint endpoint;
 	private final Set<AbstractIndexBuilder> indexBuilders;
 	private final EntityBuffer entityBuffer;
 	private final EntityCounter entityCounter;
 
-	public ElasticSearchWriterTask(IndexAdminService indexAdminService, EntityDao entityDao,
-			Set<AbstractIndexBuilder> indexBuilders, Properties params) {
-		this.indexAdminService = indexAdminService;
+	public ElasticSearchWriterTask(Endpoint endpoint, Set<AbstractIndexBuilder> indexBuilders, Parameters params) {
+		this.endpoint = endpoint;
 		this.indexBuilders = indexBuilders;
 		int bulkSize = Integer.valueOf(params.getProperty("index.bulk.size", "5000"));
-		this.entityBuffer = new EntityBuffer(entityDao, bulkSize);
+		this.entityBuffer = new EntityBuffer(endpoint.getEntityDao(), bulkSize);
 		this.entityCounter = new EntityCounter();
 	}
 
@@ -54,7 +52,7 @@ public class ElasticSearchWriterTask implements Sink {
 				"total processed ways: ........ " + entityCounter.getCount(EntityType.Way) + "\n" +
 				"total processed relations: ... " + entityCounter.getCount(EntityType.Relation) + "\n" +
 				"total processed bounds: ...... " + entityCounter.getCount(EntityType.Bound));
-		indexAdminService.refresh();
+		endpoint.getIndexAdminService().refresh();
 		buildSpecializedIndex();
 	}
 
@@ -63,7 +61,7 @@ public class ElasticSearchWriterTask implements Sink {
 			try {
 				String indexName = indexBuilder.getSpecializedIndexName();
 				LOG.info("Creating selected index [" + indexName + "]");
-				indexAdminService.createIndex(indexName, indexBuilder.getIndexConfig());
+				endpoint.getIndexAdminService().createIndex(indexName, indexBuilder.getIndexConfig());
 				LOG.info("Building selected index [" + indexName + "]");
 				long time = System.currentTimeMillis();
 				indexBuilder.buildIndex();
@@ -81,8 +79,8 @@ public class ElasticSearchWriterTask implements Sink {
 		float consumedMemoryMb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())
 				/ (float) Math.pow(1024, 2);
 		LOG.info(String.format("Estimated memory consumption: %.2f MB", consumedMemoryMb));
-		indexAdminService.refresh();
-		indexAdminService.getClient().close();
+		endpoint.getIndexAdminService().refresh();
+		endpoint.getClient().close();
 	}
 
 }

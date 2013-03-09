@@ -34,12 +34,16 @@ public class EntityDao {
 
 	private final String indexName;
 	private final Client client;
-	protected EntityMapper entityMapper;
+	private final EntityMapper entityMapper;
 
 	public EntityDao(String indexName, Client client) {
-		this.client = client;
+		this(indexName, client, new EntityMapper());
+	}
+
+	public EntityDao(String indexName, Client client, EntityMapper entityMapper) {
 		this.indexName = indexName;
-		this.entityMapper = new EntityMapper();
+		this.client = client;
+		this.entityMapper = entityMapper;
 	}
 
 	/**

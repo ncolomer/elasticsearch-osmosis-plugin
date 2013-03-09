@@ -162,7 +162,7 @@ osmosis \
 
 ## 3. Mapping
 
-OSM data is organized in a relational model composed of [data primitives](https://wiki.openstreetmap.org/wiki/Data_Primitives) - mainly `node`, `way` and `relation` - linked each other by their `osmid`. As relational, this model fits well in a RDBMS (commonly PostgreSQL + Postgis) and is exportable. Even though XML is the official representation, OpenStreetMap also supports other compressed formats such as PBF (Protocol Buffers) or BZ2 (compressed XML). These files can be easily found on the Internet (see [4.1. Get some OSM test data](#41-get-some-osm-test-data)).
+OSM data is organized in a relational model composed of [data primitives](https://wiki.openstreetmap.org/wiki/Data_Primitives) - mainly `node`, `way` and `relation` - linked each other by their `osmid`. As relational, this model fits well in a RDBMS (commonly PostgreSQL + Postgis) and is exportable. Even though XML is the official representation, OpenStreetMap also supports other compressed formats such as PBF (Protocol Buffers) or BZ2 (compressed XML). These files can be easily found on the Internet (see [4.1. Get OSM data](#41-get-some-osm-test-data)).
 
 Osmosis is able to read both XML and PBF formats: it deserializes data into Java objects that can be processed through plugins.
 In our case, the *elasticsearch-osmosis-plugin* will convert these Java objects into their JSON equivalent prior to be inserted into elasticsearch.
@@ -212,7 +212,7 @@ The *elasticsearch-osmosis-plugin* will convert and insert these data into elast
 
 ## 4. Tips box
 
-### 4.1. Get some OSM test data
+### 4.1. Get OSM data
 
 You can get OSM files (planet, extract) from various location. OpenStreetMap have some listed on their dedicated 
 [Planet.osm](http://wiki.openstreetmap.org/wiki/Planet.osm) wiki page.

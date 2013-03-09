@@ -12,7 +12,7 @@ import org.elasticsearch.action.count.CountRequest;
 import org.junit.Test;
 import org.openstreetmap.osmosis.core.Osmosis;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
 public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 

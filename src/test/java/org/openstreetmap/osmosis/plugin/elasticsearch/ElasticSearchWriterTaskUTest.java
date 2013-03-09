@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
 
 import org.elasticsearch.client.Client;
@@ -22,22 +21,29 @@ import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
 public class ElasticSearchWriterTaskUTest {
 
+	private Client clientMocked;
 	private IndexAdminService indexAdminServiceMocked;
-	private Set<AbstractIndexBuilder> indexBuilders;
-	private ElasticSearchWriterTask elasticSearchWriterTask;
 	private EntityDao entityDaoMocked;
+	private Endpoint endpoint;
+	private Set<AbstractIndexBuilder> indexBuilders;
+
+	private ElasticSearchWriterTask elasticSearchWriterTask;
 
 	@Before
 	public void setUp() throws Exception {
+		clientMocked = mock(Client.class);
 		indexAdminServiceMocked = mock(IndexAdminService.class);
-		indexBuilders = new HashSet<AbstractIndexBuilder>();
 		entityDaoMocked = mock(EntityDao.class);
-		Properties params = new Properties();
-		params.setProperty("index.bulk.size", "1");
-		elasticSearchWriterTask = new ElasticSearchWriterTask(indexAdminServiceMocked, entityDaoMocked, indexBuilders, params);
+		endpoint = new Endpoint(clientMocked, indexAdminServiceMocked, entityDaoMocked);
+		indexBuilders = new HashSet<AbstractIndexBuilder>();
+		Parameters params = new Parameters.Builder().loadResource("plugin.properties")
+				.addParameter("index.bulk.size", "1").build();
+		elasticSearchWriterTask = new ElasticSearchWriterTask(endpoint, indexBuilders, params);
 	}
 
 	@Test
@@ -74,10 +80,6 @@ public class ElasticSearchWriterTaskUTest {
 
 	@Test
 	public void release() {
-		// Setup
-		Client clientMocked = mock(Client.class);
-		when(indexAdminServiceMocked.getClient()).thenReturn(clientMocked);
-
 		// Action
 		elasticSearchWriterTask.release();
 
