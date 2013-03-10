@@ -31,6 +31,7 @@ public class ElasticSearchWriterTaskUTest {
 	private EntityDao entityDaoMocked;
 	private Endpoint endpoint;
 	private Set<AbstractIndexBuilder> indexBuilders;
+	private Parameters params;
 
 	private ElasticSearchWriterTask elasticSearchWriterTask;
 
@@ -41,7 +42,7 @@ public class ElasticSearchWriterTaskUTest {
 		entityDaoMocked = mock(EntityDao.class);
 		endpoint = new Endpoint(clientMocked, indexAdminServiceMocked, entityDaoMocked);
 		indexBuilders = new HashSet<AbstractIndexBuilder>();
-		Parameters params = new Parameters.Builder().loadResource("plugin.properties")
+		params = new Parameters.Builder().loadResource("plugin.properties")
 				.addParameter("index.bulk.size", "1").build();
 		elasticSearchWriterTask = new ElasticSearchWriterTask(endpoint, indexBuilders, params);
 	}
@@ -64,7 +65,7 @@ public class ElasticSearchWriterTaskUTest {
 	@Test
 	public void complete() {
 		// Setup
-		AbstractIndexBuilder indexBuilderMocked = spy(new DummyIndexBuilder());
+		AbstractIndexBuilder indexBuilderMocked = spy(new DummyIndexBuilder(endpoint, params));
 		indexBuilders.add(indexBuilderMocked);
 
 		// Action
@@ -73,8 +74,7 @@ public class ElasticSearchWriterTaskUTest {
 		// Assert
 		verify(entityDaoMocked, times(1)).saveAll(eq(new ArrayList<Entity>()));
 		verify(indexBuilderMocked, times(1)).getSpecializedIndexName();
-		verify(indexBuilderMocked, times(1)).getIndexConfig();
-		verify(indexAdminServiceMocked, times(1)).createIndex(eq("index-test"), eq("{}"));
+		verify(indexBuilderMocked, times(1)).createIndex();
 		verify(indexBuilderMocked, times(1)).buildIndex();
 	}
 
@@ -90,14 +90,17 @@ public class ElasticSearchWriterTaskUTest {
 
 	public class DummyIndexBuilder extends AbstractIndexBuilder {
 
-		public DummyIndexBuilder() {
-			super(null, null, "index", "{}");
+		public DummyIndexBuilder(Endpoint endpoint, Parameters params) {
+			super(endpoint, params);
 		}
 
 		@Override
 		public String getSpecializedIndexSuffix() {
-			return "test";
+			return "dummy";
 		}
+
+		@Override
+		public void createIndex() {}
 
 		@Override
 		public void buildIndex() {}

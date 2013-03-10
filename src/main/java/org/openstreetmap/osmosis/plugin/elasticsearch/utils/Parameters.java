@@ -6,13 +6,19 @@ import java.util.Properties;
 
 public class Parameters {
 
-	public static final String PARAM_PROPERTIES_FILE = "properties.file";
-	public static final String PARAM_CLUSTER_HOSTS = "cluster.hosts";
-	public static final String PARAM_CLUSTER_NAME = "cluster.name";
-	public static final String PARAM_INDEX_NAME = "index.name";
-	public static final String PARAM_INDEX_CREATE = "index.create";
-	public static final String PARAM_INDEX_CONFIG = "index.config";
-	public static final String PARAM_INDEX_BUILDERS = "index.builders";
+	public static final String PROPERTIES_FILE = "properties.file";
+
+	public static final String CLUSTER_HOSTS = "cluster.hosts";
+	public static final String CLUSTER_NAME = "cluster.name";
+
+	public static final String INDEX_NAME = "index.name";
+	public static final String INDEX_CREATE = "index.create";
+	public static final String INDEX_SETTINGS_REPLICAS = "index.settings.replicas";
+	public static final String INDEX_SETTINGS_SHARDS = "index.settings.shards";
+	public static final String INDEX_MAPPINGS = "index.mappings";
+	public static final String INDEX_BULK_SIZE = "index.bulk.size";
+
+	public static final String INDEX_BUILDERS = "index.builders";
 
 	private final Properties params;
 

@@ -73,6 +73,10 @@ public abstract class AbstractElasticSearchInMemoryTest {
 		client().admin().indices().prepareRefresh(indices).execute().actionGet();
 	}
 
+	protected boolean exists(String... indices) {
+		return client().admin().indices().prepareExists(indices).execute().actionGet().exists();
+	}
+
 	protected String clusterName() {
 		return CLUSTER_NAME;
 	}

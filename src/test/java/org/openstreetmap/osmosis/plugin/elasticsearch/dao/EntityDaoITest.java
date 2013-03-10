@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 import junit.framework.Assert;
 
@@ -20,6 +19,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AssertUtils;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
 public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
@@ -29,12 +29,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 	@Before
 	public void setUp() throws IOException {
-		Properties params = new Properties();
-		params.load(getClass().getClassLoader().getResourceAsStream("plugin.properties"));
-		IndexAdminService indexService = new IndexAdminService(client());
-		indexService.createIndex(INDEX_NAME, (String) params.get("index.config"));
-		// Create tested objects
 		entityDao = new EntityDao(INDEX_NAME, client());
+		Parameters params = new Parameters.Builder().loadResource("plugin.properties").build();
+		IndexAdminService indexAdminService = new IndexAdminService(client());
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, params.getProperty(Parameters.INDEX_MAPPINGS));
 	}
 
 	/* save */

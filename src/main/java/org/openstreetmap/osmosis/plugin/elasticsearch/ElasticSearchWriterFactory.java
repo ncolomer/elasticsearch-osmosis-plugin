@@ -46,17 +46,22 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		// Load internal plugin.properties
 		builder.loadResource("plugin.properties");
 		// Load custom properties file if specified
-		if (doesArgumentExist(taskConfig, Parameters.PARAM_PROPERTIES_FILE)) {
-			String fileName = getStringArgument(taskConfig, Parameters.PARAM_PROPERTIES_FILE);
+		if (doesArgumentExist(taskConfig, Parameters.PROPERTIES_FILE)) {
+			String fileName = getStringArgument(taskConfig, Parameters.PROPERTIES_FILE);
 			builder.loadFile(fileName);
 		}
 		// Load custom parameters
-		addArgumentIfExists(Parameters.PARAM_CLUSTER_HOSTS, taskConfig, builder);
-		addArgumentIfExists(Parameters.PARAM_CLUSTER_NAME, taskConfig, builder);
-		addArgumentIfExists(Parameters.PARAM_INDEX_NAME, taskConfig, builder);
-		addArgumentIfExists(Parameters.PARAM_INDEX_CREATE, taskConfig, builder);
-		addArgumentIfExists(Parameters.PARAM_INDEX_CONFIG, taskConfig, builder);
-		addArgumentIfExists(Parameters.PARAM_INDEX_BUILDERS, taskConfig, builder);
+		addArgumentIfExists(Parameters.CLUSTER_HOSTS, taskConfig, builder);
+		addArgumentIfExists(Parameters.CLUSTER_NAME, taskConfig, builder);
+
+		addArgumentIfExists(Parameters.INDEX_NAME, taskConfig, builder);
+		addArgumentIfExists(Parameters.INDEX_CREATE, taskConfig, builder);
+		addArgumentIfExists(Parameters.INDEX_SETTINGS_REPLICAS, taskConfig, builder);
+		addArgumentIfExists(Parameters.INDEX_SETTINGS_SHARDS, taskConfig, builder);
+		addArgumentIfExists(Parameters.INDEX_MAPPINGS, taskConfig, builder);
+		addArgumentIfExists(Parameters.INDEX_BULK_SIZE, taskConfig, builder);
+
+		addArgumentIfExists(Parameters.INDEX_BUILDERS, taskConfig, builder);
 		return builder.build();
 	}
 
@@ -69,40 +74,39 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 
 	protected Client buildElasticsearchClient(Parameters params) {
 		return ElasticsearchClientBuilder.newClient()
-				.setClusterName(params.getProperty(Parameters.PARAM_CLUSTER_NAME))
-				.setHosts(params.getProperty(Parameters.PARAM_CLUSTER_HOSTS))
+				.setClusterName(params.getProperty(Parameters.CLUSTER_NAME))
+				.setHosts(params.getProperty(Parameters.CLUSTER_HOSTS))
 				.build();
 	}
 
 	protected void createIndex(IndexAdminService indexAdminService, Parameters params) {
-		if (Boolean.valueOf(params.getProperty(Parameters.PARAM_INDEX_CREATE))) {
-			String indexName = params.getProperty(Parameters.PARAM_INDEX_NAME);
-			String indexConfig = params.getProperty(Parameters.PARAM_INDEX_CONFIG);
-			indexAdminService.createIndex(indexName, indexConfig);
+		if (Boolean.valueOf(params.getProperty(Parameters.INDEX_CREATE))) {
+			String name = params.getProperty(Parameters.INDEX_NAME);
+			int shards = Integer.valueOf(params.getProperty(Parameters.INDEX_SETTINGS_SHARDS));
+			int replicas = Integer.valueOf(params.getProperty(Parameters.INDEX_SETTINGS_REPLICAS));
+			String mappings = params.getProperty(Parameters.INDEX_MAPPINGS);
+			indexAdminService.createIndex(name, shards, replicas, mappings);
 		}
 	}
 
 	protected EntityDao buildEntityDao(Client client, Parameters params) {
-		String indexName = params.getProperty(Parameters.PARAM_INDEX_NAME);
+		String indexName = params.getProperty(Parameters.INDEX_NAME);
 		return new EntityDao(indexName, client);
 	}
 
 	protected Set<AbstractIndexBuilder> getSelectedIndexBuilders(Endpoint endpoint, Parameters params) {
-		// Client client; EntityDao entityDao;
 		Set<AbstractIndexBuilder> set = new LinkedHashSet<AbstractIndexBuilder>();
-		String entityIndexName = params.getProperty(Parameters.PARAM_INDEX_NAME);
-		String selectedIndexBuilders = params.getProperty(Parameters.PARAM_INDEX_BUILDERS, "");
+		String selectedIndexBuilders = params.getProperty(Parameters.INDEX_BUILDERS, "");
 		if (selectedIndexBuilders.isEmpty()) return set;
 		for (String indexBuilderName : selectedIndexBuilders.split(",")) {
 			if (!params.containsKey(indexBuilderName)) {
 				throw new RuntimeException("Unable to find IndexBuilder [" + indexBuilderName + "]");
 			} else try {
 				String indexBuilderClass = params.getProperty(indexBuilderName);
-				String indexConfig = params.getProperty(indexBuilderName + ".config");
 				@SuppressWarnings("unchecked")
 				Class<AbstractIndexBuilder> _class = (Class<AbstractIndexBuilder>) Class.forName(indexBuilderClass);
-				Constructor<AbstractIndexBuilder> _const = _class.getDeclaredConstructor(Client.class, EntityDao.class, String.class, String.class);
-				AbstractIndexBuilder indexBuilder = _const.newInstance(endpoint.getClient(), endpoint.getEntityDao(), entityIndexName, indexConfig);
+				Constructor<AbstractIndexBuilder> _const = _class.getDeclaredConstructor(Endpoint.class, Parameters.class);
+				AbstractIndexBuilder indexBuilder = _const.newInstance(endpoint, params);
 				set.add(indexBuilder);
 			} catch (Exception e) {
 				throw new RuntimeException("Unable to load IndexBuilder [" + indexBuilderName + "]");

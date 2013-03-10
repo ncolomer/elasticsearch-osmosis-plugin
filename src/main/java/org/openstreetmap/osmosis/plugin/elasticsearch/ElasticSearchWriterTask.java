@@ -56,12 +56,12 @@ public class ElasticSearchWriterTask implements Sink {
 		buildSpecializedIndex();
 	}
 
-	private void buildSpecializedIndex() {
+	protected void buildSpecializedIndex() {
 		for (AbstractIndexBuilder indexBuilder : indexBuilders) {
 			try {
 				String indexName = indexBuilder.getSpecializedIndexName();
 				LOG.info("Creating selected index [" + indexName + "]");
-				endpoint.getIndexAdminService().createIndex(indexName, indexBuilder.getIndexConfig());
+				indexBuilder.createIndex();
 				LOG.info("Building selected index [" + indexName + "]");
 				long time = System.currentTimeMillis();
 				indexBuilder.buildIndex();
