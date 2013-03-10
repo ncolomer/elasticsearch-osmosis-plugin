@@ -13,8 +13,8 @@ public class Parameters {
 
 	public static final String INDEX_NAME = "index.name";
 	public static final String INDEX_CREATE = "index.create";
-	public static final String INDEX_SETTINGS_REPLICAS = "index.settings.replicas";
 	public static final String INDEX_SETTINGS_SHARDS = "index.settings.shards";
+	public static final String INDEX_SETTINGS_REPLICAS = "index.settings.replicas";
 	public static final String INDEX_MAPPINGS = "index.mappings";
 	public static final String INDEX_BULK_SIZE = "index.bulk.size";
 
