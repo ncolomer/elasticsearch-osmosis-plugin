@@ -1,8 +1,7 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.builder.rg;
+package org.openstreetmap.osmosis.plugin.elasticsearch.builder.highway;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 
 import junit.framework.Assert;
 
@@ -17,6 +16,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
@@ -34,7 +34,7 @@ import com.spatial4j.core.shape.Point;
 import com.spatial4j.core.shape.Rectangle;
 import com.spatial4j.core.shape.impl.PointImpl;
 
-public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
+public class HighwayIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 
 	private static final String INDEX_NAME = "osm-test";
 
@@ -48,9 +48,9 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 		entityDao = new EntityDao(INDEX_NAME, client());
 		Endpoint endpoint = new Endpoint(client(), indexAdminService, entityDao);
 		Parameters params = new Parameters.Builder().loadResource("plugin.properties").build();
-		indexBuilder = new RgIndexBuilder(endpoint, params);
+		indexBuilder = new HighwayIndexBuilder(endpoint, params);
 		indexAdminService.createIndex(INDEX_NAME, 1, 0, params.getProperty(Parameters.INDEX_MAPPINGS));
-		indexAdminService.createIndex(indexBuilder.getSpecializedIndexName(), 1, 0, params.getProperty("rg.mappings"));
+		indexAdminService.createIndex(indexBuilder.getSpecializedIndexName(), 1, 0, params.getProperty("highway.mappings"));
 	}
 
 	@Test
@@ -65,9 +65,8 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(indexBuilder.getSpecializedIndexName(), "way", "1").execute().actionGet();
 		Assert.assertTrue(response.exists());
-		String expected = "{\"tags\":{\"highway\":\"tertiary\",\"name\":\"Avenue Jean Galmot\"}," +
-				"\"line\":{\"type\":\"linestring\",\"coordinates\":[[-52.3294249,4.9316988]," +
-				"[-52.3289426,4.9318342],[-52.3284144,4.9319625],[-52.3278228,4.9321291]]}}";
+		String expected = "{\"tags\":{\"highway\":\"tertiary\",\"name\":\"Avenue Jean Galmot\"},\"line\":{\"type\":\"linestring\"," +
+				"\"coordinates\":[[-52.3294249,4.9316988],[-52.3289426,4.9318342],[-52.3284144,4.9319625],[-52.3278228,4.9321291]]}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
@@ -84,15 +83,14 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 		Rectangle rectangle = GeoShapeConstants.SPATIAL_CONTEXT.makeCircle(point, radius).getBoundingBox();
 
 		// Action
-		SearchRequestBuilder queryBuilder = client().prepareSearch(indexBuilder.getSpecializedIndexName())
-				.setTypes("way")
+		SearchRequestBuilder queryBuilder = client().prepareSearch(indexBuilder.getSpecializedIndexName()).setTypes("way")
 				.setQuery(QueryBuilders.matchAllQuery())
 				.setFilter(new GeoShapeFilterBuilder("line", rectangle).relation(ShapeRelation.INTERSECTS));
 		System.out.println(queryBuilder.toString());
 		SearchResponse searchResponse = queryBuilder.execute().actionGet();
 
 		// Assert
-		Assert.assertTrue(searchResponse.hits().hits().length == 1);
+		Assert.assertEquals(1, searchResponse.hits().hits().length);
 	}
 
 	@Test
@@ -193,20 +191,14 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertTrue(searchResponse.hits().hits().length == 0);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void buildMainIndexSample() {
-		Way way = OsmDataBuilder.buildWay(1l,
-				Arrays.asList(new Tag[] { new Tag("highway", "tertiary"), new Tag("name", "Avenue Jean Galmot") }),
-				Arrays.asList(new WayNode[] { new WayNode(1l), new WayNode(2l), new WayNode(3l), new WayNode(4l) }));
-		Node node1 = OsmDataBuilder.buildNode(1l, 4.9316988, -52.3294249, Collections.EMPTY_LIST);
-		Node node2 = OsmDataBuilder.buildNode(2l, 4.9318342, -52.3289426, Collections.EMPTY_LIST);
-		Node node3 = OsmDataBuilder.buildNode(3l, 4.9319625, -52.3284144, Collections.EMPTY_LIST);
-		Node node4 = OsmDataBuilder.buildNode(4l, 4.9321291, -52.3278228, Collections.EMPTY_LIST);
-		entityDao.save(way);
-		entityDao.save(node1);
-		entityDao.save(node2);
-		entityDao.save(node3);
-		entityDao.save(node4);
+		Node node1 = OsmDataBuilder.buildNode(1l, 4.9316988, -52.3294249);
+		Node node2 = OsmDataBuilder.buildNode(2l, 4.9318342, -52.3289426);
+		Node node3 = OsmDataBuilder.buildNode(3l, 4.9319625, -52.3284144);
+		Node node4 = OsmDataBuilder.buildNode(4l, 4.9321291, -52.3278228);
+		Way way = OsmDataBuilder.buildWay(1l, Arrays.asList(new WayNode[] { new WayNode(1l), new WayNode(2l), new WayNode(3l),
+				new WayNode(4l) }), new Tag("highway", "tertiary"), new Tag("name", "Avenue Jean Galmot"));
+		entityDao.saveAll(Arrays.asList(new Entity[] { node1, node2, node3, node4, way }));
 		refresh(INDEX_NAME);
 	}
 

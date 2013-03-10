@@ -1,6 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.testutils;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -25,13 +26,17 @@ public class OsmDataBuilder {
 		return new Way(entityData, Arrays.asList(new WayNode[] { new WayNode(1l) }));
 	}
 
-	public static Node buildNode(long id, double latitude, double longitude, List<Tag> tags) {
-		CommonEntityData entityData = new CommonEntityData(id, 0, new Date(), new OsmUser(1, "nco"), 1l, tags);
+	public static Node buildNode(long id, double latitude, double longitude, Tag... tags) {
+		@SuppressWarnings("unchecked")
+		List<Tag> list = (tags == null) ? Collections.EMPTY_LIST : Arrays.asList(tags);
+		CommonEntityData entityData = new CommonEntityData(id, 0, new Date(), new OsmUser(1, "nco"), 1l, list);
 		return new Node(entityData, latitude, longitude);
 	}
 
-	public static Way buildWay(long id, List<Tag> tags, List<WayNode> wayNodes) {
-		CommonEntityData entityData = new CommonEntityData(id, 0, new Date(), new OsmUser(1, "nco"), 1l, tags);
+	public static Way buildWay(long id, List<WayNode> wayNodes, Tag... tags) {
+		@SuppressWarnings("unchecked")
+		List<Tag> list = (tags == null) ? Collections.EMPTY_LIST : Arrays.asList(tags);
+		CommonEntityData entityData = new CommonEntityData(id, 0, new Date(), new OsmUser(1, "nco"), 1l, list);
 		return new Way(entityData, wayNodes);
 	}
 

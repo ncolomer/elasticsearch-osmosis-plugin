@@ -38,7 +38,7 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 	}
 
 	@Test
-	public void countRgIndexedDocuments() throws Exception {
+	public void countHighwayIndexedDocuments() throws Exception {
 		// Action
 		Osmosis.run(new String[] {
 				"--read-xml",
@@ -48,17 +48,17 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 				"cluster.name=" + clusterName(),
 				"index.name=" + INDEX_NAME,
 				"index.create=true",
-				"index.builders=rg"
+				"index.builders=highway"
 		});
 
 		// Assert
-		String RG_INDEX_NAME = INDEX_NAME + "-rg";
-		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(RG_INDEX_NAME)).actionGet().exists());
-		assertEquals(57, client().count(new CountRequest(RG_INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
+		String HIGHWAY_INDEX_NAME = INDEX_NAME + "-highway";
+		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(HIGHWAY_INDEX_NAME)).actionGet().exists());
+		assertEquals(57, client().count(new CountRequest(HIGHWAY_INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
 	}
 
 	private File getOsmExtractFile() throws URISyntaxException {
-		URL url = this.getClass().getResource("/mondeville-20130123.osm");
+		URL url = getClass().getResource("/mondeville-20130123.osm");
 		return new File(url.toURI());
 	}
 

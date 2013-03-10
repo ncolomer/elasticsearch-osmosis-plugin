@@ -143,10 +143,10 @@ Available builders are:
 
 <table>
 	<tr>
-		<th>Id</th><th>Name</th><th>Description</th>
+		<th>Id</th><th>Description</th>
 	</tr>
 	<tr>
-		<td>rg</td><td>Reverse-Geocoding</td><td>This builder extracts all Ways containing the <code>highway</code> tag (whatever its value) from the main index. For each way, it gathers all its ordered nodes and finally map their locations into a <code>geo_shape</code> field as a <code>linestring</code>. Thus, you can use either GeoShape queries or GeoShape filters to retrieve any related Way from a location.</td>
+		<td>highway</td><td>This builder extracts all Ways containing the <code>highway</code> tag (whatever its value) from the main index. For each way, it gathers all its ordered nodes and finally map their locations into a <code>geo_shape</code> field as a <code>linestring</code>. Thus, you can use either GeoShape queries or GeoShape filters to retrieve any related Way from a location.</td>
 	</tr>
 </table>
 

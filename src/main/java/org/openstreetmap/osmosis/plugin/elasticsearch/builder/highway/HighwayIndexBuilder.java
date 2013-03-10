@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.builder.rg;
+package org.openstreetmap.osmosis.plugin.elasticsearch.builder.highway;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.FilterBuilders.existsFilter;
@@ -23,17 +23,17 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
-public class RgIndexBuilder extends AbstractIndexBuilder {
+public class HighwayIndexBuilder extends AbstractIndexBuilder {
 
-	private static final Logger LOG = Logger.getLogger(RgIndexBuilder.class.getName());
+	private static final Logger LOG = Logger.getLogger(HighwayIndexBuilder.class.getName());
 
-	public RgIndexBuilder(Endpoint endpoint, Parameters params) {
+	public HighwayIndexBuilder(Endpoint endpoint, Parameters params) {
 		super(endpoint, params);
 	}
 
 	@Override
 	public String getSpecializedIndexSuffix() {
-		return "rg";
+		return "highway";
 	}
 
 	@Override
@@ -46,7 +46,7 @@ public class RgIndexBuilder extends AbstractIndexBuilder {
 				.setSearchType(SearchType.SCAN).setScroll(new TimeValue(scrollTimeout)).setSize(bulkSize)
 				.setTypes(EntityDao.WAY)
 				.setQuery(matchAllQuery())
-				.setFilter(existsFilter("highway"))
+				.setFilter(existsFilter("tags.highway"))
 				.addFields("tags", "nodes")
 				.execute().actionGet();
 
@@ -111,9 +111,10 @@ public class RgIndexBuilder extends AbstractIndexBuilder {
 		// Build line
 		double[][] line = new double[nodeIds.size()][2];
 		for (int i = 0; i < nodes.size(); i++) {
-			// Format in [lon, lat] to conform with GeoJSON.
+			// Format as [lon, lat] to conform with GeoJSON.
 			line[i] = new double[] { nodes.get(i).getLongitude(), nodes.get(i).getLatitude() };
 		}
 		return line;
 	}
+
 }
