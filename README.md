@@ -112,17 +112,26 @@ Available options are:
 		<td>index.create</td><td>Boolean</td><td>true</td><td>(Re)create the main index (delete if exists!) and its mapping prior inserting data</td>
 	</tr>
 	<tr>
-		<td>index.config</td><td>String</td><td>[see below]</td><td>The configuration (settings + mappings) used to create the entity index</td>
+		<td>index.settings.shards</td><td>Integer</td><td>5</td><td>Set the <code>number_of_shards</code> elasticsearch setting of the entity index</td>
+	</tr>
+	<tr>
+		<td>index.settings.replicas</td><td>Integer</td><td>1</td><td>Set the <code>number_of_replicas</code> elasticsearch setting of the entity index</td>
+	</tr>
+	<tr>
+		<td>index.mappings</td><td>String (JSON)</td><td>[see below]</td><td>The mappings used to create the entity index</td>
+	</tr>
+	<tr>
+		<td>index.bulk.size</td><td>Integer</td><td>5000</td><td>The size of the entities batch sent to elasticsearch while creating the entity index</td>
 	</tr>
 	<tr>
 		<td>index.builders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index builder id (see below)</td>
 	</tr>
 	<tr>
-		<td>properties.file</td><td>String</td><td>[empty]</td><td>The absolute path to a properties file containing a (sub)set of valid options</td>
+		<td>properties.file</td><td>String</td><td>[empty]</td><td>The absolute path of a properties file containing a (sub)set of valid parameters</td>
 	</tr>
 </table>
 
-The default plugin configuration can be overridden by providing a properties file (see the `properties.file` option) and/or through the command-line options described above.
+The default plugin configuration can be overridden through command-line parameters above and/or by providing a properties file (see the `properties.file` parameter).
 
 ### 2.3. Specialized index builders
 
