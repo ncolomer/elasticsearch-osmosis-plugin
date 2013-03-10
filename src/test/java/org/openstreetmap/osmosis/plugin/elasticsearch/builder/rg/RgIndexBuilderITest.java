@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.index.rg;
+package org.openstreetmap.osmosis.plugin.elasticsearch.builder.rg;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -21,12 +21,13 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
 import com.spatial4j.core.distance.DistanceUtils;
 import com.spatial4j.core.shape.Point;
@@ -43,11 +44,13 @@ public class RgIndexBuilderITest extends AbstractElasticSearchInMemoryTest {
 
 	@Before
 	public void setUp() throws IOException {
+		IndexAdminService indexAdminService = new IndexAdminService(client());
 		entityDao = new EntityDao(INDEX_NAME, client());
-		indexBuilder = new RgIndexBuilder(client(), entityDao, INDEX_NAME);
-		IndexAdminService indexService = new IndexAdminService(client());
-		indexService.createIndex(INDEX_NAME, new OsmIndexBuilder().getIndexMapping());
-		indexService.createIndex(indexBuilder.getSpecializedIndexName(), indexBuilder.getIndexMapping());
+		Endpoint endpoint = new Endpoint(client(), indexAdminService, entityDao);
+		Parameters params = new Parameters.Builder().loadResource("plugin.properties").build();
+		indexBuilder = new RgIndexBuilder(endpoint, params);
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, params.getProperty(Parameters.INDEX_MAPPINGS));
+		indexAdminService.createIndex(indexBuilder.getSpecializedIndexName(), 1, 0, params.getProperty("rg.mappings"));
 	}
 
 	@Test

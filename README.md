@@ -99,22 +99,39 @@ Available options are:
 		<th>Name</th><th>Type</th><th>Default value</th><th>Description</th>
 	</tr>
 	<tr>
-		<td>hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join. 
-			Valid syntax for a single node is <code>host1</code>, <code>host2:port</code> or <code>host3[portX-portY]</code></td>
+		<td>cluster.hosts</td><td>String</td><td>localhost</td><td>Comma-separated list of nodes to join (one is enough as the cluster will be discovered automatically). 
+			Valid syntax for a single node is <code>host1</code> or <code>host2:port</code></td>
 	</tr>
 	<tr>
-		<td>clusterName</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
+		<td>cluster.name</td><td>String</td><td>elasticsearch</td><td>Name of the elasticsearch cluster to join</td>
 	</tr>
 	<tr>
-		<td>indexName</td><td>String</td><td>osm</td><td>Name of the index that will be filled with data</td>
+		<td>index.name</td><td>String</td><td>osm</td><td>Name of the index that will be filled with data</td>
 	</tr>
 	<tr>
-		<td>createIndex</td><td>Boolean</td><td>true</td><td>(Re)create the main index (delete if exists!) and its mapping prior inserting data</td>
+		<td>index.create</td><td>Boolean</td><td>true</td><td>(Re)create the main index (delete if exists!) and its mapping prior inserting data</td>
 	</tr>
 	<tr>
-		<td>indexBuilders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index builder id (see below)</td>
+		<td>index.settings.shards</td><td>Integer</td><td>5</td><td>Set the <code>number_of_shards</code> elasticsearch setting of the entity index</td>
+	</tr>
+	<tr>
+		<td>index.settings.replicas</td><td>Integer</td><td>1</td><td>Set the <code>number_of_replicas</code> elasticsearch setting of the entity index</td>
+	</tr>
+	<tr>
+		<td>index.mappings</td><td>String (JSON)</td><td>[see below]</td><td>The mappings used to create the entity index</td>
+	</tr>
+	<tr>
+		<td>index.bulk.size</td><td>Integer</td><td>5000</td><td>The size of the entities batch sent to elasticsearch while creating the entity index</td>
+	</tr>
+	<tr>
+		<td>index.builders</td><td>String</td><td>[empty]</td><td>Comma-separated list of specialized index builder id (see below)</td>
+	</tr>
+	<tr>
+		<td>properties.file</td><td>String</td><td>[empty]</td><td>The absolute path of a properties file containing a (sub)set of valid parameters</td>
 	</tr>
 </table>
+
+The default plugin configuration can be overridden through command-line parameters above and/or by providing a properties file (see the `properties.file` parameter).
 
 ### 2.3. Specialized index builders
 
@@ -154,7 +171,7 @@ osmosis \
 
 ## 3. Mapping
 
-OSM data is organized in a relational model composed of [data primitives](https://wiki.openstreetmap.org/wiki/Data_Primitives) - mainly `node`, `way` and `relation` - linked each other by their `osmid`. As relational, this model fits well in a RDBMS (commonly PostgreSQL + Postgis) and is exportable. Even though XML is the official representation, OpenStreetMap also supports other compressed formats such as PBF (Protocol Buffers) or BZ2 (compressed XML). These files can be easily found on the Internet (see [4.1. Get some OSM test data](#41-get-some-osm-test-data)).
+OSM data is organized in a relational model composed of [data primitives](https://wiki.openstreetmap.org/wiki/Data_Primitives) - mainly `node`, `way` and `relation` - linked each other by their `osmid`. As relational, this model fits well in a RDBMS (commonly PostgreSQL + Postgis) and is exportable. Even though XML is the official representation, OpenStreetMap also supports other compressed formats such as PBF (Protocol Buffers) or BZ2 (compressed XML). These files can be easily found on the Internet (see [4.1. Get OSM data](#41-get-some-osm-test-data)).
 
 Osmosis is able to read both XML and PBF formats: it deserializes data into Java objects that can be processed through plugins.
 In our case, the *elasticsearch-osmosis-plugin* will convert these Java objects into their JSON equivalent prior to be inserted into elasticsearch.
@@ -204,7 +221,7 @@ The *elasticsearch-osmosis-plugin* will convert and insert these data into elast
 
 ## 4. Tips box
 
-### 4.1. Get some OSM test data
+### 4.1. Get OSM data
 
 You can get OSM files (planet, extract) from various location. OpenStreetMap have some listed on their dedicated 
 [Planet.osm](http://wiki.openstreetmap.org/wiki/Planet.osm) wiki page.

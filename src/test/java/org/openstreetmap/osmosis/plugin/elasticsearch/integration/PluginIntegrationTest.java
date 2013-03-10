@@ -12,7 +12,7 @@ import org.elasticsearch.action.count.CountRequest;
 import org.junit.Test;
 import org.openstreetmap.osmosis.core.Osmosis;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
 public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 
@@ -25,10 +25,10 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 				"--read-xml",
 				getOsmExtractFile().getPath(),
 				"--write-elasticsearch",
-				"hosts=" + nodeAddress(),
-				"clusterName=" + clusterName(),
-				"indexName=" + INDEX_NAME,
-				"createIndex=true"
+				"cluster.hosts=" + nodeAddress(),
+				"cluster.name=" + clusterName(),
+				"index.name=" + INDEX_NAME,
+				"index.create=true"
 		});
 
 		// Assert
@@ -44,11 +44,11 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 				"--read-xml",
 				getOsmExtractFile().getPath(),
 				"--write-elasticsearch",
-				"hosts=" + nodeAddress(),
-				"clusterName=" + clusterName(),
-				"indexName=" + INDEX_NAME,
-				"createIndex=true",
-				"indexBuilders=rg"
+				"cluster.hosts=" + nodeAddress(),
+				"cluster.name=" + clusterName(),
+				"index.name=" + INDEX_NAME,
+				"index.create=true",
+				"index.builders=rg"
 		});
 
 		// Assert

@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.openstreetmap.osmosis</groupId>
 	<artifactId>elasticsearch-osmosis-plugin</artifactId>
@@ -20,13 +21,13 @@
 		<!-- Libraries -->
 		<osmosis.version>0.42</osmosis.version>
 		<elasticsearch.version>0.20.5</elasticsearch.version>
-		<!-- Test -->
+		<!-- Testing -->
 		<commons-io.version>2.1</commons-io.version>
 		<mockito.version>1.9.0</mockito.version>
 		<junit.version>4.10</junit.version>
-		<!-- Log -->
-		<slf4j-bridge.version>1.6.4</slf4j-bridge.version>
-		<logback.version>1.0.3</logback.version>
+		<!-- Logging -->
+		<logback.version>1.0.9</logback.version>
+		<slf4j.version>1.7.2</slf4j.version>
 		<!-- Maven plugins -->
 		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
 		<maven-assembly-plugin.version>2.3</maven-assembly-plugin.version>
@@ -65,7 +66,7 @@
 			<version>${osmosis.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>net.sf.jpf</groupId>
 			<artifactId>jpf</artifactId>
@@ -96,7 +97,7 @@
 			<version>2.9.1</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<!-- Elasticsearch -->
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
@@ -112,9 +113,15 @@
 			<groupId>com.vividsolutions</groupId>
 			<artifactId>jts</artifactId>
 			<version>1.12</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>xercesImpl</artifactId>
+					<groupId>xerces</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
-		<!-- Test -->
+		<!-- Testing -->
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -133,18 +140,12 @@
 			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
-		<!-- Log -->
+
+		<!-- Logging (test only) -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>${logback.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-			<version>${slf4j-bridge.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -1,22 +1,21 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import junit.framework.Assert;
 
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
 public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 
-	IndexAdminService indexAdminService;
+	private static final String INDEX_NAME = "osm-test";
+
+	private IndexAdminService indexAdminService;
 
 	@Before
 	public void setUp() {
@@ -24,46 +23,47 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 	}
 
 	@Test
-	public void createIndex() {
-		// Setup
-		String indexName = "my_index";
-		Map<String, XContentBuilder> mapping = getDummyMapping();
-
+	public void createIndex() throws IOException {
 		// Action
-		indexAdminService.createIndex(indexName, mapping);
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, "{}");
 
 		// Assert
-		Assert.assertTrue(client().admin().indices().prepareExists(indexName)
-				.execute().actionGet().exists());
+		Assert.assertTrue(exists(INDEX_NAME));
 	}
 
 	@Test
 	public void createIndex_withExistingIndex_shouldDelete() {
 		// Setup
-		String indexName = "my_index";
-		client().admin().indices().prepareCreate(indexName).execute().actionGet();
-		client().admin().indices().refresh(Requests.refreshRequest()).actionGet();
-		Map<String, XContentBuilder> mapping = getDummyMapping();
+		client().admin().indices().prepareCreate(INDEX_NAME).execute().actionGet();
+		refresh(INDEX_NAME);
+		Assume.assumeTrue(exists(INDEX_NAME));
 
 		// Action
-		indexAdminService.createIndex(indexName, mapping);
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, "{}");
 
 		// Assert
-		Assert.assertTrue(client().admin().indices().prepareExists(indexName)
-				.execute().actionGet().exists());
+		Assert.assertTrue(exists(INDEX_NAME));
 	}
 
-	private Map<String, XContentBuilder> getDummyMapping() {
-		try {
-			Map<String, XContentBuilder> mapping = new HashMap<String, XContentBuilder>();
-			XContentBuilder xContentBuilder = jsonBuilder()
-					.startObject().startObject("my_type").startObject("properties")
-					.endObject().endObject().endObject();
-			mapping.put("my_type", xContentBuilder);
-			return mapping;
-		} catch (IOException e) {
-			throw new IllegalStateException("Unable to create mapping", e);
-		}
+	@Test
+	public void createIndex_withSettingsAndMappings() throws IOException {
+		// Setup
+		String mapping = getDummyMapping();
+
+		// Action
+		indexAdminService.createIndex(INDEX_NAME, 1, 1, mapping);
+
+		// Assert
+		ClusterState state = client().admin().cluster().prepareState().execute().actionGet().state();
+		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfShards());
+		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfReplicas());
+		Assert.assertEquals("{\"my_type\":{\"properties\":{}}}", state.getMetaData().index(INDEX_NAME).mapping("my_type").source().string());
+	}
+
+	private String getDummyMapping() throws IOException {
+		return XContentFactory.jsonBuilder()
+				.startObject().startObject("my_type").startObject("properties")
+				.endObject().endObject().endObject().string();
 	}
 
 }
