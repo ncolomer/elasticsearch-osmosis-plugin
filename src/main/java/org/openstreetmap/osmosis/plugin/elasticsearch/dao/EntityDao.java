@@ -93,6 +93,7 @@ public class EntityDao {
 						entity, exception.getMessage()));
 			}
 		}
+		if (bulkRequest.numberOfActions() == 0) return;
 		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 		if (!bulkResponse.hasFailures()) return;
 		for (BulkItemResponse response : bulkResponse.items()) {

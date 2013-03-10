@@ -135,6 +135,7 @@ public class EntityDaoUTest {
 		doReturn(indexRequestBuilderMocked1).when(entityDao).buildIndexRequest(node);
 		IndexRequestBuilder indexRequestBuilderMocked2 = mock(IndexRequestBuilder.class);
 		doReturn(indexRequestBuilderMocked2).when(entityDao).buildIndexRequest(way);
+		when(bulkRequestBuilderMocked.numberOfActions()).thenReturn(2);
 
 		ListenableActionFuture<BulkResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
 		when(bulkRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
@@ -170,6 +171,7 @@ public class EntityDaoUTest {
 		IndexRequestBuilder indexRequestBuilderMocked1 = mock(IndexRequestBuilder.class);
 		doReturn(indexRequestBuilderMocked1).when(entityDao).buildIndexRequest(node);
 		doThrow(new IOException("Simulated Exception")).when(entityDao).buildIndexRequest(way);
+		when(bulkRequestBuilderMocked.numberOfActions()).thenReturn(1);
 
 		ListenableActionFuture<BulkResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
 		when(bulkRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
@@ -186,7 +188,36 @@ public class EntityDaoUTest {
 		verify(bulkRequestBuilderMocked, times(1)).add(indexRequestBuilderMocked1);
 		verify(bulkRequestBuilderMocked, times(1)).execute();
 		verify(listenableActionFutureMocked, times(1)).actionGet();
+	}
 
+	@Test
+	public void saveAllEntities_withAllFailed() throws Exception {
+		// Setup
+		Node node = OsmDataBuilder.buildSampleNode();
+		Way way = OsmDataBuilder.buildSampleWay();
+		List<Entity> entities = new ArrayList<Entity>();
+		entities.add(node);
+		entities.add(way);
+
+		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
+		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
+
+		doThrow(new IOException("Simulated Exception")).when(entityDao).buildIndexRequest(node);
+		doThrow(new IOException("Simulated Exception")).when(entityDao).buildIndexRequest(way);
+
+		ListenableActionFuture<BulkResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		when(bulkRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		BulkResponse bulkResponseMocked = mock(BulkResponse.class);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(bulkResponseMocked);
+		when(bulkResponseMocked.hasFailures()).thenReturn(false);
+
+		// Action
+		entityDao.saveAll(entities);
+
+		// Assert
+		verify(entityDao, times(1)).buildIndexRequest(node);
+		verify(entityDao, times(1)).buildIndexRequest(way);
+		verify(bulkRequestBuilderMocked, never()).execute();
 	}
 
 	@Test
