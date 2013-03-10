@@ -1,13 +1,11 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.index.rg;
+package org.openstreetmap.osmosis.plugin.elasticsearch.builder.rg;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.FilterBuilders.existsFilter;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -16,23 +14,21 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
+import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.AbstractIndexBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
 public class RgIndexBuilder extends AbstractIndexBuilder {
 
 	private static final Logger LOG = Logger.getLogger(RgIndexBuilder.class.getName());
 
-	private static final int SCROLL_TIMEOUT = 60000;
-	private static final int BULK_SIZE = 100;
-
-	public RgIndexBuilder(Client client, EntityDao entityDao, String indexName) {
-		super(client, entityDao, indexName);
+	public RgIndexBuilder(Endpoint endpoint, Parameters params) {
+		super(endpoint, params);
 	}
 
 	@Override
@@ -41,26 +37,13 @@ public class RgIndexBuilder extends AbstractIndexBuilder {
 	}
 
 	@Override
-	public Map<String, XContentBuilder> getIndexMapping() {
-		try {
-			Map<String, XContentBuilder> mapping = new HashMap<String, XContentBuilder>();
-			XContentBuilder xContentBuilder = jsonBuilder()
-					.startObject()
-					.startObject("way").startObject("properties")
-					.startObject("line").field("type", "geo_shape").endObject()
-					.endObject().endObject()
-					.endObject();
-			mapping.put("way", xContentBuilder);
-			return mapping;
-		} catch (IOException e) {
-			throw new IllegalStateException("Unable to create mapping", e);
-		}
-	}
-
-	@Override
 	public void buildIndex() {
+
+		int bulkSize = Integer.valueOf(getParameters().getProperty(getSpecializedIndexSuffix() + ".bulk.size"));
+		int scrollTimeout = 60000;
+
 		SearchResponse scrollResp = getClient().prepareSearch(getEntityIndexName())
-				.setSearchType(SearchType.SCAN).setScroll(new TimeValue(SCROLL_TIMEOUT)).setSize(BULK_SIZE)
+				.setSearchType(SearchType.SCAN).setScroll(new TimeValue(scrollTimeout)).setSize(bulkSize)
 				.setTypes(EntityDao.WAY)
 				.setQuery(matchAllQuery())
 				.setFilter(existsFilter("highway"))
@@ -70,7 +53,7 @@ public class RgIndexBuilder extends AbstractIndexBuilder {
 		while (true) {
 			BulkRequestBuilder bulkRequest = getClient().prepareBulk();
 			scrollResp = getClient().prepareSearchScroll(scrollResp.getScrollId())
-					.setScroll(new TimeValue(SCROLL_TIMEOUT))
+					.setScroll(new TimeValue(scrollTimeout))
 					.execute().actionGet();
 			if (scrollResp.hits().hits().length == 0) break;
 			for (SearchHit way : scrollResp.hits()) {

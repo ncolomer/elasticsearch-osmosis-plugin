@@ -1,28 +1,34 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 
-import java.util.Map;
-
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 
 public class IndexAdminService {
 
-	protected final Client client;
+	private final Client client;
 
 	public IndexAdminService(Client client) {
 		this.client = client;
 	}
 
-	public void createIndex(String indexName, Map<String, XContentBuilder> map) {
-		// Delete previous existing index
-		if (indexExists(indexName)) deleteIndex(indexName);
-		// Create the new index
-		CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(indexName);
-		for (String key : map.keySet())
-			builder.addMapping(key, map.get(key));
-		builder.execute().actionGet();
+	public void createIndex(String name, int shards, int replicas, String mappings) {
+		try {
+			// Delete previous existing index
+			if (indexExists(name)) deleteIndex(name);
+			// Build index configuration
+			String configuration = XContentFactory.jsonBuilder().startObject()
+					.startObject("settings").field("number_of_shards", shards)
+					.field("number_of_replicas", replicas).endObject()
+					.rawField("mappings", mappings.getBytes())
+					.endObject().string();
+			// Create the new index
+			client.admin().indices().prepareCreate(name)
+					.setSource(configuration)
+					.execute().actionGet();
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to create index " + name, e);
+		}
 	}
 
 	public boolean indexExists(String... indices) {
@@ -50,11 +56,8 @@ public class IndexAdminService {
 	}
 
 	public void refresh(String... indices) {
-		client.admin().indices().refresh(Requests.refreshRequest(indices)).actionGet();
-	}
-
-	public Client getClient() {
-		return client;
+		client.admin().indices().prepareRefresh(indices)
+				.execute().actionGet();
 	}
 
 }

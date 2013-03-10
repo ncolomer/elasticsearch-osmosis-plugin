@@ -10,15 +10,16 @@ import junit.framework.Assert;
 import org.elasticsearch.action.get.GetResponse;
 import org.junit.Before;
 import org.junit.Test;
+import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.index.osm.OsmIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AbstractElasticSearchInMemoryTest;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.AssertUtils;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AssertUtils;
+import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
 public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
@@ -28,9 +29,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 	@Before
 	public void setUp() throws IOException {
-		IndexAdminService indexService = new IndexAdminService(client());
-		indexService.createIndex(INDEX_NAME, new OsmIndexBuilder().getIndexMapping());
 		entityDao = new EntityDao(INDEX_NAME, client());
+		Parameters params = new Parameters.Builder().loadResource("plugin.properties").build();
+		IndexAdminService indexAdminService = new IndexAdminService(client());
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, params.getProperty(Parameters.INDEX_MAPPINGS));
 	}
 
 	/* save */
@@ -69,6 +71,30 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertEquals(expected, actual);
 	}
 
+	@Test
+	public void saveAll() throws InterruptedException {
+		// Setup
+		Node node = OsmDataBuilder.buildSampleNode();
+		Way way = OsmDataBuilder.buildSampleWay();
+
+		// Action
+		entityDao.saveAll(Arrays.asList(new Entity[] { node, way }));
+		refresh(INDEX_NAME);
+
+		// Assert
+		GetResponse response1 = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
+		Assert.assertTrue(response1.exists());
+		String expected1 = "{\"location\":[2.0,1.0],\"tags\":{\"highway\":\"traffic_signals\"}}";
+		String actual1 = response1.getSourceAsString();
+		Assert.assertEquals(expected1, actual1);
+
+		GetResponse response2 = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
+		Assert.assertTrue(response2.exists());
+		String expected2 = "{\"tags\":{\"highway\":\"residential\"},\"nodes\":[1]}";
+		String actual2 = response2.getSourceAsString();
+		Assert.assertEquals(expected2, actual2);
+	}
+
 	/* find */
 
 	@Test
@@ -76,12 +102,12 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Node expected = OsmDataBuilder.buildSampleNode();
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(expected))
+				.setSource(new EntityMapper().marshall(expected))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		Node actual = entityDao.find(1l, Node.class);
+		Node actual = entityDao.find(Node.class, 1l);
 
 		// Assert
 		AssertUtils.assertEquals(expected, actual);
@@ -92,12 +118,12 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Node node = OsmDataBuilder.buildSampleNode();
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(node))
+				.setSource(new EntityMapper().marshall(node))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		Node actual = entityDao.find(2l, Node.class);
+		Node actual = entityDao.find(Node.class, 2l);
 
 		// Assert
 		Assert.assertNull(actual);
@@ -108,12 +134,12 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Way way = OsmDataBuilder.buildSampleWay();
 		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshallWay(way))
+				.setSource(new EntityMapper().marshall(way))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		Way actual = entityDao.find(1l, Way.class);
+		Way actual = entityDao.find(Way.class, 1l);
 
 		// Assert
 		Assert.assertEquals(1l, actual.getId());
@@ -129,12 +155,12 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Way way = OsmDataBuilder.buildSampleWay();
 		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshallWay(way))
+				.setSource(new EntityMapper().marshall(way))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		Way actual = entityDao.find(2l, Way.class);
+		Way actual = entityDao.find(Way.class, 2l);
 
 		// Assert
 		Assert.assertNull(actual);
@@ -157,7 +183,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 			expected.add(node);
 			ids[i] = i;
 			client().prepareIndex(INDEX_NAME, "node", String.valueOf(i))
-					.setSource(new EntityMapper().marshallNode(node))
+					.setSource(new EntityMapper().marshall(node))
 					.execute().actionGet();
 		}
 		refresh(INDEX_NAME);
@@ -179,10 +205,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		List<Node> expected = Arrays.asList(new Node[] { node1, node2 });
 
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(node1))
+				.setSource(new EntityMapper().marshall(node1))
 				.execute().actionGet();
 		client().prepareIndex(INDEX_NAME, "node", "2")
-				.setSource(new EntityMapper().marshallNode(node2))
+				.setSource(new EntityMapper().marshall(node2))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
@@ -203,10 +229,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		List<Node> expected = Arrays.asList(new Node[] { node2 });
 
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(node1))
+				.setSource(new EntityMapper().marshall(node1))
 				.execute().actionGet();
 		client().prepareIndex(INDEX_NAME, "node", "2")
-				.setSource(new EntityMapper().marshallNode(node2))
+				.setSource(new EntityMapper().marshall(node2))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
@@ -227,10 +253,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		List<Node> expected = Arrays.asList(new Node[] { node2, node1 });
 
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(node1))
+				.setSource(new EntityMapper().marshall(node1))
 				.execute().actionGet();
 		client().prepareIndex(INDEX_NAME, "node", "2")
-				.setSource(new EntityMapper().marshallNode(node2))
+				.setSource(new EntityMapper().marshall(node2))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
@@ -251,10 +277,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		List<Way> expected = Arrays.asList(new Way[] { way1, way2 });
 
 		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshallWay(way1))
+				.setSource(new EntityMapper().marshall(way1))
 				.execute().actionGet();
 		client().prepareIndex(INDEX_NAME, "way", "2")
-				.setSource(new EntityMapper().marshallWay(way2))
+				.setSource(new EntityMapper().marshall(way2))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
@@ -275,10 +301,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		List<Way> expected = Arrays.asList(new Way[] { way2 });
 
 		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshallWay(way1))
+				.setSource(new EntityMapper().marshall(way1))
 				.execute().actionGet();
 		client().prepareIndex(INDEX_NAME, "way", "2")
-				.setSource(new EntityMapper().marshallWay(way2))
+				.setSource(new EntityMapper().marshall(way2))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
@@ -299,10 +325,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		List<Way> expected = Arrays.asList(new Way[] { way2, way1 });
 
 		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshallWay(way1))
+				.setSource(new EntityMapper().marshall(way1))
 				.execute().actionGet();
 		client().prepareIndex(INDEX_NAME, "way", "2")
-				.setSource(new EntityMapper().marshallWay(way2))
+				.setSource(new EntityMapper().marshall(way2))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
@@ -320,15 +346,15 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Node node = OsmDataBuilder.buildSampleNode();
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(node))
+				.setSource(new EntityMapper().marshall(node))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(1l, Node.class);
+		boolean actual = entityDao.delete(Node.class, 1l);
 
 		// Assert
-		Assert.assertEquals(true, actual);
+		Assert.assertTrue(actual);
 	}
 
 	@Test
@@ -336,15 +362,15 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Node node = OsmDataBuilder.buildSampleNode();
 		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshallNode(node))
+				.setSource(new EntityMapper().marshall(node))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(2l, Node.class);
+		boolean actual = entityDao.delete(Node.class, 2l);
 
 		// Assert
-		Assert.assertEquals(false, actual);
+		Assert.assertFalse(actual);
 	}
 
 	@Test
@@ -352,15 +378,15 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Way way = OsmDataBuilder.buildSampleWay();
 		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshallWay(way))
+				.setSource(new EntityMapper().marshall(way))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(1l, Way.class);
+		boolean actual = entityDao.delete(Way.class, 1l);
 
 		// Assert
-		Assert.assertEquals(true, actual);
+		Assert.assertTrue(actual);
 	}
 
 	@Test
@@ -368,15 +394,15 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Setup
 		Way way = OsmDataBuilder.buildSampleWay();
 		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshallWay(way))
+				.setSource(new EntityMapper().marshall(way))
 				.execute().actionGet();
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(2l, Way.class);
+		boolean actual = entityDao.delete(Way.class, 2l);
 
 		// Assert
-		Assert.assertEquals(false, actual);
+		Assert.assertFalse(actual);
 	}
 
 }
