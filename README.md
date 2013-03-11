@@ -22,7 +22,7 @@ This feeling remains to be demonstrated but first benchs makes me quite confiden
 
 Here are the plugin's features:
 * Create a general purpose index from OpenStreetMap data [core elements](http://wiki.openstreetmap.org/wiki/Elements) benefiting Osmosis [filtering capabilities](http://wiki.openstreetmap.org/wiki/Osmosis/Detailed_Usage)
-* Create specialized indexes such as Reverse-Geocoding index (i.e. retrieve ways from a location) or Bounds index (i.e. retrieve the city/region/country from a location - still working on)
+* Create specialized indexes such as highway index (i.e. retrieve ways from a location) or boundary index (i.e. retrieve the city/region/country from a location - work in progress)
 
 ### Want to contribute? Things that would be great...
 
