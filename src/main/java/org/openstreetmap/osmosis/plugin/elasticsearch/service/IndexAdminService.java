@@ -42,6 +42,12 @@ public class IndexAdminService {
 				.execute().actionGet();
 	}
 
+	public void index(String index, String type, long id, String source) {
+		client.prepareIndex(index, type, Long.toString(id))
+				.setSource(source)
+				.execute().actionGet();
+	}
+
 	public void deleteIndex(String... indices) {
 		client.admin().indices().prepareDelete(indices)
 				.execute().actionGet();
