@@ -32,6 +32,10 @@ public abstract class ESEntity {
 		return id;
 	}
 
+	public String getIdString() {
+		return Long.toString(id);
+	}
+
 	public Map<String, String> getTags() {
 		return tags;
 	}

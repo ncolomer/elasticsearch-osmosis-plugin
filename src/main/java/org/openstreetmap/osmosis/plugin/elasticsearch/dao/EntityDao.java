@@ -1,16 +1,12 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest.Item;
@@ -20,30 +16,26 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
-import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
+import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntity;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESWay;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
 
 public class EntityDao {
 
 	private static final Logger LOG = Logger.getLogger(EntityDao.class.getName());
 
-	public static final String NODE = "node";
-	public static final String WAY = "way";
-
 	private final String indexName;
 	private final Client client;
-	private final EntityMapper entityMapper;
 
 	public EntityDao(String indexName, Client client) {
-		this(indexName, client, new EntityMapper());
-	}
-
-	public EntityDao(String indexName, Client client, EntityMapper entityMapper) {
 		this.indexName = indexName;
 		this.client = client;
-		this.entityMapper = entityMapper;
 	}
 
 	/**
@@ -89,8 +81,8 @@ public class EntityDao {
 			try {
 				bulkRequest.add(buildIndexRequest(entity));
 			} catch (Exception exception) {
-				LOG.warning(String.format("Unable to add Entity [%s] to bulk request, cause: %s",
-						entity, exception.getMessage()));
+				LOG.warning(String.format("Unable to add Entity %s to bulk request, cause: %s",
+						entity.getId(), exception.getMessage()));
 			}
 		}
 		if (bulkRequest.numberOfActions() == 0) return;
@@ -98,19 +90,23 @@ public class EntityDao {
 		if (!bulkResponse.hasFailures()) return;
 		for (BulkItemResponse response : bulkResponse.items()) {
 			if (!response.failed()) continue;
-			LOG.warning(String.format("Unable to index Entity [index=%s, type=%s, id=%s], cause: %s",
-					response.index(), response.type(), response.id(), response.failureMessage()));
+			LOG.warning(String.format("Unable to save Entity %s in %s/%s, cause: %s",
+					response.id(), response.index(), response.type(), response.failureMessage()));
 		}
 	}
 
-	protected IndexRequestBuilder buildIndexRequest(Entity entity) throws IOException {
+	protected IndexRequestBuilder buildIndexRequest(Entity entity) {
 		switch (entity.getType()) {
 		case Node:
-			return client.prepareIndex(indexName, EntityDao.NODE, Long.toString(entity.getId()))
-					.setSource(entityMapper.marshall(entity));
+			ESNode esNode = ESNode.Builder.buildFromEntity((Node) entity);
+			return client.prepareIndex(indexName, esNode.getType().getIndiceName(), esNode.getIdString())
+					.setSource(esNode.toJson());
 		case Way:
-			return client.prepareIndex(indexName, EntityDao.WAY, Long.toString(entity.getId()))
-					.setSource(entityMapper.marshall(entity));
+			Way way = (Way) entity;
+			List<ESNode> nodes = findAll(ESNode.class, getNodeIds(way.getWayNodes()));
+			ESWay esWay = ESWay.Builder.buildFromEntity(way, getLocationArrayBuilder(nodes));
+			return client.prepareIndex(indexName, esWay.getType().getIndiceName(), esWay.getIdString())
+					.setSource(esWay.toJson());
 		case Relation:
 			throw new UnsupportedOperationException("Save Relation is not yet supported");
 		case Bound:
@@ -118,6 +114,22 @@ public class EntityDao {
 		default:
 			throw new IllegalArgumentException("Unknown EntityType for entity: " + entity);
 		}
+	}
+
+	protected LocationArrayBuilder getLocationArrayBuilder(List<ESNode> nodes) {
+		LocationArrayBuilder builder = new LocationArrayBuilder(nodes.size());
+		for (ESNode esNode : nodes) {
+			builder.addLocation(esNode.getLatitude(), esNode.getLongitude());
+		}
+		return builder;
+	}
+
+	protected long[] getNodeIds(List<WayNode> list) {
+		long[] nodeIds = new long[list.size()];
+		for (int i = 0; i < list.size(); i++) {
+			nodeIds[i] = list.get(i).getNodeId();
+		}
+		return nodeIds;
 	}
 
 	/**
@@ -138,17 +150,19 @@ public class EntityDao {
 	 * @throws DaoException
 	 *             if something was wrong during the elasticsearch request
 	 */
-	@SuppressWarnings("unchecked")
-	public <T extends Entity> T find(Class<T> entityClass, long osmId) {
-		EntityType type = entityClassToType(entityClass);
+	public <T extends ESEntity> T find(Class<T> entityClass, long osmId) {
 		try {
+			ESEntityType type = ESEntityType.valueOf(entityClass);
 			Item item = buildGetItemRequest(type, osmId);
 			GetResponse response = client.prepareGet(item.index(), item.type(), item.id())
 					.setFields(item.fields())
 					.execute().actionGet();
-			return response.exists() ? (T) entityMapper.unmarshall(type, response) : null;
+			return response.exists() ? (T) buildFromGetReponse(entityClass, response) : null;
 		} catch (Exception e) {
-			throw new DaoException("Unable to find " + type + " with id " + osmId, e);
+			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
+			String message = String.format("Unable to find Entity %s in %s/%s",
+					osmId, indexName, indiceName);
+			throw new DaoException(message, e);
 		}
 	}
 
@@ -176,11 +190,10 @@ public class EntityDao {
 	 * @throws DaoException
 	 *             if something was wrong during the elasticsearch request
 	 */
-	@SuppressWarnings("unchecked")
-	public <T extends Entity> List<T> findAll(Class<T> entityClass, long... osmIds) {
-		EntityType type = entityClassToType(entityClass);
+	public <T extends ESEntity> List<T> findAll(Class<T> entityClass, long... osmIds) {
 		try {
 			// Build request
+			ESEntityType type = ESEntityType.valueOf(entityClass);
 			MultiGetRequestBuilder request = client.prepareMultiGet();
 			for (long osmId : osmIds) {
 				request.add(buildGetItemRequest(type, osmId));
@@ -189,24 +202,28 @@ public class EntityDao {
 			MultiGetResponse responses = request.execute().actionGet();
 			List<T> entities = new ArrayList<T>();
 			for (MultiGetItemResponse item : responses) {
-				if (item.failed()) throw new ElasticSearchException(item.failure().message());
-				entities.add((T) entityMapper.unmarshall(type, item.response()));
+				GetResponse response = item.getResponse();
+				if (!response.exists()) throw new DaoException(String.format(
+						"Entity %s does not exist in %s/%s", response.getId(),
+						response.getIndex(), response.getType()));
+				entities.add((T) buildFromGetReponse(entityClass, response));
 			}
 			return entities;
 		} catch (Exception e) {
-			throw new DaoException("Unable to findAll " + type + " with ids " + Arrays.toString(osmIds), e);
+			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
+			throw new DaoException("Unable to find all " + indiceName + " entities", e);
 		}
 	}
 
-	protected Item buildGetItemRequest(EntityType type, long osmId) {
+	protected Item buildGetItemRequest(ESEntityType type, long osmId) {
 		switch (type) {
-		case Node:
-			return new Item(indexName, EntityDao.NODE, String.valueOf(osmId)).fields("location", "tags");
-		case Way:
-			return new Item(indexName, EntityDao.WAY, String.valueOf(osmId)).fields("tags", "nodes");
-		case Relation:
+		case NODE:
+			return new Item(indexName, ESEntityType.NODE.getIndiceName(), String.valueOf(osmId)).fields("shape", "tags");
+		case WAY:
+			return new Item(indexName, ESEntityType.WAY.getIndiceName(), String.valueOf(osmId)).fields("shape", "tags");
+		case RELATION:
 			throw new UnsupportedOperationException("Get Relation is not yet supported");
-		case Bound:
+		case BOUND:
 			throw new UnsupportedOperationException("Get Bound is not yet supported");
 		default:
 			throw new IllegalArgumentException("Unknown EntityType " + type);
@@ -232,36 +249,24 @@ public class EntityDao {
 	 * @throws DaoException
 	 *             if something was wrong during the elasticsearch request
 	 */
-	public <T extends Entity> boolean delete(Class<T> entityClass, long osmId) {
-		EntityType type = entityClassToType(entityClass);
+	public <T extends ESEntity> boolean delete(Class<T> entityClass, long osmId) {
 		try {
-			return !buildDeleteRequest(type, osmId).execute().actionGet().notFound();
+			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
+			return !client.prepareDelete(indexName, indiceName, Long.toString(osmId))
+					.execute().actionGet().notFound();
 		} catch (Exception e) {
-			throw new DaoException("Unable to delete " + type + " with id " + osmId, e);
+			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
+			String message = String.format("Unable to delete entity %s in %s/%s",
+					osmId, indexName, indiceName);
+			throw new DaoException(message, e);
 		}
 	}
 
-	protected DeleteRequestBuilder buildDeleteRequest(EntityType type, long osmId) {
-		switch (type) {
-		case Node:
-			return client.prepareDelete(indexName, EntityDao.NODE, Long.toString(osmId));
-		case Way:
-			return client.prepareDelete(indexName, EntityDao.WAY, Long.toString(osmId));
-		case Relation:
-			throw new UnsupportedOperationException("Delete Relation is not yet supported");
-		case Bound:
-			throw new UnsupportedOperationException("Delete Bound is not yet supported");
-		default:
-			throw new IllegalArgumentException("Unknown EntityType " + type);
-		}
-	}
-
-	protected EntityType entityClassToType(Class<? extends Entity> entityClass) {
+	@SuppressWarnings("unchecked")
+	protected <T extends ESEntity> T buildFromGetReponse(Class<T> entityClass, GetResponse response) {
 		if (entityClass == null) throw new IllegalArgumentException("Provided Entity class is null");
-		else if (entityClass.equals(Node.class)) return EntityType.Node;
-		else if (entityClass.equals(Way.class)) return EntityType.Way;
-		else if (entityClass.equals(Relation.class)) return EntityType.Relation;
-		else if (entityClass.equals(Bound.class)) return EntityType.Bound;
+		else if (entityClass.equals(ESNode.class)) return (T) ESNode.Builder.buildFromGetReponse(response);
+		else if (entityClass.equals(ESWay.class)) return (T) ESWay.Builder.buildFromGetReponse(response);
 		else throw new IllegalArgumentException(entityClass.getSimpleName() + " is not a known Entity");
 	}
 

@@ -37,7 +37,7 @@
 		<maven-install-plugin.version>2.3.1</maven-install-plugin.version>
 		<maven-release-plugin.version>2.3.2</maven-release-plugin.version>
 		<maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
-		<downloads-maven-plugin.version>0.6</downloads-maven-plugin.version>
+		<github-downloads-plugin.version>0.6</github-downloads-plugin.version>
 	</properties>
 
 	<repositories>
@@ -98,7 +98,7 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Elasticsearch -->
+		<!-- elasticsearch -->
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
@@ -213,7 +213,7 @@
 				<!-- https://github.com/github/maven-plugins/ -->
 				<groupId>com.github.github</groupId>
 				<artifactId>downloads-maven-plugin</artifactId>
-				<version>${downloads-maven-plugin.version}</version>
+				<version>${github-downloads-plugin.version}</version>
 				<configuration>
 					<description>${project.version} release of ${project.name}</description>
 					<override>true</override>

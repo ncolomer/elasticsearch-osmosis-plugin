@@ -11,7 +11,6 @@ import java.util.Map;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
 
 public class ESWay extends ESEntity {
@@ -81,9 +80,10 @@ public class ESWay extends ESEntity {
 
 	@Override
 	public String toJson() {
+		XContentBuilder builder = null;
 		try {
 			boolean isClosed = isClosed();
-			XContentBuilder builder = jsonBuilder();
+			builder = jsonBuilder();
 			builder.startObject();
 			builder.startObject("shape");
 			builder.field("type", isClosed ? "polygon" : "linestring");
@@ -100,6 +100,8 @@ public class ESWay extends ESEntity {
 			return builder.string();
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to serialize Way to Json", e);
+		} finally {
+			if (builder != null) builder.close();
 		}
 	}
 
@@ -117,18 +119,19 @@ public class ESWay extends ESEntity {
 
 		@SuppressWarnings("unchecked")
 		public static ESWay buildFromGetReponse(GetResponse response) {
-			if (!response.getType().equals(EntityDao.WAY)) throw new IllegalArgumentException("Provided GetResponse is not a Way");
+			if (!response.getType().equals(ESEntityType.WAY.getIndiceName())) throw new IllegalArgumentException("Provided GetResponse is not a Way");
 			Builder builder = new Builder();
 			builder.id = Long.valueOf(response.getId());
 			builder.tags = (Map<String, String>) response.field("tags").getValue();
-			List<List<Double>> locations = (List<List<Double>>) response.field("shape.coordinates").getValue();
-			for (List<Double> location : locations) {
+			Map<String, Object> shape = (Map<String, Object>) response.field("shape").getValue();
+			List<List<List<Double>>> locations = (List<List<List<Double>>>) shape.get("coordinates");
+			for (List<Double> location : locations.get(0)) {
 				builder.addLocation(location.get(1), location.get(0));
 			}
 			return builder.build();
 		}
 
-		public static ESWay buildFromWayEntity(Way way, LocationArrayBuilder locationArrayBuilder) {
+		public static ESWay buildFromEntity(Way way, LocationArrayBuilder locationArrayBuilder) {
 			return new ESWay(way, locationArrayBuilder);
 		}
 

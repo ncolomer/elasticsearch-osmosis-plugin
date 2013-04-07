@@ -6,6 +6,7 @@ bin/
 target/
 data/
 test-output/
+benchmark/
 
 release.properties
 pom.xml.releaseBackup

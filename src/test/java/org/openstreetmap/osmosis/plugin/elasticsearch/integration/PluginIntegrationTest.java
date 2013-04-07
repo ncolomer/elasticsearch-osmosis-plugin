@@ -11,7 +11,7 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsReques
 import org.elasticsearch.action.count.CountRequest;
 import org.junit.Test;
 import org.openstreetmap.osmosis.core.Osmosis;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
 public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
@@ -33,28 +33,8 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().exists());
-		assertEquals(7738, client().count(new CountRequest(INDEX_NAME).types(EntityDao.NODE)).actionGet().count());
-		assertEquals(225, client().count(new CountRequest(INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
-	}
-
-	@Test
-	public void countHighwayIndexedDocuments() throws Exception {
-		// Action
-		Osmosis.run(new String[] {
-				"--read-xml",
-				getOsmExtractFile().getPath(),
-				"--write-elasticsearch",
-				"cluster.hosts=" + nodeAddress(),
-				"cluster.name=" + clusterName(),
-				"index.name=" + INDEX_NAME,
-				"index.create=true",
-				"index.builders=highway"
-		});
-
-		// Assert
-		String HIGHWAY_INDEX_NAME = INDEX_NAME + "-highway";
-		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(HIGHWAY_INDEX_NAME)).actionGet().exists());
-		assertEquals(57, client().count(new CountRequest(HIGHWAY_INDEX_NAME).types(EntityDao.WAY)).actionGet().count());
+		assertEquals(7738, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.NODE.getIndiceName())).actionGet().count());
+		assertEquals(225, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.WAY.getIndiceName())).actionGet().count());
 	}
 
 	private File getOsmExtractFile() throws URISyntaxException {

@@ -16,7 +16,6 @@ import org.mockito.Mockito;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
 
 public class ESWayUTest {
@@ -42,7 +41,7 @@ public class ESWayUTest {
 				.addTag("highway", "primary").build();
 
 		// Action
-		ESWay actual = ESWay.Builder.buildFromWayEntity(way, builder);
+		ESWay actual = ESWay.Builder.buildFromEntity(way, builder);
 
 		// Assert
 		assertEquals(expected, actual);
@@ -65,22 +64,27 @@ public class ESWayUTest {
 		builder.addLocation(11.0, 12.0);
 
 		// Action
-		ESWay.Builder.buildFromWayEntity(way, builder);
+		ESWay.Builder.buildFromEntity(way, builder);
 	}
 
 	@Test
 	public void buildFromGetReponse() {
 		// Setup
 		GetResponse response = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response.getType()).thenReturn(EntityDao.WAY);
+		when(response.getType()).thenReturn(ESEntityType.WAY.getIndiceName());
 		when(response.getId()).thenReturn("1");
 		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("highway", "primary");
 		when(response.field("tags").getValue()).thenReturn(tags);
-		List<List<Double>> locations = new ArrayList<List<Double>>();
-		locations.add(Arrays.asList(new Double[] { 12.0, 11.0 }));
-		locations.add(Arrays.asList(new Double[] { 22.0, 21.0 }));
-		when(response.field("shape.coordinates").getValue()).thenReturn(locations);
+		List<List<List<Double>>> locations = new ArrayList<List<List<Double>>>();
+		ArrayList<List<Double>> subLocations = new ArrayList<List<Double>>();
+		subLocations.add(Arrays.asList(new Double[] { 12.0, 11.0 }));
+		subLocations.add(Arrays.asList(new Double[] { 22.0, 21.0 }));
+		locations.add(subLocations);
+		@SuppressWarnings("unchecked")
+		Map<String, Object> shape = mock(Map.class);
+		when(shape.get("coordinates")).thenReturn(locations);
+		when(response.field("shape").getValue()).thenReturn(shape);
 
 		ESWay expected = ESWay.Builder.create().id(1l)
 				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
@@ -97,7 +101,7 @@ public class ESWayUTest {
 	public void buildFromGetReponse_withInvalidGetResponse() {
 		// Setup
 		GetResponse response = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response.getType()).thenReturn(EntityDao.NODE);
+		when(response.getType()).thenReturn(ESEntityType.NODE.getIndiceName());
 
 		// Action
 		ESNode.Builder.buildFromGetReponse(response);

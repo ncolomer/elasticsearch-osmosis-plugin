@@ -10,7 +10,6 @@ import java.util.Map;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 
 public class ESNode extends ESEntity {
 
@@ -82,8 +81,9 @@ public class ESNode extends ESEntity {
 
 	@Override
 	public String toJson() {
+		XContentBuilder builder = null;
 		try {
-			XContentBuilder builder = jsonBuilder();
+			builder = jsonBuilder();
 			builder.startObject();
 			builder.startObject("shape")
 					.field("type", "point")
@@ -94,6 +94,8 @@ public class ESNode extends ESEntity {
 			return builder.string();
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to serialize Node to Json", e);
+		} finally {
+			if (builder != null) builder.close();
 		}
 	}
 
@@ -112,17 +114,18 @@ public class ESNode extends ESEntity {
 
 		@SuppressWarnings("unchecked")
 		public static ESNode buildFromGetReponse(GetResponse response) {
-			if (!response.getType().equals(EntityDao.NODE)) throw new IllegalArgumentException("Provided GetResponse is not a Node");
+			if (!response.getType().equals(ESEntityType.NODE.getIndiceName())) throw new IllegalArgumentException("Provided GetResponse is not a Node");
 			Builder builder = new Builder();
 			builder.id = Long.valueOf(response.getId());
 			builder.tags = (Map<String, String>) response.field("tags").getValue();
-			List<Double> location = (List<Double>) response.field("shape.coordinates").getValue();
+			Map<String, Object> shape = (Map<String, Object>) response.field("shape").getValue();
+			List<Double> location = (List<Double>) shape.get("coordinates");
 			builder.latitude = location.get(1);
 			builder.longitude = location.get(0);
 			return builder.build();
 		}
 
-		public static ESNode buildFromNodeEntity(Node node) {
+		public static ESNode buildFromEntity(Node node) {
 			return new ESNode(node);
 		}
 

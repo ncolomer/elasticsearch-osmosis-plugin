@@ -10,7 +10,6 @@ import org.elasticsearch.index.query.GeoShapeFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
 import org.junit.Test;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
@@ -40,11 +39,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 				.addTag("highway", "residential").addTag("name", "Avenue Marc Sangnier").build();
 
 		// Action
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 40849832l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 40849832l, way.toJson());
 		refresh();
 
 		// Assert
-		GetResponse response = client().prepareGet(INDEX_NAME, EntityDao.WAY, "40849832").execute().actionGet();
+		GetResponse response = client().prepareGet(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "40849832").execute().actionGet();
 		Assert.assertTrue(response.exists());
 		String expected = "{\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
 				"[[2.379358,48.675763],[2.379606,48.675584],[2.379955,48.675288]]}," +
@@ -62,11 +61,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 				.addTag("building", "yes").build();
 
 		// Action
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 97583115l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 97583115l, way.toJson());
 		refresh();
 
 		// Assert
-		GetResponse response = client().prepareGet(INDEX_NAME, EntityDao.WAY, "97583115").execute().actionGet();
+		GetResponse response = client().prepareGet(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "97583115").execute().actionGet();
 		Assert.assertTrue(response.exists());
 		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.379255,48.67581]," +
 				"[2.379358,48.675874],[2.379262,48.675946],[2.379161,48.675885],[2.379255,48.67581]]]}," +
@@ -81,12 +80,12 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		ESWay way = ESWay.Builder.create().id(40849832l)
 				.addLocation(48.675763, 2.379358).addLocation(48.675584, 2.379606).addLocation(48.675288, 2.379955)
 				.addTag("highway", "residential").addTag("name", "Avenue Marc Sangnier").build();
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 40849832l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 40849832l, way.toJson());
 		refresh();
 
 		// Action
 		Shape shape = buildSquareShape(48.675763, 2.379358, 20);
-		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(EntityDao.WAY)
+		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
 				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
 				.execute().actionGet();
@@ -101,12 +100,12 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		ESWay way = ESWay.Builder.create().id(40849832l)
 				.addLocation(48.675763, 2.379358).addLocation(48.675584, 2.379606).addLocation(48.675288, 2.379955)
 				.addTag("highway", "residential").addTag("name", "Avenue Marc Sangnier").build();
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 40849832l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 40849832l, way.toJson());
 		refresh();
 
 		// Action
 		Shape shape = buildSquareShape(48.676455, 2.380899, 20);
-		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(EntityDao.WAY)
+		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
 				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
 				.execute().actionGet();
@@ -121,12 +120,12 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		ESWay way = ESWay.Builder.create().id(40849832l)
 				.addLocation(48.675763, 2.379358).addLocation(48.675584, 2.379606).addLocation(48.675288, 2.379955)
 				.addTag("highway", "residential").addTag("name", "Avenue Marc Sangnier").build();
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 40849832l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 40849832l, way.toJson());
 		refresh();
 
 		// Action
 		Shape shape = buildSquareShape(48.675763, 2.379358, 10000);
-		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(EntityDao.WAY)
+		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
 				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
 				.execute().actionGet();
@@ -145,14 +144,14 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 				.addLocation(48.675957, 2.383090).addLocation(48.676137, 2.383404).addLocation(48.676230, 2.384246)
 				.addLocation(48.675890, 2.384684).addLocation(48.675580, 2.385125)
 				.addTag("highway", "residential").build();
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 40849832l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 40849832l, way.toJson());
 		refresh();
 
 		// Action
 		// ~ 45 meters min shape radius to match
 		// center between positions index #5 and #6
 		Shape shape = buildSquareShape(48.675689, 2.38259, 45);
-		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(EntityDao.WAY)
+		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
 				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
 				.execute().actionGet();
@@ -168,12 +167,12 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 				.addLocation(48.67581, 2.379255).addLocation(48.675874, 2.379358).addLocation(48.675946, 2.379262)
 				.addLocation(48.675885, 2.379161).addLocation(48.67581, 2.379255)
 				.addTag("building", "yes").build();
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 97583115l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 97583115l, way.toJson());
 		refresh();
 
 		// Action
 		Shape shape = buildSquareShape(48.675763, 2.379358, 100);
-		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(EntityDao.WAY)
+		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
 				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
 				.execute().actionGet();
@@ -189,12 +188,12 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 				.addLocation(48.67581, 2.379255).addLocation(48.675874, 2.379358).addLocation(48.675946, 2.379262)
 				.addLocation(48.675885, 2.379161).addLocation(48.67581, 2.379255)
 				.addTag("building", "yes").build();
-		indexAdminService.index(INDEX_NAME, EntityDao.WAY, 97583115l, way.toJson());
+		indexAdminService.index(INDEX_NAME, ESEntityType.WAY.getIndiceName(), 97583115l, way.toJson());
 		refresh();
 
 		// Action
 		Shape shape = buildSquareShape(48.676455, 2.380899, 20);
-		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(EntityDao.WAY)
+		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
 				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
 				.execute().actionGet();

@@ -15,7 +15,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 
 public class ESNodeUTest {
 
@@ -34,7 +33,7 @@ public class ESNodeUTest {
 				.addTag("highway", "primary").build();
 
 		// Action
-		ESNode actual = ESNode.Builder.buildFromNodeEntity(node);
+		ESNode actual = ESNode.Builder.buildFromEntity(node);
 
 		// Assert
 		assertEquals(expected, actual);
@@ -44,13 +43,16 @@ public class ESNodeUTest {
 	public void buildFromGetReponse() {
 		// Setup
 		GetResponse response = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response.getType()).thenReturn(EntityDao.NODE);
+		when(response.getType()).thenReturn(ESEntityType.NODE.getIndiceName());
 		when(response.getId()).thenReturn("1");
 		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("highway", "primary");
 		when(response.field("tags").getValue()).thenReturn(tags);
 		List<Double> location = Arrays.asList(new Double[] { 2.0, 1.0 });
-		when(response.field("shape.coordinates").getValue()).thenReturn(location);
+		@SuppressWarnings("unchecked")
+		Map<String, Object> shape = mock(Map.class);
+		when(shape.get("coordinates")).thenReturn(location);
+		when(response.field("shape").getValue()).thenReturn(shape);
 
 		ESNode expected = ESNode.Builder.create().id(1l).location(1.0, 2.0)
 				.addTag("highway", "primary").build();
@@ -66,7 +68,7 @@ public class ESNodeUTest {
 	public void buildFromGetReponse_withInvalidGetResponse() {
 		// Setup
 		GetResponse response = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response.getType()).thenReturn(EntityDao.WAY);
+		when(response.getType()).thenReturn(ESEntityType.WAY.getIndiceName());
 
 		// Action
 		ESNode.Builder.buildFromGetReponse(response);
