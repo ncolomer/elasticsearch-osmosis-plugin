@@ -1,3 +1,8 @@
+
+
+| Elasticsearch is evolving rapidly! Recent 0.90.0 version introduced major great changes on both `geo_point` and `geo_shape` types. I'm working on this plugin to take advantage of all these new improvements. Stay tuned! |
+| :-: |
+
 # elasticsearch-osmosis-plugin
 
 elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/Osmosis) plugin that inserts [OpenStreetMap](http://www.openstreetmap.org) data into an [elasticsearch](http://www.elasticsearch.org) cluster. It aims to help indexing the world, no more, no less :)
