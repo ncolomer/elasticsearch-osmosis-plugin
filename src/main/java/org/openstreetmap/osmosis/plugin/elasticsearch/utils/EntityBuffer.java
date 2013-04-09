@@ -1,7 +1,6 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
@@ -15,7 +14,7 @@ public class EntityBuffer {
 
 	public EntityBuffer(EntityDao entityDao, int size) {
 		this.size = size;
-		this.buffer = Collections.synchronizedList(new ArrayList<Entity>(size));
+		this.buffer = new ArrayList<Entity>(size);
 		this.entityDao = entityDao;
 	}
 
@@ -25,10 +24,8 @@ public class EntityBuffer {
 	}
 
 	public void flush() {
-		synchronized (buffer) {
-			entityDao.saveAll(buffer);
-			buffer.clear();
-		}
+		entityDao.saveAll(buffer);
+		buffer.clear();
 	}
 
 }

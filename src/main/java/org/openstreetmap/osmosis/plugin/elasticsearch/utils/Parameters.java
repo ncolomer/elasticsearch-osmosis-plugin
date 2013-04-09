@@ -16,9 +16,12 @@ public class Parameters {
 	public static final String INDEX_SETTINGS_SHARDS = "index.settings.shards";
 	public static final String INDEX_SETTINGS_REPLICAS = "index.settings.replicas";
 	public static final String INDEX_MAPPINGS = "index.mappings";
-	public static final String INDEX_BULK_SIZE = "index.bulk.size";
 
 	public static final String INDEX_BUILDERS = "index.builders";
+
+	public static final String CONFIG_NODE_BULK_SIZE = "config.node.bulk.size";
+	public static final String CONFIG_WAY_BULK_SIZE = "config.way.bulk.size";
+	public static final String CONFIG_WORKER_POOL_SIZE = "config.worker.pool.size";
 
 	private final Properties params;
 

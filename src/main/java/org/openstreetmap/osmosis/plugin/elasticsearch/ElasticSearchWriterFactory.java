@@ -59,7 +59,10 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		addArgumentIfExists(Parameters.INDEX_SETTINGS_SHARDS, taskConfig, builder);
 		addArgumentIfExists(Parameters.INDEX_SETTINGS_REPLICAS, taskConfig, builder);
 		addArgumentIfExists(Parameters.INDEX_MAPPINGS, taskConfig, builder);
-		addArgumentIfExists(Parameters.INDEX_BULK_SIZE, taskConfig, builder);
+
+		addArgumentIfExists(Parameters.CONFIG_NODE_BULK_SIZE, taskConfig, builder);
+		addArgumentIfExists(Parameters.CONFIG_WAY_BULK_SIZE, taskConfig, builder);
+		addArgumentIfExists(Parameters.CONFIG_WORKER_POOL_SIZE, taskConfig, builder);
 
 		addArgumentIfExists(Parameters.INDEX_BUILDERS, taskConfig, builder);
 		return builder.build();

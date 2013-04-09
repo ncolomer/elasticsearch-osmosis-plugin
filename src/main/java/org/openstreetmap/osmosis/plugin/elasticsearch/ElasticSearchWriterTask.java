@@ -2,6 +2,7 @@ package org.openstreetmap.osmosis.plugin.elasticsearch;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -11,9 +12,9 @@ import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityBuffer;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityCounter;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
+import org.openstreetmap.osmosis.plugin.elasticsearch.worker.WorkerPool;
 
 public class ElasticSearchWriterTask implements Sink {
 
@@ -21,15 +22,21 @@ public class ElasticSearchWriterTask implements Sink {
 
 	private final Endpoint endpoint;
 	private final Set<AbstractIndexBuilder> indexBuilders;
-	private final EntityBuffer entityBuffer;
+	private final Parameters params;
+
 	private final EntityCounter entityCounter;
+	private final AtomicReference<EntityType> lastType;
+	private final WorkerPool workerPool;
 
 	public ElasticSearchWriterTask(Endpoint endpoint, Set<AbstractIndexBuilder> indexBuilders, Parameters params) {
 		this.endpoint = endpoint;
 		this.indexBuilders = indexBuilders;
-		int bulkSize = Integer.valueOf(params.getProperty("index.bulk.size", "5000"));
-		this.entityBuffer = new EntityBuffer(endpoint.getEntityDao(), bulkSize);
+		this.params = params;
+
 		this.entityCounter = new EntityCounter();
+		this.lastType = new AtomicReference<EntityType>();
+		int poolSize = Integer.valueOf(params.getProperty(Parameters.CONFIG_WORKER_POOL_SIZE));
+		this.workerPool = new WorkerPool(poolSize, endpoint.getEntityDao());
 	}
 
 	@Override
@@ -40,13 +47,29 @@ public class ElasticSearchWriterTask implements Sink {
 	@Override
 	public void process(EntityContainer entityContainer) {
 		Entity entity = entityContainer.getEntity();
-		entityCounter.increment(entity.getType());
-		entityBuffer.add(entity);
+		EntityType type = entity.getType();
+		if (lastType.getAndSet(type) != type) {
+			workerPool.prepareNewEntityType(type, getBulkSizeForType(type));
+			endpoint.getIndexAdminService().refresh();
+		}
+		workerPool.submit(entity);
+		entityCounter.increment(type);
+	}
+
+	private int getBulkSizeForType(EntityType type) {
+		switch (type) {
+		case Node:
+			return Integer.valueOf(params.getProperty(Parameters.CONFIG_NODE_BULK_SIZE));
+		case Way:
+			return Integer.valueOf(params.getProperty(Parameters.CONFIG_WAY_BULK_SIZE));
+		default:
+			return 10;
+		}
 	}
 
 	@Override
 	public void complete() {
-		entityBuffer.flush();
+		workerPool.shutdown();
 		LOG.info("OSM indexing completed!\n" +
 				"total processed nodes: ....... " + entityCounter.getCount(EntityType.Node) + "\n" +
 				"total processed ways: ........ " + entityCounter.getCount(EntityType.Way) + "\n" +
