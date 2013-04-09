@@ -25,10 +25,14 @@ public class OsmDataBuilder {
 		return buildSampleNode(1);
 	}
 
-	public static Way buildSampleWay(long id) {
+	public static Way buildSampleWay(long id, long... nodeIds) {
 		List<Tag> tags = Arrays.asList(new Tag[] { new Tag("highway", "residential") });
 		CommonEntityData entityData = new CommonEntityData(id, 0, new Date(), new OsmUser(1, "nco"), 1l, tags);
 		return new Way(entityData, Arrays.asList(new WayNode[] { new WayNode(1l) }));
+	}
+
+	public static Way buildWay(long id) {
+		return buildSampleWay(id, 1);
 	}
 
 	public static Way buildSampleWay() {

@@ -117,7 +117,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertEquals(expected, actual);
 	}
 
-	@Test
+	@Test(expected = DaoException.class)
 	public void findNode_thatDoesNotExists() {
 		// Setup
 		ESNode node = OsmDataBuilder.buildSampleESNode();
@@ -127,10 +127,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		refresh(INDEX_NAME);
 
 		// Action
-		ESNode actual = entityDao.find(ESNode.class, 2l);
-
-		// Assert
-		Assert.assertNull(actual);
+		entityDao.find(ESNode.class, 2l);
 	}
 
 	@Test
@@ -149,7 +146,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		Assert.assertEquals(expected, actual);
 	}
 
-	@Test
+	@Test(expected = DaoException.class)
 	public void findWay_thatDoesNotExists() {
 		// Setup
 		ESWay way = OsmDataBuilder.buildSampleESWay();
@@ -159,10 +156,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		refresh(INDEX_NAME);
 
 		// Action
-		ESWay actual = entityDao.find(ESWay.class, 2l);
-
-		// Assert
-		Assert.assertNull(actual);
+		entityDao.find(ESWay.class, 2l);
 	}
 
 	/* findAll */

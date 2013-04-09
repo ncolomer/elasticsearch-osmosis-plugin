@@ -1,7 +1,11 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -12,7 +16,6 @@ import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest.Item;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
@@ -52,11 +55,7 @@ public class EntityDao {
 	 */
 	public void save(Entity entity) {
 		if (entity == null) throw new IllegalArgumentException("You must provide a non-null Entity");
-		try {
-			buildIndexRequest(entity).execute().actionGet();
-		} catch (Exception e) {
-			throw new DaoException("Unable to save Entity [" + entity + "]", e);
-		}
+		saveAll(Arrays.asList(entity));
 	}
 
 	/**
@@ -74,62 +73,98 @@ public class EntityDao {
 	 * @throws DaoException
 	 *             if something was wrong during the save process
 	 */
-	public void saveAll(List<Entity> entities) {
+	public <T extends Entity> void saveAll(List<T> entities) {
 		if (entities == null || entities.isEmpty()) return;
-		BulkRequestBuilder bulkRequest = client.prepareBulk();
-		for (Entity entity : entities) {
-			try {
-				bulkRequest.add(buildIndexRequest(entity));
-			} catch (Exception exception) {
-				LOG.warning(String.format("Unable to add Entity %s to bulk request, cause: %s",
-						entity.getId(), exception.getMessage()));
+		List<Node> nodes = new ArrayList<Node>();
+		List<Way> ways = new ArrayList<Way>();
+		for (T entity : entities) {
+			if (entity == null) continue;
+			switch (entity.getType()) {
+			case Node:
+				nodes.add((Node) entity);
+				break;
+			case Way:
+				ways.add((Way) entity);
+				break;
+			case Relation:
+			case Bound:
+			default:
+				LOG.warning(String.format("Unable to add Entity %s to bulk request, " +
+						"cause: save %s is not yet supported", entity, entity.getType()));
 			}
 		}
+		if (!nodes.isEmpty()) saveAllNodes(nodes);
+		if (!ways.isEmpty()) saveAllWays(ways);
+	}
+
+	protected void saveAllNodes(List<Node> nodes) {
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		for (Node node : nodes) {
+			try {
+				ESNode esNode = ESNode.Builder.buildFromEntity(node);
+				bulkRequest.add(client.prepareIndex(indexName, esNode.getType().getIndiceName(), esNode.getIdString())
+						.setSource(esNode.toJson()));
+			} catch (Exception exception) {
+				LOG.warning(String.format("Unable to add Entity %s to bulk request, cause: %s",
+						node.getId(), exception.getMessage()));
+			}
+		}
+		executeBulkRequest(bulkRequest);
+	}
+
+	protected void saveAllWays(List<Way> ways) {
+		Iterator<MultiGetItemResponse> iterator = getNodeItems(ways);
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		for (Way way : ways) {
+			try {
+				int size = way.getWayNodes().size();
+				ESWay esWay = ESWay.Builder.buildFromEntity(way, getLocationArrayBuilder(iterator, size));
+				bulkRequest.add(client.prepareIndex(indexName, esWay.getType().getIndiceName(), esWay.getIdString())
+						.setSource(esWay.toJson()));
+			} catch (Exception e) {
+				LOG.warning(String.format("Unable to add Entity %s to bulk request, cause: %s",
+						way.getId(), e.getMessage()));
+			}
+		}
+		executeBulkRequest(bulkRequest);
+	}
+
+	protected Iterator<MultiGetItemResponse> getNodeItems(List<Way> ways) {
+		MultiGetRequestBuilder request = client.prepareMultiGet();
+		for (Way way : ways) {
+			for (WayNode wayNode : way.getWayNodes()) {
+				request.add(new Item(indexName, ESEntityType.NODE.getIndiceName(),
+						String.valueOf(wayNode.getNodeId())).fields("shape"));
+			}
+		}
+		MultiGetResponse responses = request.execute().actionGet();
+		Iterator<MultiGetItemResponse> iterator = responses.iterator();
+		return iterator;
+	}
+
+	protected LocationArrayBuilder getLocationArrayBuilder(Iterator<MultiGetItemResponse> iterator, int size) {
+		LocationArrayBuilder locationArrayBuilder = new LocationArrayBuilder(size);
+		for (int i = 0; i < size; i++) {
+			GetResponse response = iterator.next().getResponse();
+			if (!response.exists()) continue;
+			@SuppressWarnings("unchecked")
+			Map<String, Object> shape = (Map<String, Object>) response.field("shape").getValue();
+			@SuppressWarnings("unchecked")
+			List<Double> coordinates = (List<Double>) shape.get("coordinates");
+			locationArrayBuilder.addLocation(coordinates.get(1), coordinates.get(0));
+		}
+		return locationArrayBuilder;
+	}
+
+	protected void executeBulkRequest(BulkRequestBuilder bulkRequest) {
 		if (bulkRequest.numberOfActions() == 0) return;
 		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 		if (!bulkResponse.hasFailures()) return;
-		for (BulkItemResponse response : bulkResponse.items()) {
+		for (BulkItemResponse response : bulkResponse) {
 			if (!response.failed()) continue;
 			LOG.warning(String.format("Unable to save Entity %s in %s/%s, cause: %s",
 					response.id(), response.index(), response.type(), response.failureMessage()));
 		}
-	}
-
-	protected IndexRequestBuilder buildIndexRequest(Entity entity) {
-		switch (entity.getType()) {
-		case Node:
-			ESNode esNode = ESNode.Builder.buildFromEntity((Node) entity);
-			return client.prepareIndex(indexName, esNode.getType().getIndiceName(), esNode.getIdString())
-					.setSource(esNode.toJson());
-		case Way:
-			Way way = (Way) entity;
-			List<ESNode> nodes = findAll(ESNode.class, getNodeIds(way.getWayNodes()));
-			ESWay esWay = ESWay.Builder.buildFromEntity(way, getLocationArrayBuilder(nodes));
-			return client.prepareIndex(indexName, esWay.getType().getIndiceName(), esWay.getIdString())
-					.setSource(esWay.toJson());
-		case Relation:
-			throw new UnsupportedOperationException("Save Relation is not yet supported");
-		case Bound:
-			throw new UnsupportedOperationException("Save Bound is not yet supported");
-		default:
-			throw new IllegalArgumentException("Unknown EntityType for entity: " + entity);
-		}
-	}
-
-	protected LocationArrayBuilder getLocationArrayBuilder(List<ESNode> nodes) {
-		LocationArrayBuilder builder = new LocationArrayBuilder(nodes.size());
-		for (ESNode esNode : nodes) {
-			builder.addLocation(esNode.getLatitude(), esNode.getLongitude());
-		}
-		return builder;
-	}
-
-	protected long[] getNodeIds(List<WayNode> list) {
-		long[] nodeIds = new long[list.size()];
-		for (int i = 0; i < list.size(); i++) {
-			nodeIds[i] = list.get(i).getNodeId();
-		}
-		return nodeIds;
 	}
 
 	/**
@@ -151,19 +186,7 @@ public class EntityDao {
 	 *             if something was wrong during the elasticsearch request
 	 */
 	public <T extends ESEntity> T find(Class<T> entityClass, long osmId) {
-		try {
-			ESEntityType type = ESEntityType.valueOf(entityClass);
-			Item item = buildGetItemRequest(type, osmId);
-			GetResponse response = client.prepareGet(item.index(), item.type(), item.id())
-					.setFields(item.fields())
-					.execute().actionGet();
-			return response.exists() ? (T) buildFromGetReponse(entityClass, response) : null;
-		} catch (Exception e) {
-			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
-			String message = String.format("Unable to find Entity %s in %s/%s",
-					osmId, indexName, indiceName);
-			throw new DaoException(message, e);
-		}
+		return findAll(entityClass, osmId).get(0);
 	}
 
 	/**
@@ -191,43 +214,45 @@ public class EntityDao {
 	 *             if something was wrong during the elasticsearch request
 	 */
 	public <T extends ESEntity> List<T> findAll(Class<T> entityClass, long... osmIds) {
+		if (osmIds == null || osmIds.length == 0) return Collections.unmodifiableList(new ArrayList<T>(0));
 		try {
-			// Build request
-			ESEntityType type = ESEntityType.valueOf(entityClass);
-			MultiGetRequestBuilder request = client.prepareMultiGet();
-			for (long osmId : osmIds) {
-				request.add(buildGetItemRequest(type, osmId));
-			}
-			// Compute response
-			MultiGetResponse responses = request.execute().actionGet();
-			List<T> entities = new ArrayList<T>();
-			for (MultiGetItemResponse item : responses) {
-				GetResponse response = item.getResponse();
-				if (!response.exists()) throw new DaoException(String.format(
-						"Entity %s does not exist in %s/%s", response.getId(),
-						response.getIndex(), response.getType()));
-				entities.add((T) buildFromGetReponse(entityClass, response));
-			}
-			return entities;
+			MultiGetRequestBuilder request = buildMultiGetRequest(entityClass, osmIds);
+			return executeMultiGetRequest(entityClass, request);
 		} catch (Exception e) {
+			if (e instanceof DaoException) throw (DaoException) e;
 			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
 			throw new DaoException("Unable to find all " + indiceName + " entities", e);
 		}
 	}
 
-	protected Item buildGetItemRequest(ESEntityType type, long osmId) {
-		switch (type) {
-		case NODE:
-			return new Item(indexName, ESEntityType.NODE.getIndiceName(), String.valueOf(osmId)).fields("shape", "tags");
-		case WAY:
-			return new Item(indexName, ESEntityType.WAY.getIndiceName(), String.valueOf(osmId)).fields("shape", "tags");
-		case RELATION:
-			throw new UnsupportedOperationException("Get Relation is not yet supported");
-		case BOUND:
-			throw new UnsupportedOperationException("Get Bound is not yet supported");
-		default:
-			throw new IllegalArgumentException("Unknown EntityType " + type);
+	protected <T extends ESEntity> MultiGetRequestBuilder buildMultiGetRequest(Class<T> entityClass, long... osmIds) {
+		ESEntityType type = ESEntityType.valueOf(entityClass);
+		MultiGetRequestBuilder request = client.prepareMultiGet();
+		for (long osmId : osmIds) {
+			request.add(new Item(indexName, type.getIndiceName(), String.valueOf(osmId)).fields("shape", "tags"));
 		}
+		return request;
+	}
+
+	protected <T extends ESEntity> List<T> executeMultiGetRequest(Class<T> entityClass, MultiGetRequestBuilder request) {
+		MultiGetResponse responses = request.execute().actionGet();
+		List<T> entities = new ArrayList<T>();
+		for (MultiGetItemResponse item : responses) {
+			entities.add(buildEntityFromGetResponse(entityClass, item));
+		}
+		return Collections.unmodifiableList(entities);
+	}
+
+	@SuppressWarnings("unchecked")
+	protected <T extends ESEntity> T buildEntityFromGetResponse(Class<T> entityClass, MultiGetItemResponse item) {
+		GetResponse response = item.getResponse();
+		if (!response.exists()) throw new DaoException(String.format(
+				"Entity %s does not exist in %s/%s", response.getId(),
+				response.getIndex(), response.getType()));
+		if (entityClass == null) throw new IllegalArgumentException("Provided Entity class is null");
+		else if (entityClass.equals(ESNode.class)) return (T) ESNode.Builder.buildFromGetReponse(response);
+		else if (entityClass.equals(ESWay.class)) return (T) ESWay.Builder.buildFromGetReponse(response);
+		else throw new IllegalArgumentException(entityClass.getSimpleName() + " is not a known Entity");
 	}
 
 	/**
@@ -260,14 +285,6 @@ public class EntityDao {
 					osmId, indexName, indiceName);
 			throw new DaoException(message, e);
 		}
-	}
-
-	@SuppressWarnings("unchecked")
-	protected <T extends ESEntity> T buildFromGetReponse(Class<T> entityClass, GetResponse response) {
-		if (entityClass == null) throw new IllegalArgumentException("Provided Entity class is null");
-		else if (entityClass.equals(ESNode.class)) return (T) ESNode.Builder.buildFromGetReponse(response);
-		else if (entityClass.equals(ESWay.class)) return (T) ESWay.Builder.buildFromGetReponse(response);
-		else throw new IllegalArgumentException(entityClass.getSimpleName() + " is not a known Entity");
 	}
 
 }

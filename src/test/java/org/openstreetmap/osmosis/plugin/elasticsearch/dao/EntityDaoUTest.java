@@ -1,44 +1,42 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest.Item;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -52,6 +50,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntity;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
 
 @SuppressWarnings("unchecked")
 public class EntityDaoUTest {
@@ -75,21 +74,14 @@ public class EntityDaoUTest {
 	public void saveEntity() throws Exception {
 		// Setup
 		Entity entity = mock(Entity.class);
-		IndexRequestBuilder indexRequestBuilderMocked = mock(IndexRequestBuilder.class);
-		ListenableActionFuture<IndexResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
-		IndexResponse indexResponseMocked = mock(IndexResponse.class);
 
-		doReturn(indexRequestBuilderMocked).when(entityDao).buildIndexRequest(entity);
-		when(indexRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
-		when(listenableActionFutureMocked.actionGet()).thenReturn(indexResponseMocked);
+		doNothing().when(entityDao).saveAll(any(List.class));
 
 		// Action
 		entityDao.save(entity);
 
 		// Assert
-		verify(entityDao, times(1)).buildIndexRequest(entity);
-		verify(indexRequestBuilderMocked, times(1)).execute();
-		verify(listenableActionFutureMocked, times(1)).actionGet();
+		verify(entityDao, times(1)).saveAll(eq(Arrays.asList(entity)));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -98,78 +90,199 @@ public class EntityDaoUTest {
 		entityDao.save(null);
 	}
 
-	@Test(expected = DaoException.class)
-	public void saveEntity_withRelation_shouldBeUnsupported() {
+	/* SAVE ALL */
+
+	@Test
+	public void saveAll() {
 		// Setup
+		Node node = mock(Node.class);
+		Way way = mock(Way.class);
 		Relation relation = mock(Relation.class);
-		when(relation.getType()).thenReturn(EntityType.Relation);
-
-		// Action
-		entityDao.save(relation);
-	}
-
-	@Test(expected = DaoException.class)
-	public void saveEntity_withBound_shouldBeUnsupported() {
-		// Setup
 		Bound bound = mock(Bound.class);
+
+		when(node.getType()).thenReturn(EntityType.Node);
+		when(way.getType()).thenReturn(EntityType.Way);
+		when(relation.getType()).thenReturn(EntityType.Relation);
 		when(bound.getType()).thenReturn(EntityType.Bound);
 
-		// Action
-		entityDao.save(bound);
-	}
-
-	@Test
-	public void saveAllEntities() throws Exception {
-		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-		Way way = OsmDataBuilder.buildSampleWay();
-		List<Entity> entities = new ArrayList<Entity>();
-		entities.add(node);
-		entities.add(way);
-
-		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
-		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
-
-		IndexRequestBuilder indexRequestBuilderMocked1 = mock(IndexRequestBuilder.class);
-		doReturn(indexRequestBuilderMocked1).when(entityDao).buildIndexRequest(node);
-		IndexRequestBuilder indexRequestBuilderMocked2 = mock(IndexRequestBuilder.class);
-		doReturn(indexRequestBuilderMocked2).when(entityDao).buildIndexRequest(way);
-		when(bulkRequestBuilderMocked.numberOfActions()).thenReturn(2);
-
-		ListenableActionFuture<BulkResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
-		when(bulkRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
-		BulkResponse bulkResponseMocked = mock(BulkResponse.class);
-		when(listenableActionFutureMocked.actionGet()).thenReturn(bulkResponseMocked);
-		when(bulkResponseMocked.hasFailures()).thenReturn(false);
+		doNothing().when(entityDao).saveAllNodes(any(List.class));
+		doNothing().when(entityDao).saveAllWays(any(List.class));
 
 		// Action
-		entityDao.saveAll(entities);
+		entityDao.saveAll(Arrays.asList(node, way, relation, bound));
 
 		// Assert
-		verify(entityDao, times(1)).buildIndexRequest(node);
-		verify(entityDao, times(1)).buildIndexRequest(way);
-		verify(bulkRequestBuilderMocked, times(1)).add(indexRequestBuilderMocked1);
-		verify(bulkRequestBuilderMocked, times(1)).add(indexRequestBuilderMocked2);
-		verify(bulkRequestBuilderMocked, times(1)).execute();
-		verify(listenableActionFutureMocked, times(1)).actionGet();
-
+		verify(entityDao, times(1)).saveAllNodes(eq(Arrays.asList(node)));
+		verify(entityDao, times(1)).saveAllWays(eq(Arrays.asList(way)));
 	}
 
 	@Test
-	public void saveAllEntities_withOneFailed() throws Exception {
+	public void saveAll_withNullList() throws Exception {
+		// Action
+		entityDao.saveAll(null);
+
+		// Assert
+		verifyNoMoreInteractions(clientMocked);
+	}
+
+	@Test
+	public void saveAll_withEmptyList() throws Exception {
+		// Action
+		entityDao.saveAll(new ArrayList<Entity>());
+
+		// Assert
+		verifyNoMoreInteractions(clientMocked);
+	}
+
+	@Test
+	public void saveAllNodes() {
 		// Setup
 		Node node = OsmDataBuilder.buildSampleNode();
-		Way way = OsmDataBuilder.buildSampleWay();
-		List<Entity> entities = new ArrayList<Entity>();
-		entities.add(node);
-		entities.add(way);
+
+		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
+		doReturn(iteratorMocked).when(entityDao).getNodeItems(any(List.class));
+
+		LocationArrayBuilder builder = new LocationArrayBuilder(1).addLocation(1.0, 2.0);
+		doReturn(builder).when(entityDao).getLocationArrayBuilder(iteratorMocked, 1);
 
 		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
 		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
 
-		IndexRequestBuilder indexRequestBuilderMocked1 = mock(IndexRequestBuilder.class);
-		doReturn(indexRequestBuilderMocked1).when(entityDao).buildIndexRequest(node);
-		doThrow(new RuntimeException("Simulated Exception")).when(entityDao).buildIndexRequest(way);
+		IndexRequestBuilder indexRequestBuilderMocked = mock(IndexRequestBuilder.class);
+		when(indexRequestBuilderMocked.setSource(any(String.class))).thenReturn(indexRequestBuilderMocked);
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class)))
+				.thenReturn(indexRequestBuilderMocked);
+
+		// Action
+		entityDao.saveAllNodes(Arrays.asList(node));
+
+		// Assert
+		String source = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
+		verify(clientMocked).prepareIndex(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1");
+		verify(indexRequestBuilderMocked).setSource(source);
+		verify(bulkRequestBuilderMocked).add(indexRequestBuilderMocked);
+		verify(entityDao).executeBulkRequest(bulkRequestBuilderMocked);
+	}
+
+	@Test
+	public void saveAllWays() {
+		// Setup
+		Way way = OsmDataBuilder.buildSampleWay();
+
+		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
+		doReturn(iteratorMocked).when(entityDao).getNodeItems(any(List.class));
+
+		LocationArrayBuilder builder = new LocationArrayBuilder(1).addLocation(1.0, 2.0);
+		doReturn(builder).when(entityDao).getLocationArrayBuilder(iteratorMocked, 1);
+
+		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
+		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
+
+		IndexRequestBuilder indexRequestBuilderMocked = mock(IndexRequestBuilder.class);
+		when(indexRequestBuilderMocked.setSource(any(String.class))).thenReturn(indexRequestBuilderMocked);
+		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class)))
+				.thenReturn(indexRequestBuilderMocked);
+
+		// Action
+		List<Way> ways = Arrays.asList(way);
+		entityDao.saveAllWays(ways);
+
+		// Assert
+		verify(entityDao).getNodeItems(ways);
+		String source = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
+		verify(clientMocked).prepareIndex(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "1");
+		verify(indexRequestBuilderMocked).setSource(source);
+		verify(bulkRequestBuilderMocked).add(indexRequestBuilderMocked);
+		verify(entityDao).executeBulkRequest(bulkRequestBuilderMocked);
+	}
+
+	@Test
+	public void getNodeItems() {
+		// Setup
+		Way way = OsmDataBuilder.buildSampleWay();
+
+		MultiGetRequestBuilder multiGetRequestBuilderMocked = mock(MultiGetRequestBuilder.class);
+		when(clientMocked.prepareMultiGet()).thenReturn(multiGetRequestBuilderMocked);
+
+		ListenableActionFuture<MultiGetResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
+		when(multiGetRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
+		MultiGetResponse multiGetResponseMocked = mock(MultiGetResponse.class);
+		when(listenableActionFutureMocked.actionGet()).thenReturn(multiGetResponseMocked);
+		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
+		when(multiGetResponseMocked.iterator()).thenReturn(iteratorMocked);
+
+		// Action
+		Iterator<MultiGetItemResponse> actual = entityDao.getNodeItems(Arrays.asList(way));
+
+		// Assert
+		Item item = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1").fields("shape");
+		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item)));
+		verify(multiGetRequestBuilderMocked, times(1)).execute();
+		Assert.assertSame(iteratorMocked, actual);
+	}
+
+	@Test
+	public void getLocationArrayBuilder() {
+		// Setup
+		GetResponse response1 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		when(response1.exists()).thenReturn(true);
+		Map<String, Object> map1 = mock(Map.class);
+		when(response1.field("shape").getValue()).thenReturn(map1);
+		when(map1.get("coordinates")).thenReturn(Arrays.asList(2.0, 1.0));
+
+		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		when(response2.exists()).thenReturn(true);
+		Map<String, Object> map2 = mock(Map.class);
+		when(response2.field("shape").getValue()).thenReturn(map2);
+		when(map2.get("coordinates")).thenReturn(Arrays.asList(4.0, 3.0));
+
+		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
+		when(multiGetItemResponseMocked.getResponse()).thenReturn(response1, response2);
+
+		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
+		when(iteratorMocked.next()).thenReturn(multiGetItemResponseMocked);
+
+		// Action
+		LocationArrayBuilder actual = entityDao.getLocationArrayBuilder(iteratorMocked, 2);
+
+		// Assert
+		Assert.assertTrue(Arrays.deepEquals(new double[][] {
+				new double[] { 2.0, 1.0 },
+				new double[] { 4.0, 3.0 }
+		}, actual.toArray()));
+	}
+
+	@Test
+	public void getLocationArrayBuilder_withNotExistingResponse() {
+		// Setup
+		GetResponse response1 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		when(response1.exists()).thenReturn(true);
+		Map<String, Object> map1 = mock(Map.class);
+		when(response1.field("shape").getValue()).thenReturn(map1);
+		when(map1.get("coordinates")).thenReturn(Arrays.asList(2.0, 1.0));
+
+		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
+		when(response2.exists()).thenReturn(false);
+
+		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
+		when(multiGetItemResponseMocked.getResponse()).thenReturn(response1, response2);
+
+		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
+		when(iteratorMocked.next()).thenReturn(multiGetItemResponseMocked);
+
+		// Action
+		LocationArrayBuilder actual = entityDao.getLocationArrayBuilder(iteratorMocked, 2);
+
+		// Assert
+		Assert.assertTrue(Arrays.deepEquals(new double[][] {
+				new double[] { 2.0, 1.0 }
+		}, actual.toArray()));
+	}
+
+	@Test
+	public void executeBulkRequest() {
+		// Setup
+		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
 		when(bulkRequestBuilderMocked.numberOfActions()).thenReturn(1);
 
 		ListenableActionFuture<BulkResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
@@ -179,318 +292,151 @@ public class EntityDaoUTest {
 		when(bulkResponseMocked.hasFailures()).thenReturn(false);
 
 		// Action
-		entityDao.saveAll(entities);
+		entityDao.executeBulkRequest(bulkRequestBuilderMocked);
 
 		// Assert
-		verify(entityDao, times(1)).buildIndexRequest(node);
-		verify(entityDao, times(1)).buildIndexRequest(way);
-		verify(bulkRequestBuilderMocked, times(1)).add(indexRequestBuilderMocked1);
 		verify(bulkRequestBuilderMocked, times(1)).execute();
-		verify(listenableActionFutureMocked, times(1)).actionGet();
+		verify(bulkResponseMocked, times(0)).iterator();
 	}
 
 	@Test
-	public void saveAllEntities_withAllFailed() throws Exception {
+	public void executeBulkRequest_withFailure() {
 		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-		Way way = OsmDataBuilder.buildSampleWay();
-		List<Entity> entities = new ArrayList<Entity>();
-		entities.add(node);
-		entities.add(way);
-
 		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
-		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
-
-		doThrow(new RuntimeException("Simulated Exception")).when(entityDao).buildIndexRequest(node);
-		doThrow(new RuntimeException("Simulated Exception")).when(entityDao).buildIndexRequest(way);
+		when(bulkRequestBuilderMocked.numberOfActions()).thenReturn(1);
 
 		ListenableActionFuture<BulkResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
 		when(bulkRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
 		BulkResponse bulkResponseMocked = mock(BulkResponse.class);
 		when(listenableActionFutureMocked.actionGet()).thenReturn(bulkResponseMocked);
-		when(bulkResponseMocked.hasFailures()).thenReturn(false);
+		when(bulkResponseMocked.hasFailures()).thenReturn(true);
+
+		Iterator<BulkItemResponse> iteratorMocked = mock(Iterator.class);
+		when(bulkResponseMocked.iterator()).thenReturn(iteratorMocked);
+		BulkItemResponse response1 = mock(BulkItemResponse.class);
+		when(response1.failed()).thenReturn(true);
+		when(iteratorMocked.hasNext()).thenReturn(true, false);
+		when(iteratorMocked.next()).thenReturn(response1);
 
 		// Action
-		entityDao.saveAll(entities);
+		entityDao.executeBulkRequest(bulkRequestBuilderMocked);
 
 		// Assert
-		verify(entityDao, times(1)).buildIndexRequest(node);
-		verify(entityDao, times(1)).buildIndexRequest(way);
-		verify(bulkRequestBuilderMocked, never()).execute();
+		verify(bulkRequestBuilderMocked, times(1)).execute();
+		verify(bulkResponseMocked, times(1)).iterator();
 	}
 
 	@Test
-	public void saveAllEntities_withNullList() throws Exception {
+	public void executeBulkRequest_withNoResult() {
+		// Setup
+		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
+		when(bulkRequestBuilderMocked.numberOfActions()).thenReturn(0);
+
 		// Action
-		entityDao.saveAll(null);
+		entityDao.executeBulkRequest(bulkRequestBuilderMocked);
 
 		// Assert
-		verifyNoMoreInteractions(clientMocked);
-	}
-
-	@Test
-	public void saveAllEntities_withEmptyList() throws Exception {
-		// Action
-		entityDao.saveAll(new ArrayList<Entity>());
-
-		// Assert
-		verifyNoMoreInteractions(clientMocked);
-	}
-
-	@Test
-	public void buildIndexRequest_withNode() throws IOException {
-		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-
-		IndexRequestBuilder indexRequestBuilderMocked = mock(IndexRequestBuilder.class);
-		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenReturn(indexRequestBuilderMocked);
-		when(indexRequestBuilderMocked.setSource(any(String.class))).thenReturn(indexRequestBuilderMocked);
-
-		// Action
-		IndexRequestBuilder actual = entityDao.buildIndexRequest(node);
-
-		// Assert
-		assertSame(indexRequestBuilderMocked, actual);
-		verify(clientMocked).prepareIndex(INDEX_NAME, "node", "1");
-		verify(indexRequestBuilderMocked).setSource("{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}");
-	}
-
-	@Test
-	public void buildIndexRequest_withWay() throws IOException {
-		// Setup
-		Way way = OsmDataBuilder.buildSampleWay();
-
-		ESNode esNode = OsmDataBuilder.buildSampleESNode();
-		doReturn(Arrays.asList(new ESNode[] { esNode })).when(entityDao).findAll(ESNode.class, 1l);
-
-		IndexRequestBuilder indexRequestBuilderMocked = mock(IndexRequestBuilder.class);
-		when(clientMocked.prepareIndex(any(String.class), any(String.class), any(String.class))).thenReturn(indexRequestBuilderMocked);
-		when(indexRequestBuilderMocked.setSource(any(String.class))).thenReturn(indexRequestBuilderMocked);
-
-		// Action
-		IndexRequestBuilder actual = entityDao.buildIndexRequest(way);
-
-		// Assert
-		assertSame(indexRequestBuilderMocked, actual);
-		verify(clientMocked).prepareIndex(INDEX_NAME, "way", "1");
-		verify(indexRequestBuilderMocked).setSource("{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}");
-	}
-
-	@Test(expected = UnsupportedOperationException.class)
-	public void buildIndexRequest_withRelation() throws IOException {
-		// Setup
-		Relation relation = mock(Relation.class);
-		when(relation.getType()).thenReturn(EntityType.Relation);
-
-		// Action
-		entityDao.buildIndexRequest(relation);
-	}
-
-	@Test(expected = UnsupportedOperationException.class)
-	public void buildIndexRequest_withBound() throws IOException {
-		// Setup
-		Bound bound = mock(Bound.class);
-		when(bound.getType()).thenReturn(EntityType.Bound);
-
-		// Action
-		entityDao.buildIndexRequest(bound);
+		verify(bulkRequestBuilderMocked, times(0)).execute();
 	}
 
 	/* FIND */
 
 	@Test
-	public void findEntity() throws Exception {
+	public void find() throws Exception {
 		// Setup
 		ESNode node = mock(ESNode.class);
 
-		Item item = mock(Item.class);
-		doReturn(item).when(entityDao).buildGetItemRequest(ESEntityType.NODE, 1l);
-		when(item.index()).thenReturn("index");
-		when(item.type()).thenReturn(ESEntityType.NODE.getIndiceName());
-		when(item.id()).thenReturn("1");
-		String[] fields = new String[] { "field1", "field2" };
-		when(item.fields()).thenReturn(fields);
-
-		GetRequestBuilder getRequestBuilderMocked = mock(GetRequestBuilder.class);
-		when(clientMocked.prepareGet(any(String.class), any(String.class), any(String.class))).thenReturn(getRequestBuilderMocked);
-		when(getRequestBuilderMocked.setFields(fields)).thenReturn(getRequestBuilderMocked);
-		ListenableActionFuture<GetResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
-		when(getRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
-		GetResponse getResponseMocked = mock(GetResponse.class);
-		when(listenableActionFutureMocked.actionGet()).thenReturn(getResponseMocked);
-		when(getResponseMocked.exists()).thenReturn(true);
-		doReturn(node).when(entityDao).buildFromGetReponse(ESNode.class, getResponseMocked);
-
-		// Action
-		ESNode actual = entityDao.find(ESNode.class, 1);
-
-		// Assert
-		assertSame(node, actual);
-		verify(entityDao, times(1)).buildGetItemRequest(ESEntityType.NODE, 1l);
-		verify(clientMocked, times(1)).prepareGet("index", "node", "1");
-	}
-
-	@Test
-	public void findEntity_withNotFound() throws Exception {
-		// Setup
-
-		Item item = mock(Item.class);
-		doReturn(item).when(entityDao).buildGetItemRequest(ESEntityType.NODE, 1l);
-		when(item.index()).thenReturn("index");
-		when(item.type()).thenReturn("type");
-		when(item.id()).thenReturn("1");
-		String[] fields = new String[] { "field1", "field2" };
-		when(item.fields()).thenReturn(fields);
-
-		GetRequestBuilder getRequestBuilderMocked = mock(GetRequestBuilder.class);
-		when(clientMocked.prepareGet(any(String.class), any(String.class), any(String.class))).thenReturn(getRequestBuilderMocked);
-		when(getRequestBuilderMocked.setFields(fields)).thenReturn(getRequestBuilderMocked);
-		ListenableActionFuture<GetResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
-		when(getRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
-		GetResponse getResponseMocked = mock(GetResponse.class);
-		when(listenableActionFutureMocked.actionGet()).thenReturn(getResponseMocked);
-		when(getResponseMocked.exists()).thenReturn(false);
-
-		// Action
-		ESNode actual = entityDao.find(ESNode.class, 1);
-
-		// Assert
-		assertNull(actual);
-		verify(entityDao, times(1)).buildGetItemRequest(ESEntityType.NODE, 1l);
-		verify(clientMocked, times(1)).prepareGet("index", "type", "1");
-	}
-
-	@Test(expected = DaoException.class)
-	public void findEntity_withConnectorBroken() throws Exception {
-		// Setup
-		Item item = mock(Item.class);
-		doReturn(item).when(entityDao).buildGetItemRequest(ESEntityType.NODE, 1l);
-		when(item.index()).thenReturn("index");
-		when(item.type()).thenReturn("type");
-		when(item.id()).thenReturn("1");
-		String[] fields = new String[] { "field1", "field2" };
-		when(item.fields()).thenReturn(fields);
-
-		GetRequestBuilder getRequestBuilderMocked = mock(GetRequestBuilder.class);
-		when(clientMocked.prepareGet(any(String.class), any(String.class), any(String.class))).thenReturn(getRequestBuilderMocked);
-		when(getRequestBuilderMocked.setFields(fields)).thenReturn(getRequestBuilderMocked);
-		ListenableActionFuture<GetResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
-		when(getRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
-		when(listenableActionFutureMocked.actionGet()).thenThrow(new ElasticSearchException("Simulated exception"));
+		doReturn(Arrays.asList(node)).when(entityDao).findAll(ESNode.class, 1);
 
 		// Action
 		entityDao.find(ESNode.class, 1);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void findEntity_withNullClass_shouldThrowException() {
-		// Action
-		entityDao.find(null, 1l);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void findEntity_withEntityClass_shouldThrowException() {
-		// Action
-		entityDao.find(ESEntity.class, 1l);
-	}
-
-	@Test
-	public void buildGetItemRequest_withNode() {
-		// Action
-		Item nodeItem = entityDao.buildGetItemRequest(ESEntityType.NODE, 1l);
 
 		// Assert
-		assertEquals(INDEX_NAME, nodeItem.index());
-		assertEquals(ESEntityType.NODE.getIndiceName(), nodeItem.type());
-		assertEquals("1", nodeItem.id());
-		assertTrue(Arrays.equals(new String[] { "shape", "tags" }, nodeItem.fields()));
-	}
-
-	@Test
-	public void buildGetItemRequest_withWay() {
-		// Action
-		Item wayItem = entityDao.buildGetItemRequest(ESEntityType.WAY, 2l);
-
-		// Assert
-		assertEquals(INDEX_NAME, wayItem.index());
-		assertEquals(ESEntityType.WAY.getIndiceName(), wayItem.type());
-		assertEquals("2", wayItem.id());
-		assertTrue(Arrays.equals(new String[] { "shape", "tags" }, wayItem.fields()));
-	}
-
-	@Test(expected = UnsupportedOperationException.class)
-	public void buildGetItemRequest_withRelation() {
-		// Action
-		entityDao.buildGetItemRequest(ESEntityType.RELATION, 1l);
-	}
-
-	@Test(expected = UnsupportedOperationException.class)
-	public void buildGetItemRequest_withBound() {
-		// Action
-		entityDao.buildGetItemRequest(ESEntityType.BOUND, 1l);
+		verify(entityDao, times(1)).findAll(ESNode.class, 1);
 	}
 
 	/* FIND ALL */
 
 	@Test
-	public void findAllEntities() {
+	public void findAll() {
 		// Setup
-		ESNode node1 = mock(ESNode.class);
-		ESNode node2 = mock(ESNode.class);
-		List<ESNode> expected = Arrays.asList(new ESNode[] { node1, node2 });
+		Node node1 = OsmDataBuilder.buildSampleNode(1);
+		Node node2 = OsmDataBuilder.buildSampleNode(2);
 
 		MultiGetRequestBuilder multiGetRequestBuilderMocked = mock(MultiGetRequestBuilder.class);
-		when(clientMocked.prepareMultiGet()).thenReturn(multiGetRequestBuilderMocked);
-		when(multiGetRequestBuilderMocked.add(any(Item.class))).thenReturn(multiGetRequestBuilderMocked);
-
-		Item item1 = mock(Item.class);
-		when(entityDao.buildGetItemRequest(ESEntityType.NODE, 1l)).thenReturn(item1);
-		Item item2 = mock(Item.class);
-		when(entityDao.buildGetItemRequest(ESEntityType.NODE, 2l)).thenReturn(item2);
-
-		ListenableActionFuture<MultiGetResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
-		when(multiGetRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
-		MultiGetResponse multiGetResponseMocked = mock(MultiGetResponse.class);
-		when(listenableActionFutureMocked.actionGet()).thenReturn(multiGetResponseMocked);
-
-		Iterator<MultiGetItemResponse> iterator = mock(Iterator.class);
-		when(multiGetResponseMocked.iterator()).thenReturn(iterator);
-		when(iterator.hasNext()).thenReturn(true, true, false);
-		MultiGetItemResponse itemResponse1 = mock(MultiGetItemResponse.class);
-		MultiGetItemResponse itemResponse2 = mock(MultiGetItemResponse.class);
-		when(iterator.next()).thenReturn(itemResponse1, itemResponse2);
-
-		GetResponse getResponseMocked1 = mock(GetResponse.class);
-		when(getResponseMocked1.exists()).thenReturn(true);
-		when(itemResponse1.getResponse()).thenReturn(getResponseMocked1);
-		GetResponse getResponseMocked2 = mock(GetResponse.class);
-		when(getResponseMocked2.exists()).thenReturn(true);
-		when(itemResponse2.getResponse()).thenReturn(getResponseMocked2);
-
-		doReturn(node1).when(entityDao).buildFromGetReponse(ESNode.class, getResponseMocked1);
-		doReturn(node2).when(entityDao).buildFromGetReponse(ESNode.class, getResponseMocked2);
+		doReturn(multiGetRequestBuilderMocked).when(entityDao).buildMultiGetRequest(ESNode.class, 1, 2);
+		doReturn(Arrays.asList(node1, node2)).when(entityDao).executeMultiGetRequest(ESNode.class, multiGetRequestBuilderMocked);
 
 		// Action
-		List<ESNode> actual = entityDao.findAll(ESNode.class, 1l, 2l);
+		List<ESNode> nodes = entityDao.findAll(ESNode.class, 1, 2);
 
 		// Assert
-		assertEquals(expected, actual);
-		verify(entityDao, times(1)).buildGetItemRequest(ESEntityType.NODE, 1l);
-		verify(entityDao, times(1)).buildGetItemRequest(ESEntityType.NODE, 2l);
-		verify(clientMocked, times(1)).prepareMultiGet();
+		verify(entityDao).buildMultiGetRequest(ESNode.class, 1, 2);
+		verify(entityDao).executeMultiGetRequest(ESNode.class, multiGetRequestBuilderMocked);
+		Assert.assertEquals(Arrays.asList(node1, node2), nodes);
+	}
+
+	@Test
+	public void findAll_withEmptyArray() {
+		// Action
+		entityDao.findAll(ESNode.class);
+
+		// Assert
+		verify(entityDao, times(0)).buildMultiGetRequest(any(Class.class), any(long[].class));
+		verify(entityDao, times(0)).executeMultiGetRequest(any(Class.class), any(MultiGetRequestBuilder.class));
+	}
+
+	@Test
+	public void findAll_withNullArray() {
+		// Action
+		entityDao.findAll(ESNode.class, null);
+
+		// Assert
+		verify(entityDao, times(0)).buildMultiGetRequest(any(Class.class), any(long[].class));
+		verify(entityDao, times(0)).executeMultiGetRequest(any(Class.class), any(MultiGetRequestBuilder.class));
 	}
 
 	@Test(expected = DaoException.class)
-	public void findAllEntities_withNotFound() {
+	public void findAll_withException() {
+		// Setup
+		MultiGetRequestBuilder multiGetRequestBuilderMocked = mock(MultiGetRequestBuilder.class);
+		doReturn(multiGetRequestBuilderMocked).when(entityDao).buildMultiGetRequest(ESNode.class, 1, 2);
+		doThrow(new RuntimeException("Simulated Exception")).when(entityDao).executeMultiGetRequest(ESNode.class, multiGetRequestBuilderMocked);
+
+		// Action
+		entityDao.findAll(ESNode.class, 1, 2);
+	}
+
+	@Test
+	public void buildMultiGetRequest() {
 		// Setup
 		MultiGetRequestBuilder multiGetRequestBuilderMocked = mock(MultiGetRequestBuilder.class);
 		when(clientMocked.prepareMultiGet()).thenReturn(multiGetRequestBuilderMocked);
-		when(multiGetRequestBuilderMocked.add(any(Item.class))).thenReturn(multiGetRequestBuilderMocked);
 
-		Item item1 = mock(Item.class);
-		when(entityDao.buildGetItemRequest(ESEntityType.NODE, 1l)).thenReturn(item1);
-		Item item2 = mock(Item.class);
-		when(entityDao.buildGetItemRequest(ESEntityType.NODE, 2l)).thenReturn(item2);
+		// Action
+		MultiGetRequestBuilder actual = entityDao.buildMultiGetRequest(ESNode.class, 1, 2);
+
+		// Assert
+		Item item1 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1").fields("shape", "tags");
+		Item item2 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1").fields("shape", "tags");
+		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item1)));
+		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item2)));
+		Assert.assertSame(multiGetRequestBuilderMocked, actual);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void buildMultiGetRequest_withInvalidClass() {
+		// Action
+		entityDao.buildMultiGetRequest(ESEntity.class, 1);
+	}
+
+	@Test
+	public void executeMultiGetRequest() {
+		// Setup
+		ESNode node1 = OsmDataBuilder.buildSampleESNode(1);
+		ESNode node2 = OsmDataBuilder.buildSampleESNode(2);
+
+		MultiGetRequestBuilder multiGetRequestBuilderMocked = mock(MultiGetRequestBuilder.class);
 
 		ListenableActionFuture<MultiGetResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
 		when(multiGetRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
@@ -499,42 +445,55 @@ public class EntityDaoUTest {
 
 		Iterator<MultiGetItemResponse> iterator = mock(Iterator.class);
 		when(multiGetResponseMocked.iterator()).thenReturn(iterator);
+		MultiGetItemResponse item1 = mock(MultiGetItemResponse.class);
+		MultiGetItemResponse item2 = mock(MultiGetItemResponse.class);
 		when(iterator.hasNext()).thenReturn(true, true, false);
-		MultiGetItemResponse itemResponse1 = mock(MultiGetItemResponse.class);
-		MultiGetItemResponse itemResponse2 = mock(MultiGetItemResponse.class);
-		when(iterator.next()).thenReturn(itemResponse1, itemResponse2);
+		when(iterator.next()).thenReturn(item1, item2);
 
-		GetResponse getResponseMocked1 = mock(GetResponse.class);
-		when(getResponseMocked1.exists()).thenReturn(true);
-		when(itemResponse1.getResponse()).thenReturn(getResponseMocked1);
-		GetResponse getResponseMocked2 = mock(GetResponse.class);
-		when(getResponseMocked2.exists()).thenReturn(false);
-		when(itemResponse2.getResponse()).thenReturn(getResponseMocked2);
-
-		doReturn(mock(ESNode.class)).when(entityDao).buildFromGetReponse(ESNode.class, getResponseMocked1);
+		doReturn(node1).when(entityDao).buildEntityFromGetResponse(ESNode.class, item1);
+		doReturn(node2).when(entityDao).buildEntityFromGetResponse(ESNode.class, item2);
 
 		// Action
-		entityDao.findAll(ESNode.class, 1l, 2l);
+		List<ESNode> actual = entityDao.executeMultiGetRequest(ESNode.class, multiGetRequestBuilderMocked);
+
+		// Assert
+		Assert.assertEquals(Arrays.asList(node1, node2), actual);
 	}
 
 	@Test(expected = DaoException.class)
-	public void findAllEntities_withConnectorBroken() {
+	public void buildEntityFromGetResponse_withNotExistingResponse() {
 		// Setup
-		MultiGetRequestBuilder multiGetRequestBuilderMocked = mock(MultiGetRequestBuilder.class);
-		when(clientMocked.prepareMultiGet()).thenReturn(multiGetRequestBuilderMocked);
-		when(multiGetRequestBuilderMocked.add(any(Item.class))).thenReturn(multiGetRequestBuilderMocked);
-
-		Item item1 = mock(Item.class);
-		when(entityDao.buildGetItemRequest(ESEntityType.NODE, 1l)).thenReturn(item1);
-		Item item2 = mock(Item.class);
-		when(entityDao.buildGetItemRequest(ESEntityType.NODE, 2l)).thenReturn(item2);
-
-		ListenableActionFuture<MultiGetResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
-		when(multiGetRequestBuilderMocked.execute()).thenReturn(listenableActionFutureMocked);
-		when(listenableActionFutureMocked.actionGet()).thenThrow(new ElasticSearchException("Simulated exception"));
+		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
+		GetResponse getResponseMocked = mock(GetResponse.class);
+		when(getResponseMocked.exists()).thenReturn(false);
+		when(multiGetItemResponseMocked.getResponse()).thenReturn(getResponseMocked);
 
 		// Action
-		entityDao.findAll(ESNode.class, 1l, 2l);
+		entityDao.buildEntityFromGetResponse(ESNode.class, multiGetItemResponseMocked);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void buildEntityFromGetResponse_withNullType() {
+		// Setup
+		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
+		GetResponse getResponseMocked = mock(GetResponse.class);
+		when(getResponseMocked.exists()).thenReturn(true);
+		when(multiGetItemResponseMocked.getResponse()).thenReturn(getResponseMocked);
+
+		// Action
+		entityDao.buildEntityFromGetResponse(null, multiGetItemResponseMocked);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void buildEntityFromGetResponse_withInvalidType() {
+		// Setup
+		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
+		GetResponse getResponseMocked = mock(GetResponse.class);
+		when(getResponseMocked.exists()).thenReturn(true);
+		when(multiGetItemResponseMocked.getResponse()).thenReturn(getResponseMocked);
+
+		// Action
+		entityDao.buildEntityFromGetResponse(ESEntity.class, multiGetItemResponseMocked);
 	}
 
 	/* DELETE */
@@ -587,28 +546,6 @@ public class EntityDaoUTest {
 
 		// Action
 		entityDao.delete(ESNode.class, 1l);
-	}
-
-	public class QueryBuilderMatcher extends BaseMatcher<QueryBuilder> {
-
-		private final QueryBuilder expected;
-
-		public QueryBuilderMatcher(QueryBuilder expected) {
-			this.expected = expected;
-		}
-
-		@Override
-		public boolean matches(Object item) {
-			if (expected == item) return true;
-			if (item == null) return false;
-			if (expected.getClass() != item.getClass()) return false;
-			QueryBuilder other = (QueryBuilder) item;
-			return expected.toString().equals(other.toString());
-		}
-
-		@Override
-		public void describeTo(Description description) {}
-
 	}
 
 	public class ItemMatcher extends BaseMatcher<Item> {
