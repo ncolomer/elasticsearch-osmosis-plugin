@@ -74,7 +74,7 @@ public abstract class AbstractElasticSearchInMemoryTest {
 	}
 
 	protected boolean exists(String... indices) {
-		return client().admin().indices().prepareExists(indices).execute().actionGet().exists();
+		return client().admin().indices().prepareExists(indices).execute().actionGet().isExists();
 	}
 
 	protected String clusterName() {
@@ -83,7 +83,7 @@ public abstract class AbstractElasticSearchInMemoryTest {
 
 	protected String nodeAddress() {
 		NodesInfoResponse nodesInfo = client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
-		String transportAddress = nodesInfo.nodes()[0].node().address().toString();
+		String transportAddress = nodesInfo.getNodes()[0].getNode().address().toString();
 		Matcher matcher = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d{1,5})?").matcher(transportAddress);
 		matcher.find();
 		return matcher.group();

@@ -5,7 +5,6 @@ import junit.framework.Assert;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.geo.GeoShapeConstants;
-import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.index.query.GeoShapeFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
@@ -44,7 +43,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "40849832").execute().actionGet();
-		Assert.assertTrue(response.exists());
+		Assert.assertTrue(response.isExists());
 		String expected = "{\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
 				"[[2.379358,48.675763],[2.379606,48.675584],[2.379955,48.675288]]}," +
 				"\"tags\":{\"highway\":\"residential\",\"name\":\"Avenue Marc Sangnier\"}}";
@@ -66,7 +65,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "97583115").execute().actionGet();
-		Assert.assertTrue(response.exists());
+		Assert.assertTrue(response.isExists());
 		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.379255,48.67581]," +
 				"[2.379358,48.675874],[2.379262,48.675946],[2.379161,48.675885],[2.379255,48.67581]]]}," +
 				"\"tags\":{\"building\":\"yes\"}}";
@@ -87,11 +86,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		Shape shape = buildSquareShape(48.675763, 2.379358, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
+				.setFilter(new GeoShapeFilterBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
-		Assert.assertEquals(1, searchResponse.hits().hits().length);
+		Assert.assertEquals(1, searchResponse.getHits().hits().length);
 	}
 
 	@Test
@@ -107,11 +106,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		Shape shape = buildSquareShape(48.676455, 2.380899, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
+				.setFilter(new GeoShapeFilterBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
-		Assert.assertEquals(0, searchResponse.hits().hits().length);
+		Assert.assertEquals(0, searchResponse.getHits().hits().length);
 	}
 
 	@Test
@@ -127,11 +126,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		Shape shape = buildSquareShape(48.675763, 2.379358, 10000);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
+				.setFilter(new GeoShapeFilterBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
-		Assert.assertEquals(1, searchResponse.hits().hits().length);
+		Assert.assertEquals(1, searchResponse.getHits().hits().length);
 	}
 
 	@Test
@@ -153,11 +152,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		Shape shape = buildSquareShape(48.675689, 2.38259, 45);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
+				.setFilter(new GeoShapeFilterBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
-		Assert.assertEquals(1, searchResponse.hits().hits().length);
+		Assert.assertEquals(1, searchResponse.getHits().hits().length);
 	}
 
 	@Test
@@ -174,11 +173,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		Shape shape = buildSquareShape(48.675763, 2.379358, 100);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
+				.setFilter(new GeoShapeFilterBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
-		Assert.assertEquals(1, searchResponse.hits().hits().length);
+		Assert.assertEquals(1, searchResponse.getHits().hits().length);
 	}
 
 	@Test
@@ -195,11 +194,11 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		Shape shape = buildSquareShape(48.676455, 2.380899, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setFilter(new GeoShapeFilterBuilder("shape", shape).relation(ShapeRelation.INTERSECTS))
+				.setFilter(new GeoShapeFilterBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
-		Assert.assertEquals(0, searchResponse.hits().hits().length);
+		Assert.assertEquals(0, searchResponse.getHits().hits().length);
 	}
 
 	protected Shape buildSquareShape(double centerLat, double centerLon, double distanceMeter) {

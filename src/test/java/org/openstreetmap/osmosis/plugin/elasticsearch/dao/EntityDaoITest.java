@@ -47,7 +47,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
-		Assert.assertTrue(response.exists());
+		Assert.assertTrue(response.isExists());
 		String expected = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
@@ -69,7 +69,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
-		Assert.assertTrue(response.exists());
+		Assert.assertTrue(response.isExists());
 		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
@@ -87,13 +87,13 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		GetResponse response1 = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
-		Assert.assertTrue(response1.exists());
+		Assert.assertTrue(response1.isExists());
 		String expected1 = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		String actual1 = response1.getSourceAsString();
 		Assert.assertEquals(expected1, actual1);
 
 		GetResponse response2 = client().prepareGet(INDEX_NAME, "node", "2").execute().actionGet();
-		Assert.assertTrue(response2.exists());
+		Assert.assertTrue(response2.isExists());
 		String expected2 = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		String actual2 = response2.getSourceAsString();
 		Assert.assertEquals(expected2, actual2);

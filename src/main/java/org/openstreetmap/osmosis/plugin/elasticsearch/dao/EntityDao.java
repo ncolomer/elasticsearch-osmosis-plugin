@@ -146,9 +146,9 @@ public class EntityDao {
 		LocationArrayBuilder locationArrayBuilder = new LocationArrayBuilder(size);
 		for (int i = 0; i < size; i++) {
 			GetResponse response = iterator.next().getResponse();
-			if (!response.exists()) continue;
+			if (!response.isExists()) continue;
 			@SuppressWarnings("unchecked")
-			Map<String, Object> shape = (Map<String, Object>) response.field("shape").getValue();
+			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
 			@SuppressWarnings("unchecked")
 			List<Double> coordinates = (List<Double>) shape.get("coordinates");
 			locationArrayBuilder.addLocation(coordinates.get(1), coordinates.get(0));
@@ -161,9 +161,9 @@ public class EntityDao {
 		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 		if (!bulkResponse.hasFailures()) return;
 		for (BulkItemResponse response : bulkResponse) {
-			if (!response.failed()) continue;
+			if (!response.isFailed()) continue;
 			LOG.warning(String.format("Unable to save Entity %s in %s/%s, cause: %s",
-					response.id(), response.index(), response.type(), response.failureMessage()));
+					response.getId(), response.getIndex(), response.getType(), response.getFailureMessage()));
 		}
 	}
 
@@ -246,7 +246,7 @@ public class EntityDao {
 	@SuppressWarnings("unchecked")
 	protected <T extends ESEntity> T buildEntityFromGetResponse(Class<T> entityClass, MultiGetItemResponse item) {
 		GetResponse response = item.getResponse();
-		if (!response.exists()) throw new DaoException(String.format(
+		if (!response.isExists()) throw new DaoException(String.format(
 				"Entity %s does not exist in %s/%s", response.getId(),
 				response.getIndex(), response.getType()));
 		if (entityClass == null) throw new IllegalArgumentException("Provided Entity class is null");
@@ -278,7 +278,7 @@ public class EntityDao {
 		try {
 			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
 			return !client.prepareDelete(indexName, indiceName, Long.toString(osmId))
-					.execute().actionGet().notFound();
+					.execute().actionGet().isNotFound();
 		} catch (Exception e) {
 			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
 			String message = String.format("Unable to delete entity %s in %s/%s",

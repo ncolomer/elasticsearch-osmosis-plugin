@@ -32,9 +32,9 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 		});
 
 		// Assert
-		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().exists());
-		assertEquals(7738, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.NODE.getIndiceName())).actionGet().count());
-		assertEquals(225, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.WAY.getIndiceName())).actionGet().count());
+		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().isExists());
+		assertEquals(7738, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.NODE.getIndiceName())).actionGet().getCount());
+		assertEquals(225, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.WAY.getIndiceName())).actionGet().getCount());
 	}
 
 	private File getOsmExtractFile() throws URISyntaxException {

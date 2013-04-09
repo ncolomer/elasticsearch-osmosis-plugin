@@ -33,7 +33,7 @@ public class IndexAdminService {
 
 	public boolean indexExists(String... indices) {
 		return client.admin().indices().prepareExists(indices)
-				.execute().actionGet().exists();
+				.execute().actionGet().isExists();
 	}
 
 	public void index(String index, String type, long id, XContentBuilder sourceBuilder) {

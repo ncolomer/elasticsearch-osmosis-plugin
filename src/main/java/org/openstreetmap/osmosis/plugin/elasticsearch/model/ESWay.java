@@ -122,8 +122,8 @@ public class ESWay extends ESEntity {
 			if (!response.getType().equals(ESEntityType.WAY.getIndiceName())) throw new IllegalArgumentException("Provided GetResponse is not a Way");
 			Builder builder = new Builder();
 			builder.id = Long.valueOf(response.getId());
-			builder.tags = (Map<String, String>) response.field("tags").getValue();
-			Map<String, Object> shape = (Map<String, Object>) response.field("shape").getValue();
+			builder.tags = (Map<String, String>) response.getField("tags").getValue();
+			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
 			List<List<List<Double>>> locations = (List<List<List<Double>>>) shape.get("coordinates");
 			for (List<Double> location : locations.get(0)) {
 				builder.addLocation(location.get(1), location.get(0));

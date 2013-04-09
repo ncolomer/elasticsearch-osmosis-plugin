@@ -47,12 +47,12 @@ public class ESNodeUTest {
 		when(response.getId()).thenReturn("1");
 		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("highway", "primary");
-		when(response.field("tags").getValue()).thenReturn(tags);
+		when(response.getField("tags").getValue()).thenReturn(tags);
 		List<Double> location = Arrays.asList(new Double[] { 2.0, 1.0 });
 		@SuppressWarnings("unchecked")
 		Map<String, Object> shape = mock(Map.class);
 		when(shape.get("coordinates")).thenReturn(location);
-		when(response.field("shape").getValue()).thenReturn(shape);
+		when(response.getField("shape").getValue()).thenReturn(shape);
 
 		ESNode expected = ESNode.Builder.create().id(1l).location(1.0, 2.0)
 				.addTag("highway", "primary").build();

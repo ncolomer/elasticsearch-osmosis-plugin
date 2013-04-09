@@ -225,15 +225,15 @@ public class EntityDaoUTest {
 	public void getLocationArrayBuilder() {
 		// Setup
 		GetResponse response1 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response1.exists()).thenReturn(true);
+		when(response1.isExists()).thenReturn(true);
 		Map<String, Object> map1 = mock(Map.class);
-		when(response1.field("shape").getValue()).thenReturn(map1);
+		when(response1.getField("shape").getValue()).thenReturn(map1);
 		when(map1.get("coordinates")).thenReturn(Arrays.asList(2.0, 1.0));
 
 		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response2.exists()).thenReturn(true);
+		when(response2.isExists()).thenReturn(true);
 		Map<String, Object> map2 = mock(Map.class);
-		when(response2.field("shape").getValue()).thenReturn(map2);
+		when(response2.getField("shape").getValue()).thenReturn(map2);
 		when(map2.get("coordinates")).thenReturn(Arrays.asList(4.0, 3.0));
 
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
@@ -256,13 +256,13 @@ public class EntityDaoUTest {
 	public void getLocationArrayBuilder_withNotExistingResponse() {
 		// Setup
 		GetResponse response1 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response1.exists()).thenReturn(true);
+		when(response1.isExists()).thenReturn(true);
 		Map<String, Object> map1 = mock(Map.class);
-		when(response1.field("shape").getValue()).thenReturn(map1);
+		when(response1.getField("shape").getValue()).thenReturn(map1);
 		when(map1.get("coordinates")).thenReturn(Arrays.asList(2.0, 1.0));
 
 		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
-		when(response2.exists()).thenReturn(false);
+		when(response2.isExists()).thenReturn(false);
 
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
 		when(multiGetItemResponseMocked.getResponse()).thenReturn(response1, response2);
@@ -314,7 +314,7 @@ public class EntityDaoUTest {
 		Iterator<BulkItemResponse> iteratorMocked = mock(Iterator.class);
 		when(bulkResponseMocked.iterator()).thenReturn(iteratorMocked);
 		BulkItemResponse response1 = mock(BulkItemResponse.class);
-		when(response1.failed()).thenReturn(true);
+		when(response1.isFailed()).thenReturn(true);
 		when(iteratorMocked.hasNext()).thenReturn(true, false);
 		when(iteratorMocked.next()).thenReturn(response1);
 
@@ -465,7 +465,7 @@ public class EntityDaoUTest {
 		// Setup
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
 		GetResponse getResponseMocked = mock(GetResponse.class);
-		when(getResponseMocked.exists()).thenReturn(false);
+		when(getResponseMocked.isExists()).thenReturn(false);
 		when(multiGetItemResponseMocked.getResponse()).thenReturn(getResponseMocked);
 
 		// Action
@@ -477,7 +477,7 @@ public class EntityDaoUTest {
 		// Setup
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
 		GetResponse getResponseMocked = mock(GetResponse.class);
-		when(getResponseMocked.exists()).thenReturn(true);
+		when(getResponseMocked.isExists()).thenReturn(true);
 		when(multiGetItemResponseMocked.getResponse()).thenReturn(getResponseMocked);
 
 		// Action
@@ -489,7 +489,7 @@ public class EntityDaoUTest {
 		// Setup
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
 		GetResponse getResponseMocked = mock(GetResponse.class);
-		when(getResponseMocked.exists()).thenReturn(true);
+		when(getResponseMocked.isExists()).thenReturn(true);
 		when(multiGetItemResponseMocked.getResponse()).thenReturn(getResponseMocked);
 
 		// Action
@@ -507,7 +507,7 @@ public class EntityDaoUTest {
 		when(deleteRequestBuilder.execute()).thenReturn(listenableActionFutureMocked);
 		DeleteResponse deleteResponseMocked = mock(DeleteResponse.class);
 		when(listenableActionFutureMocked.actionGet()).thenReturn(deleteResponseMocked);
-		when(deleteResponseMocked.notFound()).thenReturn(false);
+		when(deleteResponseMocked.isNotFound()).thenReturn(false);
 
 		// Action
 		boolean actual = entityDao.delete(ESNode.class, 1l);
@@ -526,7 +526,7 @@ public class EntityDaoUTest {
 		when(deleteRequestBuilder.execute()).thenReturn(listenableActionFutureMocked);
 		DeleteResponse deleteResponseMocked = mock(DeleteResponse.class);
 		when(listenableActionFutureMocked.actionGet()).thenReturn(deleteResponseMocked);
-		when(deleteResponseMocked.notFound()).thenReturn(true);
+		when(deleteResponseMocked.isNotFound()).thenReturn(true);
 
 		// Action
 		boolean actual = entityDao.delete(ESNode.class, 1l);

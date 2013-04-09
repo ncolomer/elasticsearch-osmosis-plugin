@@ -75,7 +75,7 @@ public class ESWayUTest {
 		when(response.getId()).thenReturn("1");
 		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("highway", "primary");
-		when(response.field("tags").getValue()).thenReturn(tags);
+		when(response.getField("tags").getValue()).thenReturn(tags);
 		List<List<List<Double>>> locations = new ArrayList<List<List<Double>>>();
 		ArrayList<List<Double>> subLocations = new ArrayList<List<Double>>();
 		subLocations.add(Arrays.asList(new Double[] { 12.0, 11.0 }));
@@ -84,7 +84,7 @@ public class ESWayUTest {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> shape = mock(Map.class);
 		when(shape.get("coordinates")).thenReturn(locations);
-		when(response.field("shape").getValue()).thenReturn(shape);
+		when(response.getField("shape").getValue()).thenReturn(shape);
 
 		ESWay expected = ESWay.Builder.create().id(1l)
 				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)

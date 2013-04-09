@@ -54,7 +54,7 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 		indexAdminService.createIndex(INDEX_NAME, 1, 1, mapping);
 
 		// Assert
-		ClusterState state = client().admin().cluster().prepareState().execute().actionGet().state();
+		ClusterState state = client().admin().cluster().prepareState().execute().actionGet().getState();
 		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfShards());
 		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfReplicas());
 		Assert.assertEquals("{\"my_type\":{\"properties\":{}}}", state.getMetaData().index(INDEX_NAME).mapping("my_type").source().string());
