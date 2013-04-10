@@ -19,7 +19,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.6</java.version>
 		<!-- Libraries -->
-		<osmosis.version>0.42</osmosis.version>
+		<osmosis.version>0.43-RELEASE</osmosis.version>
 		<elasticsearch.version>0.90.0.RC2</elasticsearch.version>
 		<!-- Testing -->
 		<commons-io.version>2.1</commons-io.version>
@@ -55,13 +55,13 @@
 	<dependencies>
 		<!-- Osmosis -->
 		<dependency>
-			<groupId>org.openstreetmap</groupId>
+			<groupId>org.openstreetmap.osmosis</groupId>
 			<artifactId>osmosis-core</artifactId>
 			<version>${osmosis.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.openstreetmap</groupId>
+			<groupId>org.openstreetmap.osmosis</groupId>
 			<artifactId>osmosis-xml</artifactId>
 			<version>${osmosis.version}</version>
 			<scope>provided</scope>

@@ -36,9 +36,8 @@ Here are the plugin's features:
 The project is fully Mavenized. If you want to dig into the code, follow these 4 steps:
 
 * ensure you have [Maven](http://maven.apache.org/) and [Git](http://git-scm.com/) installed
-* clone the project somewhere locally
-* run the `lib/install.sh` script. It will install `osmosis-core-0.42.jar` and `osmosis-xml-0.42.jar` in your local Maven repository as these artifacts are not available on the central
-* import the project into your favorite Java editor 
+* fork/clone the project somewhere locally
+* import the project into your favorite Java editor
 
 From here, you can also run the test suite using `mvn clean test`: it includes inevitable unit tests and some portable (full in-memory) integration tests.
 
