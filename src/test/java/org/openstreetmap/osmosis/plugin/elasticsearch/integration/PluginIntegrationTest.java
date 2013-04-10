@@ -31,6 +31,8 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 				"index.create=true"
 		});
 
+		refresh();
+
 		// Assert
 		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().isExists());
 		assertEquals(7738, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.NODE.getIndiceName())).actionGet().getCount());

@@ -19,6 +19,7 @@ public class Parameters {
 
 	public static final String INDEX_BUILDERS = "index.builders";
 
+	public static final String CONFIG_QUEUE_SIZE = "config.queue.size";
 	public static final String CONFIG_NODE_BULK_SIZE = "config.node.bulk.size";
 	public static final String CONFIG_WAY_BULK_SIZE = "config.way.bulk.size";
 	public static final String CONFIG_WORKER_POOL_SIZE = "config.worker.pool.size";

@@ -1,80 +1,85 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.worker;
 
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
-import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityBuffer;
+import org.openstreetmap.osmosis.plugin.elasticsearch.utils.EntityBuffer.EntityBufferFactory;
 
 public class Worker extends Thread {
 
 	private static final Logger LOG = Logger.getLogger(Worker.class.getName());
-	private static final int POLL_INTERVAL = 10;
 
-	private final EntityDao entityDao;
-	private final Queue<Entity> taskQueue;
-	private final AtomicReference<NewEntityType> newEntityType;
+	private final BlockingQueue<Entity> taskQueue;
+	private final EntityBufferFactory bufferFactory;
+	private final AtomicReference<NewTypeNotification> newTypeNotification;
 
 	private boolean running = true;
-	private EntityBuffer entityBuffer;
 
-	public Worker(String name, EntityDao entityDao, Queue<Entity> taskQueue) {
+	public Worker(String name, BlockingQueue<Entity> taskQueue, EntityBufferFactory bufferFactory) {
 		super(name);
-		this.entityDao = entityDao;
 		this.taskQueue = taskQueue;
-		this.newEntityType = new AtomicReference<Worker.NewEntityType>();
+		this.bufferFactory = bufferFactory;
+		this.newTypeNotification = new AtomicReference<Worker.NewTypeNotification>();
 	}
 
 	@Override
 	public void run() {
-		Entity entity;
-		NewEntityType newType;
+		Entity entity = null;
+		EntityBuffer entityBuffer = null;
+		NewTypeNotification notification = null;
 		while (running || !taskQueue.isEmpty()) {
-			if ((entity = taskQueue.poll()) != null) {
-				LOG.fine(String.format("%s received Entity %s", getName(), entity));
-				entityBuffer.add(entity);
-			} else if ((newType = newEntityType.getAndSet(null)) != null) {
-				if (entityBuffer != null) entityBuffer.flush();
-				entityBuffer = new EntityBuffer(entityDao, newType.size);
-				LOG.fine(String.format("%s ready to consume %s", getName(), newType.type));
-				newType.latch.countDown();
-			} else {
-				try {
-					sleep(POLL_INTERVAL);
-				} catch (InterruptedException e) {}
+			try {
+				// Check if a NewTypeNotification was triggered
+				if ((notification = newTypeNotification.getAndSet(null)) != null) {
+					LOG.fine("NewTypeNotification detected, flushing...");
+					if (entityBuffer != null) entityBuffer.flush();
+					entityBuffer = bufferFactory.buildForType(notification.getType());
+					notification.getLatch().countDown();
+				}
+				// Poll the queue
+				if ((entity = taskQueue.poll(WorkerPool.POLL_INTERVAL, TimeUnit.MILLISECONDS)) != null) {
+					entityBuffer.add(entity);
+				}
+			} catch (InterruptedException e) {
+				LOG.fine("InterruptedException triggered, leaving...");
 			}
-
 		}
-		entityBuffer.flush();
+		if (entityBuffer != null) entityBuffer.flush();
 		LOG.fine(String.format("%s shutdown", getName()));
 	}
 
-	public void prepareNewEntityType(EntityType type, int size) throws InterruptedException {
-		CountDownLatch latch = new CountDownLatch(1);
-		newEntityType.set(new NewEntityType(type, size, latch));
-		latch.await();
+	public void notifyNewType(EntityType type) throws InterruptedException {
+		NewTypeNotification notification = new NewTypeNotification(type);
+		newTypeNotification.set(notification);
+		notification.getLatch().await();
 	}
 
 	public void shutdown() throws InterruptedException {
 		running = false;
-		interrupt();
 		join();
 	}
 
-	private class NewEntityType {
+	public class NewTypeNotification {
 
-		private EntityType type;
-		private int size;
-		private CountDownLatch latch;
+		private final CountDownLatch latch = new CountDownLatch(1);
+		private final EntityType type;
 
-		public NewEntityType(EntityType type, int size, CountDownLatch latch) {
+		public NewTypeNotification(EntityType type) {
 			this.type = type;
-			this.size = size;
-			this.latch = latch;
+		}
+
+		public CountDownLatch getLatch() {
+			return latch;
+		}
+
+		public EntityType getType() {
+			return type;
 		}
 
 	}

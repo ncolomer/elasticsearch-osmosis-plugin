@@ -2,7 +2,6 @@ package org.openstreetmap.osmosis.plugin.elasticsearch;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,21 +21,14 @@ public class ElasticSearchWriterTask implements Sink {
 
 	private final Endpoint endpoint;
 	private final Set<AbstractIndexBuilder> indexBuilders;
-	private final Parameters params;
-
 	private final EntityCounter entityCounter;
-	private final AtomicReference<EntityType> lastType;
 	private final WorkerPool workerPool;
 
 	public ElasticSearchWriterTask(Endpoint endpoint, Set<AbstractIndexBuilder> indexBuilders, Parameters params) {
 		this.endpoint = endpoint;
 		this.indexBuilders = indexBuilders;
-		this.params = params;
-
 		this.entityCounter = new EntityCounter();
-		this.lastType = new AtomicReference<EntityType>();
-		int poolSize = Integer.valueOf(params.getProperty(Parameters.CONFIG_WORKER_POOL_SIZE));
-		this.workerPool = new WorkerPool(poolSize, endpoint.getEntityDao());
+		this.workerPool = new WorkerPool(endpoint.getEntityDao(), params);
 	}
 
 	@Override
@@ -48,23 +40,8 @@ public class ElasticSearchWriterTask implements Sink {
 	public void process(EntityContainer entityContainer) {
 		Entity entity = entityContainer.getEntity();
 		EntityType type = entity.getType();
-		if (lastType.getAndSet(type) != type) {
-			workerPool.prepareNewEntityType(type, getBulkSizeForType(type));
-			endpoint.getIndexAdminService().refresh();
-		}
 		workerPool.submit(entity);
 		entityCounter.increment(type);
-	}
-
-	private int getBulkSizeForType(EntityType type) {
-		switch (type) {
-		case Node:
-			return Integer.valueOf(params.getProperty(Parameters.CONFIG_NODE_BULK_SIZE));
-		case Way:
-			return Integer.valueOf(params.getProperty(Parameters.CONFIG_WAY_BULK_SIZE));
-		default:
-			return 10;
-		}
 	}
 
 	@Override
@@ -75,7 +52,6 @@ public class ElasticSearchWriterTask implements Sink {
 				"total processed ways: ........ " + entityCounter.getCount(EntityType.Way) + "\n" +
 				"total processed relations: ... " + entityCounter.getCount(EntityType.Relation) + "\n" +
 				"total processed bounds: ...... " + entityCounter.getCount(EntityType.Bound));
-		endpoint.getIndexAdminService().refresh();
 		buildSpecializedIndex();
 	}
 
@@ -102,7 +78,6 @@ public class ElasticSearchWriterTask implements Sink {
 		float consumedMemoryMb = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())
 				/ (float) Math.pow(1024, 2);
 		LOG.info(String.format("Estimated memory consumption: %.2f MB", consumedMemoryMb));
-		endpoint.getIndexAdminService().refresh();
 		endpoint.getClient().close();
 	}
 
