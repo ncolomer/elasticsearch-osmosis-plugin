@@ -11,7 +11,7 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsReques
 import org.elasticsearch.action.count.CountRequest;
 import org.junit.Test;
 import org.openstreetmap.osmosis.core.Osmosis;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
 public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {

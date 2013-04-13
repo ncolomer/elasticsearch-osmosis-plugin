@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.model;
+package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 

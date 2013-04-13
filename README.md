@@ -155,7 +155,7 @@ Connect to cluster **elasticsearch** using default configuration:
 
 ```
 osmosis \
-	--read-pbf ~/osm/extract/guyane.osm.pbf \
+	--read-pbf ~/osm/extract/guyane-latest.osm.pbf \
 	--write-elasticsearch
 ```
 
@@ -164,7 +164,7 @@ and (re)create index **osm** prior to insert data:
 
 ```
 osmosis \
-	--read-pbf ~/osm/extract/guyane.osm.pbf \
+	--read-pbf ~/osm/extract/guyane-latest.osm.pbf \
 	--wes hosts="10.0.0.1:9310" clustername="openstreetmap" createIndex="true"
 ```
 
@@ -224,12 +224,12 @@ The *elasticsearch-osmosis-plugin* will convert and insert these data into elast
 
 You can get OSM files (planet, extract) from various location. OpenStreetMap have some listed on their dedicated 
 [Planet.osm](http://wiki.openstreetmap.org/wiki/Planet.osm) wiki page.
-Here is an example on how to get the `guyane.osm.pbf` extract by [Geofabrik.de](http://www.geofabrik.de/):
+Here is an example on how to get the `guyane-latest.osm.pbf` extract by [Geofabrik.de](http://www.geofabrik.de/):
 
 
 ```shell
 mkdir -p ~/osm/extract ~/osm/planet ~/osm/output
-wget -P ~/osm/extract http://download.geofabrik.de/openstreetmap/europe/france/guyane.osm.pbf
+wget -P ~/osm/extract http://download.geofabrik.de/europe/france/guyane-latest.osm.pbf
 ```
 
 ### 4.2. Useful elasticsearch HTTP commands

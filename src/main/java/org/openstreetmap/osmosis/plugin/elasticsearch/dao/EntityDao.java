@@ -23,11 +23,12 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntity;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntityType;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESWay;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
 
 public class EntityDao {
 
@@ -118,7 +119,8 @@ public class EntityDao {
 		for (Way way : ways) {
 			try {
 				int size = way.getWayNodes().size();
-				ESWay esWay = ESWay.Builder.buildFromEntity(way, getLocationArrayBuilder(iterator, size));
+				ESShape shape = getShape(iterator, size);
+				ESWay esWay = ESWay.Builder.buildFromEntity(way, shape);
 				bulkRequest.add(client.prepareIndex(indexName, esWay.getType().getIndiceName(), esWay.getIdString())
 						.setSource(esWay.toJson()));
 			} catch (Exception e) {
@@ -142,8 +144,8 @@ public class EntityDao {
 		return iterator;
 	}
 
-	protected LocationArrayBuilder getLocationArrayBuilder(Iterator<MultiGetItemResponse> iterator, int size) {
-		LocationArrayBuilder locationArrayBuilder = new LocationArrayBuilder(size);
+	protected ESShape getShape(Iterator<MultiGetItemResponse> iterator, int size) {
+		ESShapeBuilder shapeBuilder = new ESShapeBuilder(size);
 		for (int i = 0; i < size; i++) {
 			GetResponse response = iterator.next().getResponse();
 			if (!response.isExists()) continue;
@@ -151,9 +153,9 @@ public class EntityDao {
 			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
 			@SuppressWarnings("unchecked")
 			List<Double> coordinates = (List<Double>) shape.get("coordinates");
-			locationArrayBuilder.addLocation(coordinates.get(1), coordinates.get(0));
+			shapeBuilder.addLocation(coordinates.get(1), coordinates.get(0));
 		}
-		return locationArrayBuilder;
+		return shapeBuilder.build();
 	}
 
 	protected void executeBulkRequest(BulkRequestBuilder bulkRequest) {

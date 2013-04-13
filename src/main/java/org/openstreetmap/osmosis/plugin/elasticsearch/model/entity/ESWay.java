@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.model;
+package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -11,15 +11,16 @@ import java.util.Map;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
 
 public class ESWay extends ESEntity {
 
 	private final double[][] locations;
 
-	private ESWay(Way way, LocationArrayBuilder locationArrayBuilder) {
+	private ESWay(Way way, ESShape shape) {
 		super(way);
-		double[][] locations = locationArrayBuilder.toArray();
+		double[][] locations = shape.getGeoJsonArray();
 		if (locations.length != way.getWayNodes().size()) throw new IllegalArgumentException(String.format(
 				"Incorrect size! WayNodes: %d, Locations: %d", way.getWayNodes().size(), locations.length));
 		this.locations = locations;
@@ -27,7 +28,8 @@ public class ESWay extends ESEntity {
 
 	private ESWay(Builder builder) {
 		super(builder.id, builder.tags);
-		this.locations = builder.locationArrayBuilder.toArray();
+		ESShape shape = builder.shapeBuilder.build();
+		this.locations = shape.getGeoJsonArray();
 	}
 
 	@Override
@@ -108,7 +110,7 @@ public class ESWay extends ESEntity {
 	public static class Builder {
 
 		private long id;
-		private LocationArrayBuilder locationArrayBuilder = new LocationArrayBuilder();
+		private ESShapeBuilder shapeBuilder = new ESShapeBuilder();
 		private Map<String, String> tags = new HashMap<String, String>();
 
 		private Builder() {}
@@ -131,7 +133,7 @@ public class ESWay extends ESEntity {
 			return builder.build();
 		}
 
-		public static ESWay buildFromEntity(Way way, LocationArrayBuilder locationArrayBuilder) {
+		public static ESWay buildFromEntity(Way way, ESShape locationArrayBuilder) {
 			return new ESWay(way, locationArrayBuilder);
 		}
 
@@ -141,7 +143,7 @@ public class ESWay extends ESEntity {
 		}
 
 		public Builder addLocation(double latitude, double longitude) {
-			locationArrayBuilder.addLocation(latitude, longitude);
+			shapeBuilder.addLocation(latitude, longitude);
 			return this;
 		}
 

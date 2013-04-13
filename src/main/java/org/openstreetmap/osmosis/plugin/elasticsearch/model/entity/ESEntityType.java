@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.model;
+package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 
 public enum ESEntityType {
 

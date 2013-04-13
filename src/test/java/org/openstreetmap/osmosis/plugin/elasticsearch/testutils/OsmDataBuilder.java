@@ -10,8 +10,8 @@ import org.openstreetmap.osmosis.core.domain.v0_6.OsmUser;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESWay;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
 
 public class OsmDataBuilder {
 

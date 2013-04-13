@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.model;
+package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 
 import junit.framework.Assert;
 
@@ -9,6 +9,8 @@ import org.elasticsearch.index.query.GeoShapeFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
 import org.junit.Test;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
@@ -26,7 +28,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 	@Before
 	public void setUp() throws Exception {
 		indexAdminService = new IndexAdminService(client());
-		String mappings = "{\"way\":{\"properties\":{\"shape\":{\"type\":\"geo_shape\",\"properties\":{\"coordinates\":{\"type\":\"geo_point\"}}}}}}";
+		String mappings = "{\"way\":{\"properties\":{\"shape\":{\"type\":\"geo_shape\"}}}}";
 		indexAdminService.createIndex(INDEX_NAME, 1, 0, mappings);
 	}
 

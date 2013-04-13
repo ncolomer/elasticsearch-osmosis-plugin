@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.model;
+package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -16,7 +16,10 @@ import org.mockito.Mockito;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
 
 public class ESWayUTest {
 
@@ -33,7 +36,7 @@ public class ESWayUTest {
 		wayNodes.add(new WayNode(2l));
 		when(way.getWayNodes()).thenReturn(wayNodes);
 
-		LocationArrayBuilder builder = new LocationArrayBuilder();
+		ESShapeBuilder builder = new ESShapeBuilder();
 		builder.addLocation(11.0, 12.0).addLocation(21.0, 22.0);
 
 		ESWay expected = ESWay.Builder.create().id(1l)
@@ -41,7 +44,7 @@ public class ESWayUTest {
 				.addTag("highway", "primary").build();
 
 		// Action
-		ESWay actual = ESWay.Builder.buildFromEntity(way, builder);
+		ESWay actual = ESWay.Builder.buildFromEntity(way, builder.build());
 
 		// Assert
 		assertEquals(expected, actual);
@@ -60,11 +63,11 @@ public class ESWayUTest {
 		wayNodes.add(new WayNode(2l));
 		when(way.getWayNodes()).thenReturn(wayNodes);
 
-		LocationArrayBuilder builder = new LocationArrayBuilder();
+		ESShapeBuilder builder = new ESShapeBuilder();
 		builder.addLocation(11.0, 12.0);
 
 		// Action
-		ESWay.Builder.buildFromEntity(way, builder);
+		ESWay.Builder.buildFromEntity(way, builder.build());
 	}
 
 	@Test
@@ -129,7 +132,8 @@ public class ESWayUTest {
 				.addTag("highway", "primary").build();
 
 		ESWay way2 = ESWay.Builder.create().id(2l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0).addLocation(11.0, 12.0)
+				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
+				.addLocation(31.0, 32.0).addLocation(11.0, 12.0)
 				.addTag("highway", "primary").build();
 
 		// Assert
@@ -157,10 +161,11 @@ public class ESWayUTest {
 	public void toJson_withPolygon() {
 		// Setup
 		ESWay way = ESWay.Builder.create().id(1l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0).addLocation(11.0, 12.0)
+				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
+				.addLocation(31.0, 32.0).addLocation(11.0, 12.0)
 				.addTag("highway", "primary").build();
 		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
-				"[[[12.0,11.0],[22.0,21.0],[12.0,11.0]]]},\"tags\":{\"highway\":\"primary\"}}";
+				"[[[12.0,11.0],[22.0,21.0],[32.0,31.0],[12.0,11.0]]]},\"tags\":{\"highway\":\"primary\"}}";
 
 		// Action
 		String actual = way.toJson();

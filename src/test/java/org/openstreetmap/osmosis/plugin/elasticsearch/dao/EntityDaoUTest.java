@@ -46,11 +46,12 @@ import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntity;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESEntityType;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.ESNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
-import org.openstreetmap.osmosis.plugin.elasticsearch.utils.LocationArrayBuilder;
 
 @SuppressWarnings("unchecked")
 public class EntityDaoUTest {
@@ -142,8 +143,8 @@ public class EntityDaoUTest {
 		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
 		doReturn(iteratorMocked).when(entityDao).getNodeItems(any(List.class));
 
-		LocationArrayBuilder builder = new LocationArrayBuilder(1).addLocation(1.0, 2.0);
-		doReturn(builder).when(entityDao).getLocationArrayBuilder(iteratorMocked, 1);
+		ESShape builder = new ESShapeBuilder(1).addLocation(1.0, 2.0).build();
+		doReturn(builder).when(entityDao).getShape(iteratorMocked, 1);
 
 		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
 		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
@@ -172,8 +173,8 @@ public class EntityDaoUTest {
 		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
 		doReturn(iteratorMocked).when(entityDao).getNodeItems(any(List.class));
 
-		LocationArrayBuilder builder = new LocationArrayBuilder(1).addLocation(1.0, 2.0);
-		doReturn(builder).when(entityDao).getLocationArrayBuilder(iteratorMocked, 1);
+		ESShape builder = new ESShapeBuilder(1).addLocation(1.0, 2.0).build();
+		doReturn(builder).when(entityDao).getShape(iteratorMocked, 1);
 
 		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
 		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
@@ -243,13 +244,13 @@ public class EntityDaoUTest {
 		when(iteratorMocked.next()).thenReturn(multiGetItemResponseMocked);
 
 		// Action
-		LocationArrayBuilder actual = entityDao.getLocationArrayBuilder(iteratorMocked, 2);
+		ESShape actual = entityDao.getShape(iteratorMocked, 2);
 
 		// Assert
 		Assert.assertTrue(Arrays.deepEquals(new double[][] {
 				new double[] { 2.0, 1.0 },
 				new double[] { 4.0, 3.0 }
-		}, actual.toArray()));
+		}, actual.getGeoJsonArray()));
 	}
 
 	@Test
@@ -271,12 +272,12 @@ public class EntityDaoUTest {
 		when(iteratorMocked.next()).thenReturn(multiGetItemResponseMocked);
 
 		// Action
-		LocationArrayBuilder actual = entityDao.getLocationArrayBuilder(iteratorMocked, 2);
+		ESShape actual = entityDao.getShape(iteratorMocked, 2);
 
 		// Assert
 		Assert.assertTrue(Arrays.deepEquals(new double[][] {
 				new double[] { 2.0, 1.0 }
-		}, actual.toArray()));
+		}, actual.getGeoJsonArray()));
 	}
 
 	@Test

@@ -1,4 +1,4 @@
-package org.openstreetmap.osmosis.plugin.elasticsearch.model;
+package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -15,6 +15,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
 
 public class ESNodeUTest {
 
