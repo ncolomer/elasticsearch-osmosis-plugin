@@ -3,7 +3,6 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,90 +10,71 @@ import java.util.Map;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESLocation;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShapeType;
 
 public class ESWay extends ESEntity {
 
-	private final double[][] locations;
+	private final ESShape shape;
 
 	private ESWay(Way way, ESShape shape) {
 		super(way);
 		double[][] locations = shape.getGeoJsonArray();
 		if (locations.length != way.getWayNodes().size()) throw new IllegalArgumentException(String.format(
-				"Incorrect size! WayNodes: %d, Locations: %d", way.getWayNodes().size(), locations.length));
-		this.locations = locations;
+				"Incorrect size! WayNodes: %d, Shape: %d", way.getWayNodes().size(), locations.length));
+		this.shape = shape;
 	}
 
 	private ESWay(Builder builder) {
 		super(builder.id, builder.tags);
-		ESShape shape = builder.shapeBuilder.build();
-		this.locations = shape.getGeoJsonArray();
+		this.shape = builder.shape;
 	}
 
 	@Override
-	public ESEntityType getType() {
+	public ESEntityType getEntityType() {
 		return ESEntityType.WAY;
 	}
 
-	public double[][] getLocations() {
-		return locations;
-	}
-
-	public boolean isClosed() {
-		double[] first = locations[0];
-		double[] last = locations[locations.length - 1];
-		return Arrays.equals(first, last);
+	@Override
+	public ESShapeType getShapeType() {
+		return shape.getShapeType();
 	}
 
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + Arrays.hashCode(locations);
-		return result;
+	public ESLocation getCentroid() {
+		return shape.getCentroid();
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (getClass() != obj.getClass()) return false;
-		ESWay other = (ESWay) obj;
-		if (!Arrays.deepEquals(locations, other.locations)) return false;
-		return true;
+	public double getArea() {
+		return shape.getAreaKm2();
 	}
 
 	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Way [id=");
-		builder.append(getId());
-		builder.append(", isClosed=");
-		builder.append(isClosed());
-		builder.append(", tags=");
-		builder.append(getTags());
-		builder.append(", locations=");
-		builder.append(Arrays.deepToString(locations));
-		builder.append("]");
-		return builder.toString();
+	public double getLenght() {
+		return shape.getLengthKm();
 	}
 
 	@Override
 	public String toJson() {
 		XContentBuilder builder = null;
 		try {
-			boolean isClosed = isClosed();
 			builder = jsonBuilder();
 			builder.startObject();
+			ESLocation centroid = shape.getCentroid();
+			builder.field("centroid", new double[] { centroid.getLongitude(), centroid.getLatitude() });
+			builder.field("length", shape.getLengthKm());
+			builder.field("area", shape.getAreaKm2());
 			builder.startObject("shape");
-			builder.field("type", isClosed ? "polygon" : "linestring");
+			builder.field("type", shape.isClosed() ? "polygon" : "linestring");
 			builder.startArray("coordinates");
-			if (isClosed) builder.startArray();
-			for (double[] location : locations) {
+			if (shape.isClosed()) builder.startArray();
+			for (double[] location : shape.getGeoJsonArray()) {
 				builder.startArray().value(location[0]).value(location[1]).endArray();
 			}
-			if (isClosed) builder.endArray();
+			if (shape.isClosed()) builder.endArray();
 			builder.endArray();
 			builder.endObject();
 			builder.field("tags", getTags());
@@ -107,10 +87,45 @@ public class ESWay extends ESEntity {
 		}
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((shape == null) ? 0 : shape.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (getClass() != obj.getClass()) return false;
+		ESWay other = (ESWay) obj;
+		if (shape == null) {
+			if (other.shape != null) return false;
+		} else if (!shape.equals(other.shape)) return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ESWay [id=");
+		builder.append(getId());
+		builder.append(", shape=");
+		builder.append(shape);
+		builder.append(", tags=");
+		builder.append(getTags());
+		builder.append("]");
+		return builder.toString();
+	}
+
 	public static class Builder {
 
-		private long id;
 		private ESShapeBuilder shapeBuilder = new ESShapeBuilder();
+
+		private long id;
+		private ESShape shape;
 		private Map<String, String> tags = new HashMap<String, String>();
 
 		private Builder() {}
@@ -122,11 +137,16 @@ public class ESWay extends ESEntity {
 		@SuppressWarnings("unchecked")
 		public static ESWay buildFromGetReponse(GetResponse response) {
 			if (!response.getType().equals(ESEntityType.WAY.getIndiceName())) throw new IllegalArgumentException("Provided GetResponse is not a Way");
+
+			System.out.println(response.getSourceAsString());
+
 			Builder builder = new Builder();
 			builder.id = Long.valueOf(response.getId());
 			builder.tags = (Map<String, String>) response.getField("tags").getValue();
+
 			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
-			if (shape.get("type").equals("linestring")) {
+			String type = (String) shape.get("type");
+			if ("linestring".equals(type)) {
 				List<List<Double>> locations = (List<List<Double>>) shape.get("coordinates");
 				for (List<Double> location : locations) {
 					builder.addLocation(location.get(1), location.get(0));
@@ -138,7 +158,15 @@ public class ESWay extends ESEntity {
 				}
 			}
 
-			return builder.build();
+			List<Double> centroid = (List<Double>) response.getField("centroid").getValue();
+			builder.shapeBuilder.setCentroid(new ESLocation(centroid.get(1), centroid.get(0)));
+			Double length = (Double) response.getField("length").getValue();
+			builder.shapeBuilder.setLength(length);
+			Double area = (Double) response.getField("area").getValue();
+			builder.shapeBuilder.setArea(area);
+
+			builder.shape = builder.shapeBuilder.buildFast();
+			return new ESWay(builder);
 		}
 
 		public static ESWay buildFromEntity(Way way, ESShape locationArrayBuilder) {
@@ -161,6 +189,7 @@ public class ESWay extends ESEntity {
 		}
 
 		public ESWay build() {
+			this.shape = shapeBuilder.build();
 			return new ESWay(this);
 		}
 

@@ -15,8 +15,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
 
 public class ESNodeUTest {
 
@@ -83,7 +81,7 @@ public class ESNodeUTest {
 				.addTag("highway", "primary").build();
 
 		// Action
-		ESEntityType actual = node.getType();
+		ESEntityType actual = node.getEntityType();
 
 		// Assert
 		assertEquals(ESEntityType.NODE, actual);
@@ -93,9 +91,9 @@ public class ESNodeUTest {
 	public void toJson() {
 		// Setup
 		ESNode node = ESNode.Builder.create().id(1l).location(1.0, 2.0)
-				.addTag("highway", "primary").build();
-		String expected = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]}," +
-				"\"tags\":{\"highway\":\"primary\"}}";
+				.addTag("highway", "traffic_signals").build();
+		String expected = "{\"centroid\":[2.0,1.0],\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]}," +
+				"\"tags\":{\"highway\":\"traffic_signals\"}}";
 
 		// Action
 		String actual = node.toJson();

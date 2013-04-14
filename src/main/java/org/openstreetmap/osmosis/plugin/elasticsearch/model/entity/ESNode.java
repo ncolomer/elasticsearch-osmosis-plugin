@@ -10,6 +10,8 @@ import java.util.Map;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESLocation;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShapeType;
 
 public class ESNode extends ESEntity {
 
@@ -29,8 +31,28 @@ public class ESNode extends ESEntity {
 	}
 
 	@Override
-	public ESEntityType getType() {
+	public ESEntityType getEntityType() {
 		return ESEntityType.NODE;
+	}
+
+	@Override
+	public ESShapeType getShapeType() {
+		return ESShapeType.POINT;
+	}
+
+	@Override
+	public ESLocation getCentroid() {
+		return new ESLocation(latitude, longitude);
+	}
+
+	@Override
+	public double getLenght() {
+		return 0;
+	}
+
+	@Override
+	public double getArea() {
+		return 0;
 	}
 
 	public double getLatitude() {
@@ -39,6 +61,27 @@ public class ESNode extends ESEntity {
 
 	public double getLongitude() {
 		return longitude;
+	}
+
+	@Override
+	public String toJson() {
+		XContentBuilder builder = null;
+		try {
+			builder = jsonBuilder();
+			builder.startObject();
+			builder.field("centroid", new double[] { longitude, latitude });
+			builder.startObject("shape")
+					.field("type", "point")
+					.field("coordinates", new double[] { longitude, latitude })
+					.endObject();
+			builder.field("tags", getTags());
+			builder.endObject();
+			return builder.string();
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to serialize Node to Json", e);
+		} finally {
+			if (builder != null) builder.close();
+		}
 	}
 
 	@Override
@@ -67,7 +110,7 @@ public class ESNode extends ESEntity {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("Node [id=");
+		builder.append("ESNode [id=");
 		builder.append(getId());
 		builder.append(", lat=");
 		builder.append(latitude);
@@ -77,26 +120,6 @@ public class ESNode extends ESEntity {
 		builder.append(getTags());
 		builder.append("]");
 		return builder.toString();
-	}
-
-	@Override
-	public String toJson() {
-		XContentBuilder builder = null;
-		try {
-			builder = jsonBuilder();
-			builder.startObject();
-			builder.startObject("shape")
-					.field("type", "point")
-					.field("coordinates", new double[] { longitude, latitude })
-					.endObject();
-			builder.field("tags", getTags());
-			builder.endObject();
-			return builder.string();
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to serialize Node to Json", e);
-		} finally {
-			if (builder != null) builder.close();
-		}
 	}
 
 	public static class Builder {

@@ -24,10 +24,10 @@ public class ESShapeUTest {
 		ESShape shape = shapeBuilder.build();
 
 		// Assert
-		Assert.assertEquals(ESShapeType.POINT, shape.getType());
+		Assert.assertEquals(ESShapeType.POINT, shape.getShapeType());
 		Assert.assertTrue(shape.isClosed());
 		Assert.assertEquals(0, shape.getAreaKm2(), 1E-6);
-		Assert.assertEquals(0, shape.getLenghtKm(), 1E-3);
+		Assert.assertEquals(0, shape.getLengthKm(), 1E-3);
 		Assert.assertEquals(new ESLocation(48.675881, 2.379247), shape.getCentroid());
 	}
 
@@ -43,10 +43,10 @@ public class ESShapeUTest {
 		ESShape shape = shapeBuilder.build();
 
 		// Assert
-		Assert.assertEquals(ESShapeType.LINESTRING, shape.getType());
+		Assert.assertEquals(ESShapeType.LINESTRING, shape.getShapeType());
 		Assert.assertFalse(shape.isClosed());
 		Assert.assertEquals(0, shape.getAreaKm2(), 1E-6);
-		Assert.assertEquals(721E-3, shape.getLenghtKm(), 1E-3);
+		Assert.assertEquals(721E-3, shape.getLengthKm(), 1E-3);
 		Assert.assertEquals(new ESLocation(48.67559909155728, 2.3822438099468224), shape.getCentroid());
 	}
 
@@ -60,10 +60,10 @@ public class ESShapeUTest {
 		ESShape shape = shapeBuilder.build();
 
 		// Assert
-		Assert.assertEquals(ESShapeType.POLYGON, shape.getType());
+		Assert.assertEquals(ESShapeType.POLYGON, shape.getShapeType());
 		Assert.assertTrue(shape.isClosed());
 		Assert.assertEquals(160E-6, shape.getAreaKm2(), 1E-6);
-		Assert.assertEquals(52E-3, shape.getLenghtKm(), 1E-3);
+		Assert.assertEquals(52E-3, shape.getLengthKm(), 1E-3);
 		Assert.assertEquals(new ESLocation(48.67588161300993, 2.379247584621654), shape.getCentroid());
 	}
 

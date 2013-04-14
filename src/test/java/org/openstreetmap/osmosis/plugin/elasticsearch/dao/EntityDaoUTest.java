@@ -158,7 +158,7 @@ public class EntityDaoUTest {
 		entityDao.saveAllNodes(Arrays.asList(node));
 
 		// Assert
-		String source = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
+		String source = "{\"centroid\":[2.0,1.0],\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		verify(clientMocked).prepareIndex(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1");
 		verify(indexRequestBuilderMocked).setSource(source);
 		verify(bulkRequestBuilderMocked).add(indexRequestBuilderMocked);
@@ -173,8 +173,8 @@ public class EntityDaoUTest {
 		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
 		doReturn(iteratorMocked).when(entityDao).getNodeItems(any(List.class));
 
-		ESShape builder = new ESShapeBuilder(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
-				.addLocation(1.3, 2.3).addLocation(1.1, 2.1).build();
+		ESShape builder = new ESShapeBuilder(1).addLocation(1.0, 2.0).addLocation(2.0, 3.0)
+				.addLocation(3.0, 2.0).addLocation(1.0, 2.0).build();
 		doReturn(builder).when(entityDao).getShape(iteratorMocked, 4);
 
 		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
@@ -191,7 +191,9 @@ public class EntityDaoUTest {
 
 		// Assert
 		verify(entityDao).getNodeItems(ways);
-		String source = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.1,1.1],[2.2,1.2],[2.3,1.3],[2.1,1.1]]]},\"tags\":{\"highway\":\"residential\"}}";
+		String source = "{\"centroid\":[2.3333333333333335,2.0],\"length\":536.8973391277414," +
+				"\"area\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+				"[[[2.0,1.0],[3.0,2.0],[2.0,3.0],[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
 		verify(clientMocked).prepareIndex(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "1");
 		verify(indexRequestBuilderMocked).setSource(source);
 		verify(bulkRequestBuilderMocked).add(indexRequestBuilderMocked);
@@ -419,8 +421,10 @@ public class EntityDaoUTest {
 		MultiGetRequestBuilder actual = entityDao.buildMultiGetRequest(ESNode.class, 1, 2);
 
 		// Assert
-		Item item1 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1").fields("shape", "tags");
-		Item item2 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1").fields("shape", "tags");
+		Item item1 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1")
+				.fields("centroid", "length", "area", "shape", "tags");
+		Item item2 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "2")
+				.fields("centroid", "length", "area", "shape", "tags");
 		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item1)));
 		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item2)));
 		Assert.assertSame(multiGetRequestBuilderMocked, actual);

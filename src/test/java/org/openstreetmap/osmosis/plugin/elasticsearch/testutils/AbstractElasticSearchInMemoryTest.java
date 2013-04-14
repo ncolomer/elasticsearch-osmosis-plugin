@@ -80,7 +80,7 @@ public abstract class AbstractElasticSearchInMemoryTest {
 
 	protected void index(String index, ESEntity... entities) {
 		for (ESEntity entity : entities) {
-			index(index, entity.getType().getIndiceName(), entity.getIdString(), entity.toJson());
+			index(index, entity.getEntityType().getIndiceName(), entity.getIdString(), entity.toJson());
 		}
 	}
 

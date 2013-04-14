@@ -34,10 +34,10 @@ public class ESWayUTest {
 		when(way.getWayNodes()).thenReturn(wayNodes);
 
 		ESShapeBuilder builder = new ESShapeBuilder();
-		builder.addLocation(11.0, 12.0).addLocation(21.0, 22.0);
+		builder.addLocation(1.0, 2.0).addLocation(2.0, 3.0);
 
 		ESWay expected = ESWay.Builder.create().id(1l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
+				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
 				.addTag("highway", "primary").build();
 
 		// Action
@@ -61,7 +61,7 @@ public class ESWayUTest {
 		when(way.getWayNodes()).thenReturn(wayNodes);
 
 		ESShapeBuilder builder = new ESShapeBuilder();
-		builder.addLocation(11.0, 12.0);
+		builder.addLocation(1.0, 2.0);
 
 		// Action
 		ESWay.Builder.buildFromEntity(way, builder.build());
@@ -78,17 +78,20 @@ public class ESWayUTest {
 		when(response.getField("tags").getValue()).thenReturn(tags);
 		List<List<List<Double>>> locations = new ArrayList<List<List<Double>>>();
 		ArrayList<List<Double>> subLocations = new ArrayList<List<Double>>();
-		subLocations.add(Arrays.asList(new Double[] { 12.0, 11.0 }));
-		subLocations.add(Arrays.asList(new Double[] { 22.0, 21.0 }));
+		subLocations.add(Arrays.asList(new Double[] { 2.0, 1.0 }));
+		subLocations.add(Arrays.asList(new Double[] { 3.0, 2.0 }));
 		locations.add(subLocations);
 		@SuppressWarnings("unchecked")
 		Map<String, Object> shape = mock(Map.class);
 		when(shape.get("type")).thenReturn("polygon");
 		when(shape.get("coordinates")).thenReturn(locations);
 		when(response.getField("shape").getValue()).thenReturn(shape);
+		when(response.getField("centroid").getValue()).thenReturn(Arrays.asList(new Double[] { 2.5, 1.5 }));
+		when(response.getField("length").getValue()).thenReturn(157.25358982950198d);
+		when(response.getField("area").getValue()).thenReturn(0d);
 
 		ESWay expected = ESWay.Builder.create().id(1l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
+				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
 				.addTag("highway", "primary").build();
 
 		// Action
@@ -112,41 +115,25 @@ public class ESWayUTest {
 	public void getType() {
 		// Setup
 		ESWay way = ESWay.Builder.create().id(1l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
+				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
 				.addTag("highway", "primary").build();
 
 		// Action
-		ESEntityType actual = way.getType();
+		ESEntityType actual = way.getEntityType();
 
 		// Assert
 		assertEquals(ESEntityType.WAY, actual);
 	}
 
 	@Test
-	public void isClosed() {
-		// Setup
-		ESWay way1 = ESWay.Builder.create().id(1l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
-				.addTag("highway", "primary").build();
-
-		ESWay way2 = ESWay.Builder.create().id(2l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
-				.addLocation(31.0, 32.0).addLocation(11.0, 12.0)
-				.addTag("highway", "primary").build();
-
-		// Assert
-		assertEquals(false, way1.isClosed());
-		assertEquals(true, way2.isClosed());
-	}
-
-	@Test
 	public void toJson_withLinestring() {
 		// Setup
 		ESWay way = ESWay.Builder.create().id(1l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
+				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
 				.addTag("highway", "primary").build();
-		String expected = "{\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
-				"[[12.0,11.0],[22.0,21.0]]},\"tags\":{\"highway\":\"primary\"}}";
+		String expected = "{\"centroid\":[2.5,1.5],\"length\":157.25358982950198," +
+				"\"area\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
+				"[[2.0,1.0],[3.0,2.0]]},\"tags\":{\"highway\":\"primary\"}}";
 
 		// Action
 		String actual = way.toJson();
@@ -159,11 +146,12 @@ public class ESWayUTest {
 	public void toJson_withPolygon() {
 		// Setup
 		ESWay way = ESWay.Builder.create().id(1l)
-				.addLocation(11.0, 12.0).addLocation(21.0, 22.0)
-				.addLocation(31.0, 32.0).addLocation(11.0, 12.0)
+				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
+				.addLocation(3.0, 2.0).addLocation(1.0, 2.0)
 				.addTag("highway", "primary").build();
-		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
-				"[[[12.0,11.0],[22.0,21.0],[32.0,31.0],[12.0,11.0]]]},\"tags\":{\"highway\":\"primary\"}}";
+		String expected = "{\"centroid\":[2.3333333333333335,2.0],\"length\":536.8973391277414," +
+				"\"area\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+				"[[[2.0,1.0],[3.0,2.0],[2.0,3.0],[2.0,1.0]]]},\"tags\":{\"highway\":\"primary\"}}";
 
 		// Action
 		String actual = way.toJson();

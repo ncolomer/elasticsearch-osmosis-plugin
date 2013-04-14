@@ -49,7 +49,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
+		String expected = "{\"centroid\":[2.0,1.0],\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
@@ -57,9 +57,9 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void saveWay_withPolygon() {
 		// Setup
-		ESNode node1 = ESNode.Builder.create().id(1).location(1.1, 2.1).build();
-		ESNode node2 = ESNode.Builder.create().id(2).location(1.2, 2.2).build();
-		ESNode node3 = ESNode.Builder.create().id(3).location(1.3, 2.3).build();
+		ESNode node1 = ESNode.Builder.create().id(1).location(1, 2).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(2, 3).build();
+		ESNode node3 = ESNode.Builder.create().id(3).location(3, 2).build();
 		index(INDEX_NAME, node1, node2, node3);
 
 		Way way = OsmDataBuilder.buildSampleWay(1, 1, 2, 3, 1);
@@ -71,7 +71,9 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.1,1.1],[2.2,1.2],[2.3,1.3],[2.1,1.1]]]},\"tags\":{\"highway\":\"residential\"}}";
+		String expected = "{\"centroid\":[2.3333333333333335,2.0],\"length\":536.8973391277414," +
+				"\"area\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+				"[[[2.0,1.0],[3.0,2.0],[2.0,3.0],[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
@@ -79,10 +81,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void saveWay_withLineString() {
 		// Setup
-		ESNode node1 = ESNode.Builder.create().id(1).location(1.1, 2.1).build();
-		ESNode node2 = ESNode.Builder.create().id(2).location(1.2, 2.2).build();
-		ESNode node3 = ESNode.Builder.create().id(3).location(1.3, 2.3).build();
-		ESNode node4 = ESNode.Builder.create().id(4).location(1.4, 2.4).build();
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(2.0, 3.0).build();
+		ESNode node3 = ESNode.Builder.create().id(3).location(3.0, 2.0).build();
+		ESNode node4 = ESNode.Builder.create().id(4).location(4.0, 1.0).build();
 		index(INDEX_NAME, node1, node2, node3, node4);
 
 		Way way = OsmDataBuilder.buildSampleWay(1, 1, 2, 3, 4);
@@ -94,7 +96,9 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"shape\":{\"type\":\"linestring\",\"coordinates\":[[2.1,1.1],[2.2,1.2],[2.3,1.3],[2.4,1.4]]},\"tags\":{\"highway\":\"residential\"}}";
+		String expected = "{\"centroid\":[2.1666666666666665,2.5],\"length\":471.76076948850596," +
+				"\"area\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
+				"[[2.0,1.0],[3.0,2.0],[2.0,3.0],[1.0,4.0]]},\"tags\":{\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
@@ -110,17 +114,18 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		refresh(INDEX_NAME);
 
 		// Assert
+		String expected = "{\"centroid\":[2.0,1.0],\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]}," +
+				"\"tags\":{\"highway\":\"traffic_signals\"}}";
+
 		GetResponse response1 = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
 		Assert.assertTrue(response1.isExists());
-		String expected1 = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		String actual1 = response1.getSourceAsString();
-		Assert.assertEquals(expected1, actual1);
+		Assert.assertEquals(expected, actual1);
 
 		GetResponse response2 = client().prepareGet(INDEX_NAME, "node", "2").execute().actionGet();
 		Assert.assertTrue(response2.isExists());
-		String expected2 = "{\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		String actual2 = response2.getSourceAsString();
-		Assert.assertEquals(expected2, actual2);
+		Assert.assertEquals(expected, actual2);
 	}
 
 	/* find */
@@ -153,8 +158,8 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findWay_withLineString() {
 		// Setup
-		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
-				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.0, 2.0).addLocation(2.0, 3.0)
+				.addLocation(3.0, 2.0).addLocation(4.0, 1.0).build();
 		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 

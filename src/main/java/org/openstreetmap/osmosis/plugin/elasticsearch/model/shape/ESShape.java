@@ -1,6 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.model.shape;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.elasticsearch.common.geo.GeoShapeConstants;
@@ -17,40 +18,136 @@ import com.vividsolutions.jts.geom.Polygon;
 
 public class ESShape {
 
-	private ESShapeType esShapeType;
-	private boolean isClosed;
-	private double area;
-	private double lenght;
-	private ESLocation centroid;
-	private double[][] geoJsonArray;
+	private final ESShapeType esShapeType;
+	private final ESLocation centroid;
+	private final double length;
+	private final double area;
+	private final double[][] geoJsonArray;
 
-	private ESShape() {}
+	private ESShape(ESShapeBuilder builder) {
+		this.esShapeType = builder.esShapeType;
+		this.area = builder.area;
+		this.length = builder.length;
+		this.centroid = builder.centroid;
+		this.geoJsonArray = builder.geoJsonArray;
+	}
 
-	public ESShapeType getType() {
+	public ESShapeType getShapeType() {
 		return esShapeType;
 	}
 
 	public boolean isClosed() {
-		return isClosed;
-	}
-
-	public double getAreaKm2() {
-		return area;
-	}
-
-	public double getLenghtKm() {
-		return lenght;
+		switch (esShapeType) {
+		case POINT:
+			return true;
+		case LINESTRING:
+			return false;
+		case POLYGON:
+			return true;
+		default:
+			return false;
+		}
 	}
 
 	public ESLocation getCentroid() {
 		return centroid;
 	}
 
+	public double getLengthKm() {
+		return length;
+	}
+
+	public double getAreaKm2() {
+		return area;
+	}
+
 	public double[][] getGeoJsonArray() {
 		return geoJsonArray;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(area);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + ((centroid == null) ? 0 : centroid.hashCode());
+		result = prime * result + ((esShapeType == null) ? 0 : esShapeType.hashCode());
+		result = prime * result + Arrays.hashCode(geoJsonArray);
+		temp = Double.doubleToLongBits(length);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		ESShape other = (ESShape) obj;
+		if (Double.doubleToLongBits(area) != Double.doubleToLongBits(other.area)) return false;
+		if (centroid == null) {
+			if (other.centroid != null) return false;
+		} else if (!centroid.equals(other.centroid)) return false;
+		if (esShapeType != other.esShapeType) return false;
+		if (!Arrays.deepEquals(geoJsonArray, other.geoJsonArray)) return false;
+		if (Double.doubleToLongBits(length) != Double.doubleToLongBits(other.length)) return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ESShape [esShapeType=");
+		builder.append(esShapeType);
+		builder.append(", isClosed=");
+		builder.append(isClosed());
+		builder.append(", centroid=");
+		builder.append(centroid);
+		builder.append(", lenght=");
+		builder.append(length);
+		builder.append(", area=");
+		builder.append(area);
+		builder.append(", geoJsonArray=");
+		builder.append(Arrays.deepToString(geoJsonArray));
+		builder.append("]");
+		return builder.toString();
+	}
+
 	public static class ESShapeBuilder {
+
+		private ESShapeType esShapeType;
+		private double area;
+		private double length;
+		private ESLocation centroid;
+		private double[][] geoJsonArray;
+
+		/*
+		 * REGULAR BUILDER
+		 */
+
+		public void setArea(double area) {
+			this.area = area;
+		}
+
+		public void setLength(double length) {
+			this.length = length;
+		}
+
+		public void setCentroid(ESLocation centroid) {
+			this.centroid = centroid;
+		}
+
+		public ESShape buildFast() {
+			this.esShapeType = getShapeType();
+			this.geoJsonArray = toGeoJsonArray();
+			return new ESShape(this);
+		}
+
+		/*
+		 * SPECIALIZED BUILDER (FROM LOCATIONS)
+		 */
 
 		private final List<ESLocation> locations;
 
@@ -68,16 +165,14 @@ public class ESShape {
 		}
 
 		public ESShape build() {
-			ESShape shape = new ESShape();
-			shape.isClosed = isClosed();
-			shape.esShapeType = getShapeType();
+			this.esShapeType = getShapeType();
 			Geometry geometry = buildGeometry();
-			shape.area = degree2ToKm2(geometry.getArea());
-			shape.lenght = degreeToKm(geometry.getLength());
+			this.area = degree2ToKm2(geometry.getArea());
+			this.length = degreeToKm(geometry.getLength());
 			Point centroid = geometry.getCentroid();
-			shape.centroid = new ESLocation(centroid.getY(), centroid.getX());
-			shape.geoJsonArray = toGeoJsonArray();
-			return shape;
+			this.centroid = new ESLocation(centroid.getY(), centroid.getX());
+			this.geoJsonArray = toGeoJsonArray();
+			return new ESShape(this);
 		}
 
 		private boolean isClosed() {

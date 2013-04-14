@@ -103,7 +103,7 @@ public class EntityDao {
 		for (Node node : nodes) {
 			try {
 				ESNode esNode = ESNode.Builder.buildFromEntity(node);
-				bulkRequest.add(client.prepareIndex(indexName, esNode.getType().getIndiceName(), esNode.getIdString())
+				bulkRequest.add(client.prepareIndex(indexName, esNode.getEntityType().getIndiceName(), esNode.getIdString())
 						.setSource(esNode.toJson()));
 			} catch (Exception exception) {
 				LOG.warning(String.format("Unable to add Entity %s to bulk request, cause: %s",
@@ -121,7 +121,7 @@ public class EntityDao {
 				int size = way.getWayNodes().size();
 				ESShape shape = getShape(iterator, size);
 				ESWay esWay = ESWay.Builder.buildFromEntity(way, shape);
-				bulkRequest.add(client.prepareIndex(indexName, esWay.getType().getIndiceName(), esWay.getIdString())
+				bulkRequest.add(client.prepareIndex(indexName, esWay.getEntityType().getIndiceName(), esWay.getIdString())
 						.setSource(esWay.toJson()));
 			} catch (Exception e) {
 				LOG.warning(String.format("Unable to add Entity %s to bulk request, cause: %s",
@@ -231,7 +231,8 @@ public class EntityDao {
 		ESEntityType type = ESEntityType.valueOf(entityClass);
 		MultiGetRequestBuilder request = client.prepareMultiGet();
 		for (long osmId : osmIds) {
-			request.add(new Item(indexName, type.getIndiceName(), String.valueOf(osmId)).fields("shape", "tags"));
+			request.add(new Item(indexName, type.getIndiceName(), String.valueOf(osmId))
+					.fields("centroid", "length", "area", "shape", "tags"));
 		}
 		return request;
 	}

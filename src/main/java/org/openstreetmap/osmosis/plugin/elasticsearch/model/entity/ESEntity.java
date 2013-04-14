@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESLocation;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShapeType;
 
 public abstract class ESEntity {
 
@@ -24,7 +26,15 @@ public abstract class ESEntity {
 		this.tags = tags;
 	}
 
-	public abstract ESEntityType getType();
+	public abstract ESEntityType getEntityType();
+
+	public abstract ESShapeType getShapeType();
+
+	public abstract ESLocation getCentroid();
+
+	public abstract double getLenght();
+
+	public abstract double getArea();
 
 	public abstract String toJson();
 
