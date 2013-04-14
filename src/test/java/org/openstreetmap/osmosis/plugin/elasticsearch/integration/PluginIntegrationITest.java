@@ -14,7 +14,7 @@ import org.openstreetmap.osmosis.core.Osmosis;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
-public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
+public class PluginIntegrationITest extends AbstractElasticSearchInMemoryTest {
 
 	private static final String INDEX_NAME = "osm-test";
 
@@ -23,15 +23,14 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 		// Action
 		Osmosis.run(new String[] {
 				"--read-xml",
-				getOsmExtractFile().getPath(),
+				getResourceFile("mondeville-20130123.osm").getPath(),
 				"--write-elasticsearch",
 				"cluster.hosts=" + nodeAddress(),
 				"cluster.name=" + clusterName(),
 				"index.name=" + INDEX_NAME,
 				"index.create=true"
 		});
-
-		refresh();
+		refresh(INDEX_NAME);
 
 		// Assert
 		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().isExists());
@@ -39,8 +38,8 @@ public class PluginIntegrationTest extends AbstractElasticSearchInMemoryTest {
 		assertEquals(225, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.WAY.getIndiceName())).actionGet().getCount());
 	}
 
-	private File getOsmExtractFile() throws URISyntaxException {
-		URL url = getClass().getResource("/mondeville-20130123.osm");
+	private File getResourceFile(String filename) throws URISyntaxException {
+		URL url = getClass().getResource("/" + filename);
 		return new File(url.toURI());
 	}
 

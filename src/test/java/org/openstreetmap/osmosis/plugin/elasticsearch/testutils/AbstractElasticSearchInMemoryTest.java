@@ -18,6 +18,7 @@ import org.elasticsearch.node.NodeBuilder;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
 
 /**
  * Provides an empty in-memory elasticsearch index
@@ -75,6 +76,16 @@ public abstract class AbstractElasticSearchInMemoryTest {
 
 	protected boolean exists(String... indices) {
 		return client().admin().indices().prepareExists(indices).execute().actionGet().isExists();
+	}
+
+	protected void index(String index, ESEntity... entities) {
+		for (ESEntity entity : entities) {
+			index(index, entity.getType().getIndiceName(), entity.getIdString(), entity.toJson());
+		}
+	}
+
+	protected void index(String index, String type, String id, String source) {
+		client().prepareIndex(index, type, id).setSource(source).execute().actionGet();
 	}
 
 	protected String clusterName() {

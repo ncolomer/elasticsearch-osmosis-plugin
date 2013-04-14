@@ -42,6 +42,11 @@ public class Parameters {
 		return params.containsKey(key);
 	}
 
+	@Override
+	public String toString() {
+		return "Parameters [params=" + params + "]";
+	}
+
 	public static class Builder {
 
 		private Properties params = new Properties();
