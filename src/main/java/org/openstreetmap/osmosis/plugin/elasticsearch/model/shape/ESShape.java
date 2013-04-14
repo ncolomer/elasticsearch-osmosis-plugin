@@ -7,10 +7,13 @@ import org.elasticsearch.common.geo.GeoShapeConstants;
 
 import com.spatial4j.core.distance.DistanceUtils;
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.Polygon;
 
 public class ESShape {
 
@@ -65,16 +68,16 @@ public class ESShape {
 		}
 
 		public ESShape build() {
-			ESShape esShape = new ESShape();
-			esShape.isClosed = isClosed();
-			esShape.esShapeType = getShapeType();
-			Geometry geometry = getGeometry();
-			esShape.area = degree2ToKm2(geometry.getArea());
-			esShape.lenght = degreeToKm(geometry.getLength());
+			ESShape shape = new ESShape();
+			shape.isClosed = isClosed();
+			shape.esShapeType = getShapeType();
+			Geometry geometry = buildGeometry();
+			shape.area = degree2ToKm2(geometry.getArea());
+			shape.lenght = degreeToKm(geometry.getLength());
 			Point centroid = geometry.getCentroid();
-			esShape.centroid = new ESLocation(centroid.getY(), centroid.getX());
-			esShape.geoJsonArray = toGeoJsonArray();
-			return esShape;
+			shape.centroid = new ESLocation(centroid.getY(), centroid.getX());
+			shape.geoJsonArray = toGeoJsonArray();
+			return shape;
 		}
 
 		private boolean isClosed() {
@@ -95,22 +98,23 @@ public class ESShape {
 			}
 		}
 
-		private Geometry getGeometry() {
+		private Geometry buildGeometry() {
 			Coordinate[] coordinates = new Coordinate[locations.size()];
 			for (int i = 0; i < locations.size(); i++) {
 				coordinates[i] = new Coordinate(
 						locations.get(i).getLongitude(),
 						locations.get(i).getLatitude());
 			}
-			GeometryFactory geometryFactory = GeoShapeConstants.SPATIAL_CONTEXT.getGeometryFactory();
+			GeometryFactory factory = GeoShapeConstants.SPATIAL_CONTEXT.getGeometryFactory();
+			CoordinateSequence sequence = factory.getCoordinateSequenceFactory().create(coordinates);
 			switch (getShapeType()) {
 			case POINT:
-				return geometryFactory.createPoint(coordinates[0]);
+				return new Point(sequence, factory);
 			case LINESTRING:
-				return geometryFactory.createLineString(coordinates);
+				return new LineString(sequence, factory);
 			case POLYGON:
-				LinearRing shell = geometryFactory.createLinearRing(coordinates);
-				return geometryFactory.createPolygon(shell, null);
+				LinearRing shell = new LinearRing(sequence, factory);
+				return new Polygon(shell, null, factory);
 			default:
 				throw new IllegalStateException("Unrecognized geometry");
 			}

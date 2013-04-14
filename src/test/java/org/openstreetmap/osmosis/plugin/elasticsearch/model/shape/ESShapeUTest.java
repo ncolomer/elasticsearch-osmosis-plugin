@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
 
-public class ESShapeTest {
+public class ESShapeUTest {
 
 	private ESShapeBuilder shapeBuilder;
 
