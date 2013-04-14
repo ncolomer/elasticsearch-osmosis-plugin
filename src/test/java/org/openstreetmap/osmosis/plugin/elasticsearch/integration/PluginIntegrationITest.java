@@ -24,6 +24,13 @@ public class PluginIntegrationITest extends AbstractElasticSearchInMemoryTest {
 		Osmosis.run(new String[] {
 				"--read-xml",
 				getResourceFile("mondeville-20130123.osm").getPath(),
+				"--tag-filter",
+				"accept-relations",
+				"boundary=administrative",
+				"--tag-filter",
+				"accept-ways",
+				"highway=*",
+				"--used-node",
 				"--write-elasticsearch",
 				"cluster.hosts=" + nodeAddress(),
 				"cluster.name=" + clusterName(),
@@ -33,9 +40,10 @@ public class PluginIntegrationITest extends AbstractElasticSearchInMemoryTest {
 		refresh(INDEX_NAME);
 
 		// Assert
+		;
 		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().isExists());
-		assertEquals(7738, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.NODE.getIndiceName())).actionGet().getCount());
-		assertEquals(225, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.WAY.getIndiceName())).actionGet().getCount());
+		assertEquals(777, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.NODE.getIndiceName())).actionGet().getCount());
+		assertEquals(57, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.WAY.getIndiceName())).actionGet().getCount());
 	}
 
 	private File getResourceFile(String filename) throws URISyntaxException {
