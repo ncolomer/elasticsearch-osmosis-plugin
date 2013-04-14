@@ -140,11 +140,6 @@ public class ESNode extends ESEntity {
 			return this;
 		}
 
-		public Builder tags(Map<String, String> tags) {
-			this.tags = tags;
-			return this;
-		}
-
 		public Builder addTag(String key, String value) {
 			this.tags.put(key, value);
 			return this;

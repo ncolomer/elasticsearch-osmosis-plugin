@@ -126,10 +126,18 @@ public class ESWay extends ESEntity {
 			builder.id = Long.valueOf(response.getId());
 			builder.tags = (Map<String, String>) response.getField("tags").getValue();
 			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
-			List<List<List<Double>>> locations = (List<List<List<Double>>>) shape.get("coordinates");
-			for (List<Double> location : locations.get(0)) {
-				builder.addLocation(location.get(1), location.get(0));
+			if (shape.get("type").equals("linestring")) {
+				List<List<Double>> locations = (List<List<Double>>) shape.get("coordinates");
+				for (List<Double> location : locations) {
+					builder.addLocation(location.get(1), location.get(0));
+				}
+			} else {
+				List<List<List<Double>>> locations = (List<List<List<Double>>>) shape.get("coordinates");
+				for (List<Double> location : locations.get(0)) {
+					builder.addLocation(location.get(1), location.get(0));
+				}
 			}
+
 			return builder.build();
 		}
 
@@ -144,11 +152,6 @@ public class ESWay extends ESEntity {
 
 		public Builder addLocation(double latitude, double longitude) {
 			shapeBuilder.addLocation(latitude, longitude);
-			return this;
-		}
-
-		public Builder tags(Map<String, String> tags) {
-			this.tags = tags;
 			return this;
 		}
 

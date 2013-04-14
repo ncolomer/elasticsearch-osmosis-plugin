@@ -168,13 +168,14 @@ public class EntityDaoUTest {
 	@Test
 	public void saveAllWays() {
 		// Setup
-		Way way = OsmDataBuilder.buildSampleWay();
+		Way way = OsmDataBuilder.buildSampleWay(1, 1, 2, 3, 4);
 
 		Iterator<MultiGetItemResponse> iteratorMocked = mock(Iterator.class);
 		doReturn(iteratorMocked).when(entityDao).getNodeItems(any(List.class));
 
-		ESShape builder = new ESShapeBuilder(1).addLocation(1.0, 2.0).build();
-		doReturn(builder).when(entityDao).getShape(iteratorMocked, 1);
+		ESShape builder = new ESShapeBuilder(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.1, 2.1).build();
+		doReturn(builder).when(entityDao).getShape(iteratorMocked, 4);
 
 		BulkRequestBuilder bulkRequestBuilderMocked = mock(BulkRequestBuilder.class);
 		when(clientMocked.prepareBulk()).thenReturn(bulkRequestBuilderMocked);
@@ -190,7 +191,7 @@ public class EntityDaoUTest {
 
 		// Assert
 		verify(entityDao).getNodeItems(ways);
-		String source = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
+		String source = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.1,1.1],[2.2,1.2],[2.3,1.3],[2.1,1.1]]]},\"tags\":{\"highway\":\"residential\"}}";
 		verify(clientMocked).prepareIndex(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "1");
 		verify(indexRequestBuilderMocked).setSource(source);
 		verify(bulkRequestBuilderMocked).add(indexRequestBuilderMocked);

@@ -16,9 +16,6 @@ import org.mockito.Mockito;
 import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
-import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
 
 public class ESWayUTest {
@@ -86,6 +83,7 @@ public class ESWayUTest {
 		locations.add(subLocations);
 		@SuppressWarnings("unchecked")
 		Map<String, Object> shape = mock(Map.class);
+		when(shape.get("type")).thenReturn("polygon");
 		when(shape.get("coordinates")).thenReturn(locations);
 		when(response.getField("shape").getValue()).thenReturn(shape);
 

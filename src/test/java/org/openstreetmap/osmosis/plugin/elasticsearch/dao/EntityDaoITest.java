@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
@@ -54,14 +55,14 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	}
 
 	@Test
-	public void saveWay() {
+	public void saveWay_withPolygon() {
 		// Setup
-		ESNode node = ESNode.Builder.create().id(1).location(1.0d, 2.0d).build();
-		client().prepareIndex(INDEX_NAME, node.getType().getIndiceName(), node.getIdString())
-				.setSource(node.toJson())
-				.execute().actionGet();
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.1, 2.1).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(1.2, 2.2).build();
+		ESNode node3 = ESNode.Builder.create().id(3).location(1.3, 2.3).build();
+		index(INDEX_NAME, node1, node2, node3);
 
-		Way way = OsmDataBuilder.buildSampleWay();
+		Way way = OsmDataBuilder.buildSampleWay(1, 1, 2, 3, 1);
 
 		// Action
 		entityDao.save(way);
@@ -70,7 +71,30 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
+		String expected = "{\"shape\":{\"type\":\"polygon\",\"coordinates\":[[[2.1,1.1],[2.2,1.2],[2.3,1.3],[2.1,1.1]]]},\"tags\":{\"highway\":\"residential\"}}";
+		String actual = response.getSourceAsString();
+		Assert.assertEquals(expected, actual);
+	}
+
+	@Test
+	public void saveWay_withLineString() {
+		// Setup
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.1, 2.1).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(1.2, 2.2).build();
+		ESNode node3 = ESNode.Builder.create().id(3).location(1.3, 2.3).build();
+		ESNode node4 = ESNode.Builder.create().id(4).location(1.4, 2.4).build();
+		index(INDEX_NAME, node1, node2, node3, node4);
+
+		Way way = OsmDataBuilder.buildSampleWay(1, 1, 2, 3, 4);
+
+		// Action
+		entityDao.save(way);
+		refresh(INDEX_NAME);
+
+		// Assert
+		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
+		Assert.assertTrue(response.isExists());
+		String expected = "{\"shape\":{\"type\":\"linestring\",\"coordinates\":[[2.1,1.1],[2.2,1.2],[2.3,1.3],[2.4,1.4]]},\"tags\":{\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
@@ -104,59 +128,68 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findNode() {
 		// Setup
-		ESNode expected = OsmDataBuilder.buildSampleESNode();
-		client().prepareIndex(INDEX_NAME, expected.getType().getIndiceName(), expected.getIdString())
-				.setSource(expected.toJson())
-				.execute().actionGet();
+		ESNode node = OsmDataBuilder.buildSampleESNode();
+		index(INDEX_NAME, node);
 		refresh(INDEX_NAME);
 
 		// Action
-		ESNode actual = entityDao.find(ESNode.class, 1l);
+		ESNode actual = entityDao.find(ESNode.class, 1);
 
 		// Assert
-		Assert.assertEquals(expected, actual);
+		Assert.assertEquals(node, actual);
 	}
 
 	@Test(expected = DaoException.class)
 	public void findNode_thatDoesNotExists() {
 		// Setup
 		ESNode node = OsmDataBuilder.buildSampleESNode();
-		client().prepareIndex(INDEX_NAME, node.getType().getIndiceName(), node.getIdString())
-				.setSource(node.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, node);
 		refresh(INDEX_NAME);
 
 		// Action
-		entityDao.find(ESNode.class, 2l);
+		entityDao.find(ESNode.class, 2);
 	}
 
 	@Test
-	public void findWay() {
+	public void findWay_withLineString() {
 		// Setup
-		ESWay expected = OsmDataBuilder.buildSampleESWay();
-		client().prepareIndex(INDEX_NAME, expected.getType().getIndiceName(), expected.getIdString())
-				.setSource(expected.toJson())
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		ESWay actual = entityDao.find(ESWay.class, 1l);
+		ESWay actual = entityDao.find(ESWay.class, 1);
 
 		// Assert
-		Assert.assertEquals(expected, actual);
+		Assert.assertEquals(way, actual);
+	}
+
+	@Test
+	public void findWay_withPolygon() {
+		// Setup
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.1, 2.1).build();
+		index(INDEX_NAME, way);
+		refresh(INDEX_NAME);
+
+		// Action
+		ESWay actual = entityDao.find(ESWay.class, 1);
+
+		// Assert
+		Assert.assertEquals(way, actual);
 	}
 
 	@Test(expected = DaoException.class)
 	public void findWay_thatDoesNotExists() {
 		// Setup
-		ESWay way = OsmDataBuilder.buildSampleESWay();
-		client().prepareIndex(INDEX_NAME, way.getType().getIndiceName(), way.getIdString())
-				.setSource(way.toJson())
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		entityDao.find(ESWay.class, 2l);
+		entityDao.find(ESWay.class, 2);
 	}
 
 	/* findAll */
@@ -173,10 +206,9 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 			ESNode node = OsmDataBuilder.buildSampleESNode(i);
 			expected.add(node);
 			ids[i] = i;
-			client().prepareIndex(INDEX_NAME, node.getType().getIndiceName(), node.getIdString())
-					.setSource(node.toJson())
-					.execute().actionGet();
+
 		}
+		index(INDEX_NAME, expected.toArray(new ESEntity[0]));
 		refresh(INDEX_NAME);
 
 		// Action
@@ -189,20 +221,15 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findAllNodes() {
 		// Setup
-		ESNode node1 = ESNode.Builder.create().id(1).location(1.0d, 2.0d).build();
-		ESNode node2 = ESNode.Builder.create().id(2).location(3.0d, 4.0d).build();
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(3.0, 4.0).build();
 		List<ESNode> expected = Arrays.asList(new ESNode[] { node1, node2 });
 
-		client().prepareIndex(INDEX_NAME, node1.getType().getIndiceName(), node1.getIdString())
-				.setSource(node1.toJson())
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, node2.getType().getIndiceName(), node2.getIdString())
-				.setSource(node2.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, node1, node2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<ESNode> actual = entityDao.findAll(ESNode.class, 1l, 2l);
+		List<ESNode> actual = entityDao.findAll(ESNode.class, 1l, 2);
 
 		// Assert
 		Assert.assertEquals(expected, actual);
@@ -211,20 +238,15 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findAllNodes_withSubset() {
 		// Setup
-		ESNode node1 = ESNode.Builder.create().id(1).location(1.0d, 2.0d).build();
-		ESNode node2 = ESNode.Builder.create().id(2).location(3.0d, 4.0d).build();
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(3.0, 4.0).build();
 		List<ESNode> expected = Arrays.asList(new ESNode[] { node2 });
 
-		client().prepareIndex(INDEX_NAME, node1.getType().getIndiceName(), node1.getIdString())
-				.setSource(node1.toJson())
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, node2.getType().getIndiceName(), node2.getIdString())
-				.setSource(node2.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, node1, node2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<ESNode> actual = entityDao.findAll(ESNode.class, 2l);
+		List<ESNode> actual = entityDao.findAll(ESNode.class, 2);
 
 		// Assert
 		Assert.assertEquals(expected, actual);
@@ -233,20 +255,15 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findAllNodes_keepOrder() {
 		// Setup
-		ESNode node1 = ESNode.Builder.create().id(1).location(1.0d, 2.0d).build();
-		ESNode node2 = ESNode.Builder.create().id(2).location(3.0d, 4.0d).build();
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(3.0, 4.0).build();
 		List<ESNode> expected = Arrays.asList(new ESNode[] { node2, node1 });
 
-		client().prepareIndex(INDEX_NAME, node1.getType().getIndiceName(), node1.getIdString())
-				.setSource(node1.toJson())
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, node2.getType().getIndiceName(), node2.getIdString())
-				.setSource(node2.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, node1, node2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<ESNode> actual = entityDao.findAll(ESNode.class, 2l, 1l);
+		List<ESNode> actual = entityDao.findAll(ESNode.class, 2l, 1);
 
 		// Assert
 		Assert.assertEquals(expected, actual);
@@ -255,20 +272,18 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findAllWays() {
 		// Setup
-		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.0d, 2.0d).build();
-		ESWay way2 = ESWay.Builder.create().id(2).addLocation(3.0d, 4.0d).build();
+		// Setup
+		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		ESWay way2 = ESWay.Builder.create().id(2).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
 		List<ESWay> expected = Arrays.asList(new ESWay[] { way1, way2 });
 
-		client().prepareIndex(INDEX_NAME, way1.getType().getIndiceName(), way1.getIdString())
-				.setSource(way1.toJson())
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, way2.getType().getIndiceName(), way2.getIdString())
-				.setSource(way2.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, way1, way2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<ESWay> actual = entityDao.findAll(ESWay.class, 1l, 2l);
+		List<ESWay> actual = entityDao.findAll(ESWay.class, 1l, 2);
 
 		// Assert
 		Assert.assertEquals(expected, actual);
@@ -277,20 +292,17 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findAllWays_withSubset() {
 		// Setup
-		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.0d, 2.0d).build();
-		ESWay way2 = ESWay.Builder.create().id(2).addLocation(3.0d, 4.0d).build();
+		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		ESWay way2 = ESWay.Builder.create().id(2).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
 		List<ESWay> expected = Arrays.asList(new ESWay[] { way2 });
 
-		client().prepareIndex(INDEX_NAME, way1.getType().getIndiceName(), way1.getIdString())
-				.setSource(way1.toJson())
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, way2.getType().getIndiceName(), way2.getIdString())
-				.setSource(way2.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, way1, way2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<ESWay> actual = entityDao.findAll(ESWay.class, 2l);
+		List<ESWay> actual = entityDao.findAll(ESWay.class, 2);
 
 		// Assert
 		Assert.assertEquals(expected, actual);
@@ -299,20 +311,17 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void findAllWays_keepOrder() {
 		// Setup
-		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.0d, 2.0d).build();
-		ESWay way2 = ESWay.Builder.create().id(2).addLocation(3.0d, 4.0d).build();
+		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		ESWay way2 = ESWay.Builder.create().id(2).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
 		List<ESWay> expected = Arrays.asList(new ESWay[] { way2, way1 });
 
-		client().prepareIndex(INDEX_NAME, way1.getType().getIndiceName(), way1.getIdString())
-				.setSource(way1.toJson())
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, way2.getType().getIndiceName(), way2.getIdString())
-				.setSource(way2.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, way1, way2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<ESWay> actual = entityDao.findAll(ESWay.class, 2l, 1l);
+		List<ESWay> actual = entityDao.findAll(ESWay.class, 2l, 1);
 
 		// Assert
 		Assert.assertEquals(expected, actual);
@@ -324,13 +333,11 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	public void deleteNode() {
 		// Setup
 		ESNode node = OsmDataBuilder.buildSampleESNode();
-		client().prepareIndex(INDEX_NAME, node.getType().getIndiceName(), node.getIdString())
-				.setSource(node.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, node);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(ESNode.class, 1l);
+		boolean actual = entityDao.delete(ESNode.class, 1);
 
 		// Assert
 		Assert.assertTrue(actual);
@@ -340,13 +347,11 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	public void deleteNode_thatDoesNotExists() {
 		// Setup
 		ESNode node = OsmDataBuilder.buildSampleESNode();
-		client().prepareIndex(INDEX_NAME, node.getType().getIndiceName(), node.getIdString())
-				.setSource(node.toJson())
-				.execute().actionGet();
+		index(INDEX_NAME, node);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(ESNode.class, 2l);
+		boolean actual = entityDao.delete(ESNode.class, 2);
 
 		// Assert
 		Assert.assertFalse(actual);
@@ -355,14 +360,13 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void deleteWay() {
 		// Setup
-		ESWay way = OsmDataBuilder.buildSampleESWay();
-		client().prepareIndex(INDEX_NAME, way.getType().getIndiceName(), way.getIdString())
-				.setSource(way.toJson())
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(ESWay.class, 1l);
+		boolean actual = entityDao.delete(ESWay.class, 1);
 
 		// Assert
 		Assert.assertTrue(actual);
@@ -371,14 +375,13 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void deleteWay_thatDoesNotExists() {
 		// Setup
-		ESWay way = OsmDataBuilder.buildSampleESWay();
-		client().prepareIndex(INDEX_NAME, way.getType().getIndiceName(), way.getIdString())
-				.setSource(way.toJson())
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(ESWay.class, 2l);
+		boolean actual = entityDao.delete(ESWay.class, 2);
 
 		// Assert
 		Assert.assertFalse(actual);
