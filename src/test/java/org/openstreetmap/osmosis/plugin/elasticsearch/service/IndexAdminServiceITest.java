@@ -48,7 +48,10 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void createIndex_withSettingsAndMappings() throws IOException {
 		// Setup
-		String mapping = getDummyMapping();
+		String mapping = XContentFactory.jsonBuilder()
+				.startObject().startObject("properties")
+				.startObject("my_field").field("type", "string").endObject()
+				.endObject().endObject().string();
 
 		// Action
 		indexAdminService.createIndex(INDEX_NAME, 1, 1, mapping);
@@ -57,13 +60,10 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 		ClusterState state = client().admin().cluster().prepareState().execute().actionGet().getState();
 		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfShards());
 		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfReplicas());
-		Assert.assertEquals("{\"my_type\":{\"properties\":{}}}", state.getMetaData().index(INDEX_NAME).mapping("my_type").source().string());
-	}
-
-	private String getDummyMapping() throws IOException {
-		return XContentFactory.jsonBuilder()
-				.startObject().startObject("my_type").startObject("properties")
-				.endObject().endObject().endObject().string();
+		Assert.assertEquals("{\"node\":{\"properties\":{\"my_field\":{\"type\":\"string\"}}}}",
+				state.getMetaData().index(INDEX_NAME).mapping("node").source().string());
+		Assert.assertEquals("{\"way\":{\"properties\":{\"my_field\":{\"type\":\"string\"}}}}",
+				state.getMetaData().index(INDEX_NAME).mapping("way").source().string());
 	}
 
 }

@@ -3,6 +3,7 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
 
 public class IndexAdminService {
 
@@ -12,14 +13,22 @@ public class IndexAdminService {
 		this.client = client;
 	}
 
-	public void createIndex(String name, int shards, int replicas, String mappings) {
+	public void createIndex(String name, int shards, int replicas, String mappingTemplate) {
 		try {
 			// Delete previous existing index
 			if (indexExists(name)) deleteIndex(name);
 			// Build index configuration
+			String mappings = XContentFactory.jsonBuilder().startObject()
+					.rawField(ESEntityType.NODE.getIndiceName(), mappingTemplate.getBytes())
+					.rawField(ESEntityType.WAY.getIndiceName(), mappingTemplate.getBytes())
+					.endObject().string().replaceAll("\\{,", "\\{");
 			String configuration = XContentFactory.jsonBuilder().startObject()
-					.startObject("settings").field("number_of_shards", shards)
-					.field("number_of_replicas", replicas).endObject()
+					// Settings
+					.startObject("settings")
+					.field("number_of_shards", shards)
+					.field("number_of_replicas", replicas)
+					.endObject()
+					// Mappings
 					.rawField("mappings", mappings.getBytes())
 					.endObject().string();
 			// Create the new index
