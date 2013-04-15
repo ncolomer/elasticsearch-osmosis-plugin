@@ -35,7 +35,9 @@ public class IndexAdminService {
 			}
 			jsonBuilder.endObject();
 			// Build JSON
-			String configuration = jsonBuilder.endObject().string().replaceAll("\\{,", "\\{");
+			String configuration = jsonBuilder.endObject().string()
+					// https://github.com/elasticsearch/elasticsearch/issues/2897
+					.replaceAll("\\{,", "\\{");
 			// Create the new index
 			client.admin().indices().prepareCreate(name)
 					.setSource(configuration)
