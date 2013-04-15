@@ -3,6 +3,7 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import junit.framework.Assert;
@@ -14,6 +15,7 @@ import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
@@ -32,7 +34,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		entityDao = new EntityDao(INDEX_NAME, client());
 		Parameters params = new Parameters.Builder().loadResource("plugin.properties").build();
 		IndexAdminService indexAdminService = new IndexAdminService(client());
-		indexAdminService.createIndex(INDEX_NAME, 1, 0, params.getProperty(Parameters.INDEX_MAPPINGS));
+		HashMap<String, String> mappings = new HashMap<String, String>();
+		mappings.put(ESEntityType.NODE.getIndiceName(), params.getProperty(Parameters.INDEX_MAPPING_NODE));
+		mappings.put(ESEntityType.WAY.getIndiceName(), params.getProperty(Parameters.INDEX_MAPPING_WAY));
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, mappings);
 	}
 
 	/* save */

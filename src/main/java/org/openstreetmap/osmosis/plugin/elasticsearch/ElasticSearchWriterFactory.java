@@ -1,6 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -13,6 +14,7 @@ import org.openstreetmap.osmosis.core.task.v0_6.Sink;
 import org.openstreetmap.osmosis.plugin.elasticsearch.builder.AbstractIndexBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.client.ElasticsearchClientBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
@@ -58,7 +60,8 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		addArgumentIfExists(Parameters.INDEX_CREATE, taskConfig, builder);
 		addArgumentIfExists(Parameters.INDEX_SETTINGS_SHARDS, taskConfig, builder);
 		addArgumentIfExists(Parameters.INDEX_SETTINGS_REPLICAS, taskConfig, builder);
-		addArgumentIfExists(Parameters.INDEX_MAPPINGS, taskConfig, builder);
+		addArgumentIfExists(Parameters.INDEX_MAPPING_NODE, taskConfig, builder);
+		addArgumentIfExists(Parameters.INDEX_MAPPING_WAY, taskConfig, builder);
 
 		addArgumentIfExists(Parameters.CONFIG_QUEUE_SIZE, taskConfig, builder);
 		addArgumentIfExists(Parameters.CONFIG_NODE_BULK_SIZE, taskConfig, builder);
@@ -88,7 +91,9 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 			String name = params.getProperty(Parameters.INDEX_NAME);
 			int shards = Integer.valueOf(params.getProperty(Parameters.INDEX_SETTINGS_SHARDS));
 			int replicas = Integer.valueOf(params.getProperty(Parameters.INDEX_SETTINGS_REPLICAS));
-			String mappings = params.getProperty(Parameters.INDEX_MAPPINGS);
+			HashMap<String, String> mappings = new HashMap<String, String>();
+			mappings.put(ESEntityType.NODE.getIndiceName(), params.getProperty(Parameters.INDEX_MAPPING_NODE));
+			mappings.put(ESEntityType.WAY.getIndiceName(), params.getProperty(Parameters.INDEX_MAPPING_WAY));
 			indexAdminService.createIndex(name, shards, replicas, mappings);
 		}
 	}

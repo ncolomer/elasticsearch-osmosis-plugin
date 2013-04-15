@@ -15,7 +15,8 @@ public class Parameters {
 	public static final String INDEX_CREATE = "index.create";
 	public static final String INDEX_SETTINGS_SHARDS = "index.settings.shards";
 	public static final String INDEX_SETTINGS_REPLICAS = "index.settings.replicas";
-	public static final String INDEX_MAPPINGS = "index.mappings";
+	public static final String INDEX_MAPPING_NODE = "index.mapping.node";
+	public static final String INDEX_MAPPING_WAY = "index.mapping.way";
 
 	public static final String INDEX_BUILDERS = "index.builders";
 
