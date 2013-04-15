@@ -1,5 +1,4 @@
-
-| Elasticsearch is evolving rapidly! Recent 0.90.X version introduced major great changes on both `geo_point` and `geo_shape` types. I'm working on this plugin to take advantage of all these new improvements. Stay tuned! |
+| Elasticsearch is evolving rapidly! Recent 0.90.x version introduced major great changes on both `geo_point` and `geo_shape` types. I'm working on this plugin to take advantage of all these new improvements. Stay tuned! |
 | :-: |
 
 # elasticsearch-osmosis-plugin
