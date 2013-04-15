@@ -129,6 +129,7 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
@@ -137,47 +138,50 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
-					<includes>
-						<include>**/*UTest.java</include>
-					</includes>
+					<skip>true</skip>
 				</configuration>
 				<executions>
 					<execution>
-						<id>utest</id>
+						<id>unit-test</id>
 						<phase>test</phase>
 						<goals>
 							<goal>test</goal>
 						</goals>
+						<configuration>
+							<skip>false</skip>
+							<includes>
+								<include>**/*UTest.java</include>
+							</includes>
+						</configuration>
 					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>${maven-surefire-plugin.version}</version>
-				<configuration>
-					<includes>
-						<include>**/*ITest.java</include>
-					</includes>
-					<argLine>-Xmx512m -Xms512m</argLine>
-				</configuration>
-				<executions>
 					<execution>
-						<id>itest</id>
+						<id>integration-test</id>
 						<phase>integration-test</phase>
 						<goals>
-							<goal>integration-test</goal>
+							<goal>test</goal>
 						</goals>
+						<configuration>
+							<skip>false</skip>
+							<enableAssertions>false</enableAssertions>
+							<includes>
+								<include>**/*ITest.java</include>
+							</includes>
+							<argLine>-Xmx256m -Xms256m</argLine>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>${maven-jar-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>${maven-assembly-plugin.version}</version>
 				<configuration>
@@ -197,10 +201,12 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
 				<version>${maven-source-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>${maven-javadoc-plugin.version}</version>
 				<configuration>
@@ -208,10 +214,12 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-install-plugin</artifactId>
 				<version>${maven-install-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
 				<configuration>
@@ -219,6 +227,7 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-deploy-plugin</artifactId>
 				<version>${maven-deploy-plugin.version}</version>
 			</plugin>
