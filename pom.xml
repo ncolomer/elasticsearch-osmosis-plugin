@@ -38,7 +38,8 @@
 		<maven-install-plugin.version>2.3.1</maven-install-plugin.version>
 		<maven-release-plugin.version>2.3.2</maven-release-plugin.version>
 		<maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
-		<github-downloads-plugin.version>0.6</github-downloads-plugin.version>
+		<maven-wagon-plugin.version>1.0-beta-4</maven-wagon-plugin.version>
+		<maven-wagon-ssh.version>2.4</maven-wagon-ssh.version>
 	</properties>
 
 	<repositories>
@@ -127,6 +128,13 @@
 	</dependencies>
 
 	<build>
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh</artifactId>
+				<version>${maven-wagon-ssh.version}</version>
+			</extension>
+		</extensions>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -223,22 +231,36 @@
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
 				<configuration>
-					<goals>clean install ghDownloads:upload</goals>
+					<goals>clean deploy</goals>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-deploy-plugin</artifactId>
 				<version>${maven-deploy-plugin.version}</version>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
 			</plugin>
 			<plugin>
-				<!-- https://github.com/github/maven-plugins/ -->
-				<groupId>com.github.github</groupId>
-				<artifactId>downloads-maven-plugin</artifactId>
-				<version>${github-downloads-plugin.version}</version>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>wagon-maven-plugin</artifactId>
+				<version>${maven-wagon-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>upload-jar-to-sourceforge</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>upload</goal>
+						</goals>
+					</execution>
+				</executions>
 				<configuration>
-					<description>${project.version} release of ${project.name}</description>
-					<override>true</override>
+					<serverId>sourceforge</serverId>
+					<url>sftp://frs.sourceforge.net/home/frs/project/es-osmosis</url>
+					<fromDir>${project.build.directory}</fromDir>
+					<includes>${project.name}-${project.version}.jar</includes>
+					<toDir>releases</toDir>
 				</configuration>
 			</plugin>
 		</plugins>
