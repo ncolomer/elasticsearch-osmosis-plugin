@@ -1,5 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.builder;
 
+import java.util.HashMap;
+
 import org.elasticsearch.client.Client;
 import org.openstreetmap.osmosis.plugin.elasticsearch.dao.EntityDao;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Endpoint;
@@ -18,7 +20,8 @@ public abstract class AbstractIndexBuilder {
 	public void createIndex() {
 		int shards = Integer.valueOf(params.getProperty(getSpecializedIndexSuffix() + ".settings.shards"));
 		int replicas = Integer.valueOf(params.getProperty(getSpecializedIndexSuffix() + ".settings.replicas"));
-		String mappings = params.getProperty(getSpecializedIndexSuffix() + ".mappings");
+		HashMap<String, String> mappings = new HashMap<String, String>();
+		mappings.put(getSpecializedIndexName(), params.getProperty(getSpecializedIndexSuffix() + ".mappings"));
 		endpoint.getIndexAdminService().createIndex(getSpecializedIndexName(), shards, replicas, mappings);
 	}
 

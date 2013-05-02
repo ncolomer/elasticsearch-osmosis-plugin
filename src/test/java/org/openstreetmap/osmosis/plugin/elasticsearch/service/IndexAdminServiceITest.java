@@ -1,6 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.service;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import junit.framework.Assert;
 
@@ -25,7 +26,7 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void createIndex() throws IOException {
 		// Action
-		indexAdminService.createIndex(INDEX_NAME, 1, 0, "{}");
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, null);
 
 		// Assert
 		Assert.assertTrue(exists(INDEX_NAME));
@@ -39,7 +40,7 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 		Assume.assumeTrue(exists(INDEX_NAME));
 
 		// Action
-		indexAdminService.createIndex(INDEX_NAME, 1, 0, "{}");
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, null);
 
 		// Assert
 		Assert.assertTrue(exists(INDEX_NAME));
@@ -48,22 +49,22 @@ public class IndexAdminServiceITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void createIndex_withSettingsAndMappings() throws IOException {
 		// Setup
-		String mapping = getDummyMapping();
+		String mapping = XContentFactory.jsonBuilder()
+				.startObject().startObject("properties")
+				.startObject("my_field").field("type", "string").endObject()
+				.endObject().endObject().string();
+		HashMap<String, String> mappings = new HashMap<String, String>();
+		mappings.put("myindex", mapping);
 
 		// Action
-		indexAdminService.createIndex(INDEX_NAME, 1, 1, mapping);
+		indexAdminService.createIndex(INDEX_NAME, 1, 1, mappings);
 
 		// Assert
-		ClusterState state = client().admin().cluster().prepareState().execute().actionGet().state();
+		ClusterState state = client().admin().cluster().prepareState().execute().actionGet().getState();
 		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfShards());
 		Assert.assertEquals(1, state.getMetaData().index(INDEX_NAME).getNumberOfReplicas());
-		Assert.assertEquals("{\"my_type\":{\"properties\":{}}}", state.getMetaData().index(INDEX_NAME).mapping("my_type").source().string());
-	}
-
-	private String getDummyMapping() throws IOException {
-		return XContentFactory.jsonBuilder()
-				.startObject().startObject("my_type").startObject("properties")
-				.endObject().endObject().endObject().string();
+		Assert.assertEquals("{\"myindex\":{\"properties\":{\"my_field\":{\"type\":\"string\"}}}}",
+				state.getMetaData().index(INDEX_NAME).mapping("myindex").source().string());
 	}
 
 }

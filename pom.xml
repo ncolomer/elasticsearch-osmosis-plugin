@@ -19,8 +19,8 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.6</java.version>
 		<!-- Libraries -->
-		<osmosis.version>0.42</osmosis.version>
-		<elasticsearch.version>0.20.5</elasticsearch.version>
+		<osmosis.version>0.43-RELEASE</osmosis.version>
+		<elasticsearch.version>0.90.0</elasticsearch.version>
 		<!-- Testing -->
 		<commons-io.version>2.1</commons-io.version>
 		<mockito.version>1.9.0</mockito.version>
@@ -31,13 +31,14 @@
 		<!-- Maven plugins -->
 		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
 		<maven-assembly-plugin.version>2.3</maven-assembly-plugin.version>
+		<maven-surefire-plugin.version>2.14</maven-surefire-plugin.version>
 		<maven-jar-plugin.version>2.4</maven-jar-plugin.version>
 		<maven-source-plugin.version>2.1.2</maven-source-plugin.version>
 		<maven-javadoc-plugin.version>2.8.1</maven-javadoc-plugin.version>
 		<maven-install-plugin.version>2.3.1</maven-install-plugin.version>
 		<maven-release-plugin.version>2.3.2</maven-release-plugin.version>
 		<maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
-		<downloads-maven-plugin.version>0.6</downloads-maven-plugin.version>
+		<github-downloads-plugin.version>0.6</github-downloads-plugin.version>
 	</properties>
 
 	<repositories>
@@ -55,50 +56,25 @@
 	<dependencies>
 		<!-- Osmosis -->
 		<dependency>
-			<groupId>org.openstreetmap</groupId>
+			<groupId>org.openstreetmap.osmosis</groupId>
 			<artifactId>osmosis-core</artifactId>
 			<version>${osmosis.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.openstreetmap</groupId>
+			<groupId>org.openstreetmap.osmosis</groupId>
 			<artifactId>osmosis-xml</artifactId>
 			<version>${osmosis.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
-			<groupId>net.sf.jpf</groupId>
-			<artifactId>jpf</artifactId>
-			<version>1.5</version>
-			<scope>test</scope>
+			<groupId>org.openstreetmap.osmosis</groupId>
+			<artifactId>osmosis-tagfilter</artifactId>
+			<version>${osmosis.version}</version>
+			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.codehaus.woodstox</groupId>
-			<artifactId>woodstox-core-lgpl</artifactId>
-			<version>4.1.4</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.woodstox</groupId>
-			<artifactId>stax2-api</artifactId>
-			<version>3.1.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-compress</artifactId>
-			<version>1.4.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>xerces</groupId>
-			<artifactId>xercesImpl</artifactId>
-			<version>2.9.1</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Elasticsearch -->
+		
+		<!-- elasticsearch -->
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
@@ -153,6 +129,7 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
@@ -161,10 +138,50 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin.version}</version>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+				<executions>
+					<execution>
+						<id>unit-test</id>
+						<phase>test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<skip>false</skip>
+							<includes>
+								<include>**/*UTest.java</include>
+							</includes>
+						</configuration>
+					</execution>
+					<execution>
+						<id>integration-test</id>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<skip>false</skip>
+							<enableAssertions>false</enableAssertions>
+							<includes>
+								<include>**/*ITest.java</include>
+							</includes>
+							<argLine>-Xmx256m -Xms256m</argLine>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>${maven-jar-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>${maven-assembly-plugin.version}</version>
 				<configuration>
@@ -184,10 +201,12 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
 				<version>${maven-source-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>${maven-javadoc-plugin.version}</version>
 				<configuration>
@@ -195,10 +214,12 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-install-plugin</artifactId>
 				<version>${maven-install-plugin.version}</version>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
 				<configuration>
@@ -206,6 +227,7 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-deploy-plugin</artifactId>
 				<version>${maven-deploy-plugin.version}</version>
 			</plugin>
@@ -213,7 +235,7 @@
 				<!-- https://github.com/github/maven-plugins/ -->
 				<groupId>com.github.github</groupId>
 				<artifactId>downloads-maven-plugin</artifactId>
-				<version>${downloads-maven-plugin.version}</version>
+				<version>${github-downloads-plugin.version}</version>
 				<configuration>
 					<description>${project.version} release of ${project.name}</description>
 					<override>true</override>
