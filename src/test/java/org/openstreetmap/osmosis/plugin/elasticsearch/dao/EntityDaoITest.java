@@ -76,8 +76,8 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"centroid\":[2.3333333333333335,2.0],\"length\":536.8973391277414," +
-				"\"area\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+		String expected = "{\"centroid\":[2.3333333333333335,2.0],\"lengthKm\":536.8973391277414," +
+				"\"areaKm2\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
 				"[[[2.0,1.0],[3.0,2.0],[2.0,3.0],[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
@@ -101,8 +101,8 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"centroid\":[2.1666666666666665,2.5],\"length\":471.76076948850596," +
-				"\"area\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
+		String expected = "{\"centroid\":[2.1666666666666665,2.5],\"lengthKm\":471.76076948850596," +
+				"\"areaKm2\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
 				"[[2.0,1.0],[3.0,2.0],[2.0,3.0],[1.0,4.0]]},\"tags\":{\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);

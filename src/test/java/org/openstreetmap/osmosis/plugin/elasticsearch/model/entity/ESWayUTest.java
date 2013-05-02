@@ -87,8 +87,8 @@ public class ESWayUTest {
 		when(shape.get("coordinates")).thenReturn(locations);
 		when(response.getField("shape").getValue()).thenReturn(shape);
 		when(response.getField("centroid").getValue()).thenReturn(Arrays.asList(new Double[] { 2.5, 1.5 }));
-		when(response.getField("length").getValue()).thenReturn(157.25358982950198d);
-		when(response.getField("area").getValue()).thenReturn(0d);
+		when(response.getField("lengthKm").getValue()).thenReturn(157.25358982950198d);
+		when(response.getField("areaKm2").getValue()).thenReturn(0d);
 
 		ESWay expected = ESWay.Builder.create().id(1l)
 				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
@@ -131,8 +131,8 @@ public class ESWayUTest {
 		ESWay way = ESWay.Builder.create().id(1l)
 				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
 				.addTag("highway", "primary").build();
-		String expected = "{\"centroid\":[2.5,1.5],\"length\":157.25358982950198," +
-				"\"area\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
+		String expected = "{\"centroid\":[2.5,1.5],\"lengthKm\":157.25358982950198," +
+				"\"areaKm2\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
 				"[[2.0,1.0],[3.0,2.0]]},\"tags\":{\"highway\":\"primary\"}}";
 
 		// Action
@@ -149,8 +149,8 @@ public class ESWayUTest {
 				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
 				.addLocation(3.0, 2.0).addLocation(1.0, 2.0)
 				.addTag("highway", "primary").build();
-		String expected = "{\"centroid\":[2.3333333333333335,2.0],\"length\":536.8973391277414," +
-				"\"area\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+		String expected = "{\"centroid\":[2.3333333333333335,2.0],\"lengthKm\":536.8973391277414," +
+				"\"areaKm2\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
 				"[[[2.0,1.0],[3.0,2.0],[2.0,3.0],[2.0,1.0]]]},\"tags\":{\"highway\":\"primary\"}}";
 
 		// Action

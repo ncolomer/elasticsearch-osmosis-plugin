@@ -232,7 +232,7 @@ public class EntityDao {
 		MultiGetRequestBuilder request = client.prepareMultiGet();
 		for (long osmId : osmIds) {
 			request.add(new Item(indexName, type.getIndiceName(), String.valueOf(osmId))
-					.fields("centroid", "length", "area", "shape", "tags"));
+					.fields("centroid", "lengthKm", "areaKm2", "shape", "tags"));
 		}
 		return request;
 	}

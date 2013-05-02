@@ -191,8 +191,8 @@ public class EntityDaoUTest {
 
 		// Assert
 		verify(entityDao).getNodeItems(ways);
-		String source = "{\"centroid\":[2.3333333333333335,2.0],\"length\":536.8973391277414," +
-				"\"area\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+		String source = "{\"centroid\":[2.3333333333333335,2.0],\"lengthKm\":536.8973391277414," +
+				"\"areaKm2\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
 				"[[[2.0,1.0],[3.0,2.0],[2.0,3.0],[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
 		verify(clientMocked).prepareIndex(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "1");
 		verify(indexRequestBuilderMocked).setSource(source);
@@ -422,9 +422,9 @@ public class EntityDaoUTest {
 
 		// Assert
 		Item item1 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1")
-				.fields("centroid", "length", "area", "shape", "tags");
+				.fields("centroid", "lengthKm", "areaKm2", "shape", "tags");
 		Item item2 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "2")
-				.fields("centroid", "length", "area", "shape", "tags");
+				.fields("centroid", "lengthKm", "areaKm2", "shape", "tags");
 		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item1)));
 		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item2)));
 		Assert.assertSame(multiGetRequestBuilderMocked, actual);

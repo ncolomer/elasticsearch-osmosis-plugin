@@ -47,8 +47,8 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "40849832").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"centroid\":[2.37966091923039,48.67553114382843],\"length\":0.08489436252741311," +
-				"\"area\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
+		String expected = "{\"centroid\":[2.37966091923039,48.67553114382843],\"lengthKm\":0.08489436252741311," +
+				"\"areaKm2\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
 				"[[2.379358,48.675763],[2.379606,48.675584],[2.379955,48.675288]]}," +
 				"\"tags\":{\"highway\":\"residential\",\"name\":\"Avenue Marc Sangnier\"}}";
 		String actual = response.getSourceAsString();
@@ -70,8 +70,8 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, ESEntityType.WAY.getIndiceName(), "97583115").execute().actionGet();
 		Assert.assertTrue(response.isExists());
-		String expected = "{\"centroid\":[2.3792591400498715,48.6758784828737],\"length\":0.053319107940731796," +
-				"\"area\":1.661088030797273E-4,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+		String expected = "{\"centroid\":[2.3792591400498715,48.6758784828737],\"lengthKm\":0.053319107940731796," +
+				"\"areaKm2\":1.661088030797273E-4,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
 				"[[[2.379255,48.67581],[2.379358,48.675874],[2.379262,48.675946],[2.379161,48.675885],[2.379255,48.67581]]]}," +
 				"\"tags\":{\"building\":\"yes\"}}";
 		String actual = response.getSourceAsString();

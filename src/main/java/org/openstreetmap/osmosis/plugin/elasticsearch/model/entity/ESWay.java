@@ -65,8 +65,8 @@ public class ESWay extends ESEntity {
 			builder.startObject();
 			ESLocation centroid = shape.getCentroid();
 			builder.field("centroid", new double[] { centroid.getLongitude(), centroid.getLatitude() });
-			builder.field("length", shape.getLengthKm());
-			builder.field("area", shape.getAreaKm2());
+			builder.field("lengthKm", shape.getLengthKm());
+			builder.field("areaKm2", shape.getAreaKm2());
 			builder.startObject("shape");
 			builder.field("type", shape.isClosed() ? "polygon" : "linestring");
 			builder.startArray("coordinates");
@@ -158,9 +158,9 @@ public class ESWay extends ESEntity {
 
 			List<Double> centroid = (List<Double>) response.getField("centroid").getValue();
 			builder.shapeBuilder.setCentroid(new ESLocation(centroid.get(1), centroid.get(0)));
-			Double length = (Double) response.getField("length").getValue();
+			Double length = (Double) response.getField("lengthKm").getValue();
 			builder.shapeBuilder.setLength(length);
-			Double area = (Double) response.getField("area").getValue();
+			Double area = (Double) response.getField("areaKm2").getValue();
 			builder.shapeBuilder.setArea(area);
 
 			builder.shape = builder.shapeBuilder.buildFast();
