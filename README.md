@@ -18,3 +18,4 @@ Following documentation is available in the project's [wiki](https://github.com/
 
 [![OpenStreetMap](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/openstreetmap.png)](http://www.openstreetmap.org)
 [![elasticsearch](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/elasticsearch.png)](http://www.elasticsearch.org)
+[![SourceForge](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/sourceforge.png)](http://www.sourceforge.net)
