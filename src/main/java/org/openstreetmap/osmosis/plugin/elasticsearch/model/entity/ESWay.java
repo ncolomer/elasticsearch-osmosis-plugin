@@ -138,8 +138,6 @@ public class ESWay extends ESEntity {
 		public static ESWay buildFromGetReponse(GetResponse response) {
 			if (!response.getType().equals(ESEntityType.WAY.getIndiceName())) throw new IllegalArgumentException("Provided GetResponse is not a Way");
 
-			System.out.println(response.getSourceAsString());
-
 			Builder builder = new Builder();
 			builder.id = Long.valueOf(response.getId());
 			builder.tags = (Map<String, String>) response.getField("tags").getValue();
