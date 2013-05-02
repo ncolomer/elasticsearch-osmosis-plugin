@@ -15,10 +15,15 @@ public class Parameters {
 	public static final String INDEX_CREATE = "index.create";
 	public static final String INDEX_SETTINGS_SHARDS = "index.settings.shards";
 	public static final String INDEX_SETTINGS_REPLICAS = "index.settings.replicas";
-	public static final String INDEX_MAPPINGS = "index.mappings";
-	public static final String INDEX_BULK_SIZE = "index.bulk.size";
+	public static final String INDEX_MAPPING_NODE = "index.mapping.node";
+	public static final String INDEX_MAPPING_WAY = "index.mapping.way";
 
 	public static final String INDEX_BUILDERS = "index.builders";
+
+	public static final String CONFIG_QUEUE_SIZE = "config.queue.size";
+	public static final String CONFIG_NODE_BULK_SIZE = "config.node.bulk.size";
+	public static final String CONFIG_WAY_BULK_SIZE = "config.way.bulk.size";
+	public static final String CONFIG_WORKER_POOL_SIZE = "config.worker.pool.size";
 
 	private final Properties params;
 
@@ -36,6 +41,11 @@ public class Parameters {
 
 	public boolean containsKey(String key) {
 		return params.containsKey(key);
+	}
+
+	@Override
+	public String toString() {
+		return "Parameters [params=" + params + "]";
 	}
 
 	public static class Builder {

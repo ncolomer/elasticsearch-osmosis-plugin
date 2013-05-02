@@ -1,13 +1,13 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch;
 
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,39 +43,40 @@ public class ElasticSearchWriterTaskUTest {
 		endpoint = new Endpoint(clientMocked, indexAdminServiceMocked, entityDaoMocked);
 		indexBuilders = new HashSet<AbstractIndexBuilder>();
 		params = new Parameters.Builder().loadResource("plugin.properties")
-				.addParameter("index.bulk.size", "1").build();
-		elasticSearchWriterTask = new ElasticSearchWriterTask(endpoint, indexBuilders, params);
+				.addParameter(Parameters.CONFIG_QUEUE_SIZE, "1")
+				.addParameter(Parameters.CONFIG_NODE_BULK_SIZE, "1")
+				.addParameter(Parameters.CONFIG_WAY_BULK_SIZE, "1")
+				.addParameter(Parameters.CONFIG_WORKER_POOL_SIZE, "1").build();
+		elasticSearchWriterTask = spy(new ElasticSearchWriterTask(endpoint, indexBuilders, params));
 	}
 
 	@Test
 	public void process() {
 		// Setup
 		Entity entityMocked = mock(Entity.class);
+		when(entityMocked.getType()).thenReturn(EntityType.Node);
+
 		EntityContainer entityContainerMocked = mock(EntityContainer.class);
 		when(entityContainerMocked.getEntity()).thenReturn(entityMocked);
-		when(entityMocked.getType()).thenReturn(EntityType.Node);
 
 		// Action
 		elasticSearchWriterTask.process(entityContainerMocked);
+		elasticSearchWriterTask.complete();
 
 		// Assert
-		verify(entityDaoMocked, times(1)).saveAll(eq(Arrays.asList(new Entity[] {})));
+		verify(entityDaoMocked, times(2)).saveAll(eq(Arrays.asList(new Entity[] {})));
 	}
 
 	@Test
 	public void complete() {
 		// Setup
-		AbstractIndexBuilder indexBuilderMocked = spy(new DummyIndexBuilder(endpoint, params));
-		indexBuilders.add(indexBuilderMocked);
+		doNothing().when(elasticSearchWriterTask).buildSpecializedIndex();
 
 		// Action
 		elasticSearchWriterTask.complete();
 
 		// Assert
-		verify(entityDaoMocked, times(1)).saveAll(eq(new ArrayList<Entity>()));
-		verify(indexBuilderMocked, times(1)).getSpecializedIndexName();
-		verify(indexBuilderMocked, times(1)).createIndex();
-		verify(indexBuilderMocked, times(1)).buildIndex();
+		verify(elasticSearchWriterTask, times(1)).buildSpecializedIndex();
 	}
 
 	@Test
@@ -84,7 +85,6 @@ public class ElasticSearchWriterTaskUTest {
 		elasticSearchWriterTask.release();
 
 		// Assert
-		verify(indexAdminServiceMocked, times(1)).refresh();
 		verify(clientMocked, times(1)).close();
 	}
 

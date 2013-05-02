@@ -3,6 +3,7 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import junit.framework.Assert;
@@ -12,12 +13,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
 import org.openstreetmap.osmosis.core.domain.v0_6.Node;
-import org.openstreetmap.osmosis.core.domain.v0_6.Tag;
 import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESWay;
 import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
-import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AssertUtils;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.utils.Parameters;
 
@@ -32,7 +34,10 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 		entityDao = new EntityDao(INDEX_NAME, client());
 		Parameters params = new Parameters.Builder().loadResource("plugin.properties").build();
 		IndexAdminService indexAdminService = new IndexAdminService(client());
-		indexAdminService.createIndex(INDEX_NAME, 1, 0, params.getProperty(Parameters.INDEX_MAPPINGS));
+		HashMap<String, String> mappings = new HashMap<String, String>();
+		mappings.put(ESEntityType.NODE.getIndiceName(), params.getProperty(Parameters.INDEX_MAPPING_NODE));
+		mappings.put(ESEntityType.WAY.getIndiceName(), params.getProperty(Parameters.INDEX_MAPPING_WAY));
+		indexAdminService.createIndex(INDEX_NAME, 1, 0, mappings);
 	}
 
 	/* save */
@@ -48,16 +53,21 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
-		Assert.assertTrue(response.exists());
-		String expected = "{\"location\":[2.0,1.0],\"tags\":{\"highway\":\"traffic_signals\"}}";
+		Assert.assertTrue(response.isExists());
+		String expected = "{\"centroid\":[2.0,1.0],\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]},\"tags\":{\"highway\":\"traffic_signals\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void saveWay() {
+	public void saveWay_withPolygon() {
 		// Setup
-		Way way = OsmDataBuilder.buildSampleWay();
+		ESNode node1 = ESNode.Builder.create().id(1).location(1, 2).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(2, 3).build();
+		ESNode node3 = ESNode.Builder.create().id(3).location(3, 2).build();
+		index(INDEX_NAME, node1, node2, node3);
+
+		Way way = OsmDataBuilder.buildSampleWay(1, 1, 2, 3, 1);
 
 		// Action
 		entityDao.save(way);
@@ -65,8 +75,35 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
-		Assert.assertTrue(response.exists());
-		String expected = "{\"tags\":{\"highway\":\"residential\"},\"nodes\":[1]}";
+		Assert.assertTrue(response.isExists());
+		String expected = "{\"centroid\":[2.3333333333333335,2.0],\"lengthKm\":536.8973391277414," +
+				"\"areaKm2\":12364.345757132623,\"shape\":{\"type\":\"polygon\",\"coordinates\":" +
+				"[[[2.0,1.0],[3.0,2.0],[2.0,3.0],[2.0,1.0]]]},\"tags\":{\"highway\":\"residential\"}}";
+		String actual = response.getSourceAsString();
+		Assert.assertEquals(expected, actual);
+	}
+
+	@Test
+	public void saveWay_withLineString() {
+		// Setup
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(2.0, 3.0).build();
+		ESNode node3 = ESNode.Builder.create().id(3).location(3.0, 2.0).build();
+		ESNode node4 = ESNode.Builder.create().id(4).location(4.0, 1.0).build();
+		index(INDEX_NAME, node1, node2, node3, node4);
+
+		Way way = OsmDataBuilder.buildSampleWay(1, 1, 2, 3, 4);
+
+		// Action
+		entityDao.save(way);
+		refresh(INDEX_NAME);
+
+		// Assert
+		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
+		Assert.assertTrue(response.isExists());
+		String expected = "{\"centroid\":[2.1666666666666665,2.5],\"lengthKm\":471.76076948850596," +
+				"\"areaKm2\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
+				"[[2.0,1.0],[3.0,2.0],[2.0,3.0],[1.0,4.0]]},\"tags\":{\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
@@ -74,332 +111,287 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 	@Test
 	public void saveAll() throws InterruptedException {
 		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-		Way way = OsmDataBuilder.buildSampleWay();
+		Node node1 = OsmDataBuilder.buildSampleNode(1);
+		Node node2 = OsmDataBuilder.buildSampleNode(2);
 
 		// Action
-		entityDao.saveAll(Arrays.asList(new Entity[] { node, way }));
+		entityDao.saveAll(Arrays.asList(new Entity[] { node1, node2 }));
 		refresh(INDEX_NAME);
 
 		// Assert
-		GetResponse response1 = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
-		Assert.assertTrue(response1.exists());
-		String expected1 = "{\"location\":[2.0,1.0],\"tags\":{\"highway\":\"traffic_signals\"}}";
-		String actual1 = response1.getSourceAsString();
-		Assert.assertEquals(expected1, actual1);
+		String expected = "{\"centroid\":[2.0,1.0],\"shape\":{\"type\":\"point\",\"coordinates\":[2.0,1.0]}," +
+				"\"tags\":{\"highway\":\"traffic_signals\"}}";
 
-		GetResponse response2 = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();
-		Assert.assertTrue(response2.exists());
-		String expected2 = "{\"tags\":{\"highway\":\"residential\"},\"nodes\":[1]}";
+		GetResponse response1 = client().prepareGet(INDEX_NAME, "node", "1").execute().actionGet();
+		Assert.assertTrue(response1.isExists());
+		String actual1 = response1.getSourceAsString();
+		Assert.assertEquals(expected, actual1);
+
+		GetResponse response2 = client().prepareGet(INDEX_NAME, "node", "2").execute().actionGet();
+		Assert.assertTrue(response2.isExists());
 		String actual2 = response2.getSourceAsString();
-		Assert.assertEquals(expected2, actual2);
+		Assert.assertEquals(expected, actual2);
 	}
 
 	/* find */
 
 	@Test
-	public void findNode() throws Exception {
+	public void findNode() {
 		// Setup
-		Node expected = OsmDataBuilder.buildSampleNode();
-		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshall(expected))
-				.execute().actionGet();
+		ESNode node = OsmDataBuilder.buildSampleESNode();
+		index(INDEX_NAME, node);
 		refresh(INDEX_NAME);
 
 		// Action
-		Node actual = entityDao.find(Node.class, 1l);
+		ESNode actual = entityDao.find(ESNode.class, 1);
 
 		// Assert
-		AssertUtils.assertEquals(expected, actual);
+		Assert.assertEquals(node, actual);
+	}
+
+	@Test(expected = DaoException.class)
+	public void findNode_thatDoesNotExists() {
+		// Setup
+		ESNode node = OsmDataBuilder.buildSampleESNode();
+		index(INDEX_NAME, node);
+		refresh(INDEX_NAME);
+
+		// Action
+		entityDao.find(ESNode.class, 2);
 	}
 
 	@Test
-	public void findNode_thatDoesNotExists() throws Exception {
+	public void findWay_withLineString() {
 		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshall(node))
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.0, 2.0).addLocation(2.0, 3.0)
+				.addLocation(3.0, 2.0).addLocation(4.0, 1.0).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		Node actual = entityDao.find(Node.class, 2l);
+		ESWay actual = entityDao.find(ESWay.class, 1);
 
 		// Assert
-		Assert.assertNull(actual);
+		Assert.assertEquals(way, actual);
 	}
 
 	@Test
-	public void findWay() throws Exception {
+	public void findWay_withPolygon() {
 		// Setup
-		Way way = OsmDataBuilder.buildSampleWay();
-		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshall(way))
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.1, 2.1).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		Way actual = entityDao.find(Way.class, 1l);
+		ESWay actual = entityDao.find(ESWay.class, 1);
 
 		// Assert
-		Assert.assertEquals(1l, actual.getId());
-		Tag tag = actual.getTags().iterator().next();
-		Assert.assertEquals("highway", tag.getKey());
-		Assert.assertEquals("residential", tag.getValue());
-		WayNode wayNode = actual.getWayNodes().get(0);
-		Assert.assertEquals(1l, wayNode.getNodeId());
+		Assert.assertEquals(way, actual);
 	}
 
-	@Test
-	public void findWay_thatDoesNotExists() throws Exception {
+	@Test(expected = DaoException.class)
+	public void findWay_thatDoesNotExists() {
 		// Setup
-		Way way = OsmDataBuilder.buildSampleWay();
-		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshall(way))
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		Way actual = entityDao.find(Way.class, 2l);
-
-		// Assert
-		Assert.assertNull(actual);
+		entityDao.find(ESWay.class, 2);
 	}
 
 	/* findAll */
 
 	@Test
-	public void findAllNodes_stressTest() throws Exception {
+	public void findAllNodes_stressTest() {
 		// Setup
-
 		int SIZE = 100;
 
 		long[] ids = new long[SIZE];
-		List<Node> expected = new ArrayList<Node>(SIZE);
+		List<ESNode> expected = new ArrayList<ESNode>(SIZE);
 
 		for (int i = 0; i < SIZE; i++) {
-			Node node = OsmDataBuilder.buildSampleNode();
-			node.setId(i);
+			ESNode node = OsmDataBuilder.buildSampleESNode(i);
 			expected.add(node);
 			ids[i] = i;
-			client().prepareIndex(INDEX_NAME, "node", String.valueOf(i))
-					.setSource(new EntityMapper().marshall(node))
-					.execute().actionGet();
+
 		}
+		index(INDEX_NAME, expected.toArray(new ESEntity[0]));
 		refresh(INDEX_NAME);
 
 		// Action
-		List<Node> actual = entityDao.findAll(Node.class, ids);
+		List<ESNode> actual = entityDao.findAll(ESNode.class, ids);
 
 		// Assert
-		AssertUtils.assertNodesEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void findAllNodes() throws Exception {
+	public void findAllNodes() {
 		// Setup
-		Node node1 = OsmDataBuilder.buildSampleNode();
-		node1.setId(1);
-		Node node2 = OsmDataBuilder.buildSampleNode();
-		node2.setId(2);
-		List<Node> expected = Arrays.asList(new Node[] { node1, node2 });
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(3.0, 4.0).build();
+		List<ESNode> expected = Arrays.asList(new ESNode[] { node1, node2 });
 
-		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshall(node1))
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, "node", "2")
-				.setSource(new EntityMapper().marshall(node2))
-				.execute().actionGet();
+		index(INDEX_NAME, node1, node2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<Node> actual = entityDao.findAll(Node.class, 1l, 2l);
+		List<ESNode> actual = entityDao.findAll(ESNode.class, 1l, 2);
 
 		// Assert
-		AssertUtils.assertNodesEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void findAllNodes_withSubset() throws Exception {
+	public void findAllNodes_withSubset() {
 		// Setup
-		Node node1 = OsmDataBuilder.buildSampleNode();
-		node1.setId(1);
-		Node node2 = OsmDataBuilder.buildSampleNode();
-		node2.setId(2);
-		List<Node> expected = Arrays.asList(new Node[] { node2 });
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(3.0, 4.0).build();
+		List<ESNode> expected = Arrays.asList(new ESNode[] { node2 });
 
-		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshall(node1))
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, "node", "2")
-				.setSource(new EntityMapper().marshall(node2))
-				.execute().actionGet();
+		index(INDEX_NAME, node1, node2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<Node> actual = entityDao.findAll(Node.class, 2l);
+		List<ESNode> actual = entityDao.findAll(ESNode.class, 2);
 
 		// Assert
-		AssertUtils.assertNodesEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void findAllNodes_keepOrder() throws Exception {
+	public void findAllNodes_keepOrder() {
 		// Setup
-		Node node1 = OsmDataBuilder.buildSampleNode();
-		node1.setId(1);
-		Node node2 = OsmDataBuilder.buildSampleNode();
-		node2.setId(2);
-		List<Node> expected = Arrays.asList(new Node[] { node2, node1 });
+		ESNode node1 = ESNode.Builder.create().id(1).location(1.0, 2.0).build();
+		ESNode node2 = ESNode.Builder.create().id(2).location(3.0, 4.0).build();
+		List<ESNode> expected = Arrays.asList(new ESNode[] { node2, node1 });
 
-		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshall(node1))
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, "node", "2")
-				.setSource(new EntityMapper().marshall(node2))
-				.execute().actionGet();
+		index(INDEX_NAME, node1, node2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<Node> actual = entityDao.findAll(Node.class, 2l, 1l);
+		List<ESNode> actual = entityDao.findAll(ESNode.class, 2l, 1);
 
 		// Assert
-		AssertUtils.assertNodesEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void findAllWays() throws Exception {
+	public void findAllWays() {
 		// Setup
-		Way way1 = OsmDataBuilder.buildSampleWay();
-		way1.setId(1);
-		Way way2 = OsmDataBuilder.buildSampleWay();
-		way2.setId(2);
-		List<Way> expected = Arrays.asList(new Way[] { way1, way2 });
+		// Setup
+		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		ESWay way2 = ESWay.Builder.create().id(2).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		List<ESWay> expected = Arrays.asList(new ESWay[] { way1, way2 });
 
-		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshall(way1))
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, "way", "2")
-				.setSource(new EntityMapper().marshall(way2))
-				.execute().actionGet();
+		index(INDEX_NAME, way1, way2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<Way> actual = entityDao.findAll(Way.class, 1l, 2l);
+		List<ESWay> actual = entityDao.findAll(ESWay.class, 1l, 2);
 
 		// Assert
-		AssertUtils.assertWaysEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void findAllWays_withSubset() throws Exception {
+	public void findAllWays_withSubset() {
 		// Setup
-		Way way1 = OsmDataBuilder.buildSampleWay();
-		way1.setId(1);
-		Way way2 = OsmDataBuilder.buildSampleWay();
-		way2.setId(2);
-		List<Way> expected = Arrays.asList(new Way[] { way2 });
+		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		ESWay way2 = ESWay.Builder.create().id(2).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		List<ESWay> expected = Arrays.asList(new ESWay[] { way2 });
 
-		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshall(way1))
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, "way", "2")
-				.setSource(new EntityMapper().marshall(way2))
-				.execute().actionGet();
+		index(INDEX_NAME, way1, way2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<Way> actual = entityDao.findAll(Way.class, 2l);
+		List<ESWay> actual = entityDao.findAll(ESWay.class, 2);
 
 		// Assert
-		AssertUtils.assertWaysEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void findAllWays_keepOrder() throws Exception {
+	public void findAllWays_keepOrder() {
 		// Setup
-		Way way1 = OsmDataBuilder.buildSampleWay();
-		way1.setId(1);
-		Way way2 = OsmDataBuilder.buildSampleWay();
-		way2.setId(2);
-		List<Way> expected = Arrays.asList(new Way[] { way2, way1 });
+		ESWay way1 = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		ESWay way2 = ESWay.Builder.create().id(2).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		List<ESWay> expected = Arrays.asList(new ESWay[] { way2, way1 });
 
-		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshall(way1))
-				.execute().actionGet();
-		client().prepareIndex(INDEX_NAME, "way", "2")
-				.setSource(new EntityMapper().marshall(way2))
-				.execute().actionGet();
+		index(INDEX_NAME, way1, way2);
 		refresh(INDEX_NAME);
 
 		// Action
-		List<Way> actual = entityDao.findAll(Way.class, 2l, 1l);
+		List<ESWay> actual = entityDao.findAll(ESWay.class, 2l, 1);
 
 		// Assert
-		AssertUtils.assertWaysEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
 	}
 
 	/* delete */
 
 	@Test
-	public void deleteNode() throws Exception {
+	public void deleteNode() {
 		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshall(node))
-				.execute().actionGet();
+		ESNode node = OsmDataBuilder.buildSampleESNode();
+		index(INDEX_NAME, node);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(Node.class, 1l);
+		boolean actual = entityDao.delete(ESNode.class, 1);
 
 		// Assert
 		Assert.assertTrue(actual);
 	}
 
 	@Test
-	public void deleteNode_thatDoesNotExists() throws Exception {
+	public void deleteNode_thatDoesNotExists() {
 		// Setup
-		Node node = OsmDataBuilder.buildSampleNode();
-		client().prepareIndex(INDEX_NAME, "node", "1")
-				.setSource(new EntityMapper().marshall(node))
-				.execute().actionGet();
+		ESNode node = OsmDataBuilder.buildSampleESNode();
+		index(INDEX_NAME, node);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(Node.class, 2l);
+		boolean actual = entityDao.delete(ESNode.class, 2);
 
 		// Assert
 		Assert.assertFalse(actual);
 	}
 
 	@Test
-	public void deleteWay() throws Exception {
+	public void deleteWay() {
 		// Setup
-		Way way = OsmDataBuilder.buildSampleWay();
-		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshall(way))
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(Way.class, 1l);
+		boolean actual = entityDao.delete(ESWay.class, 1);
 
 		// Assert
 		Assert.assertTrue(actual);
 	}
 
 	@Test
-	public void deleteWay_thatDoesNotExists() throws Exception {
+	public void deleteWay_thatDoesNotExists() {
 		// Setup
-		Way way = OsmDataBuilder.buildSampleWay();
-		client().prepareIndex(INDEX_NAME, "way", "1")
-				.setSource(new EntityMapper().marshall(way))
-				.execute().actionGet();
+		ESWay way = ESWay.Builder.create().id(1).addLocation(1.1, 2.1).addLocation(1.2, 2.2)
+				.addLocation(1.3, 2.3).addLocation(1.4, 2.4).build();
+		index(INDEX_NAME, way);
 		refresh(INDEX_NAME);
 
 		// Action
-		boolean actual = entityDao.delete(Way.class, 2l);
+		boolean actual = entityDao.delete(ESWay.class, 2);
 
 		// Assert
 		Assert.assertFalse(actual);

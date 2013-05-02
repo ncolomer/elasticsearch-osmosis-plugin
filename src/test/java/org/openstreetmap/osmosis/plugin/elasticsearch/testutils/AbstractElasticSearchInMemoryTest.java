@@ -18,6 +18,7 @@ import org.elasticsearch.node.NodeBuilder;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
 
 /**
  * Provides an empty in-memory elasticsearch index
@@ -74,7 +75,17 @@ public abstract class AbstractElasticSearchInMemoryTest {
 	}
 
 	protected boolean exists(String... indices) {
-		return client().admin().indices().prepareExists(indices).execute().actionGet().exists();
+		return client().admin().indices().prepareExists(indices).execute().actionGet().isExists();
+	}
+
+	protected void index(String index, ESEntity... entities) {
+		for (ESEntity entity : entities) {
+			index(index, entity.getEntityType().getIndiceName(), entity.getIdString(), entity.toJson());
+		}
+	}
+
+	protected void index(String index, String type, String id, String source) {
+		client().prepareIndex(index, type, id).setSource(source).execute().actionGet();
 	}
 
 	protected String clusterName() {
@@ -83,7 +94,7 @@ public abstract class AbstractElasticSearchInMemoryTest {
 
 	protected String nodeAddress() {
 		NodesInfoResponse nodesInfo = client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
-		String transportAddress = nodesInfo.nodes()[0].node().address().toString();
+		String transportAddress = nodesInfo.getNodes()[0].getNode().address().toString();
 		Matcher matcher = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d{1,5})?").matcher(transportAddress);
 		matcher.find();
 		return matcher.group();
