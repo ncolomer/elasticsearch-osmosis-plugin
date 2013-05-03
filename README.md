@@ -14,6 +14,10 @@ Following documentation is available in the project's [wiki](https://github.com/
 * [How to contribute](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/How-to-contribute)
 * [Links](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/Links)
 
+## Download
+
+Current stable release: **1.3.0** / 2013-05-02 ([download](http://sourceforge.net/projects/es-osmosis/files/releases/elasticsearch-osmosis-plugin-1.3.0.jar))
+
 ## Powered by
 
 [![OpenStreetMap](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/openstreetmap.png)](http://www.openstreetmap.org)
