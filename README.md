@@ -7,7 +7,7 @@ elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/
 Following documentation is available in the project's [wiki](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki):
 
 * [Motivations](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/Motivations)
-* [Quick start](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/Quick-start)
+* > **[Quick start](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/Quick-start)**
 * [Data mapping](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/Data-mapping)
 * [Usage](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/Usage)
 * [Releases](https://github.com/ncolomer/elasticsearch-osmosis-plugin/wiki/Releases)
