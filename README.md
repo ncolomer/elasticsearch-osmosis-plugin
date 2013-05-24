@@ -1,6 +1,7 @@
 # elasticsearch-osmosis-plugin
 
-elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/Osmosis) plugin that index [OpenStreetMap](http://www.openstreetmap.org) data into an [elasticsearch](http://www.elasticsearch.org) cluster. It aims to help indexing the world, no more, no less :)
+elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/Osmosis) plugin that index [OpenStreetMap](http://www.openstreetmap.org) data into an [elasticsearch](http://www.elasticsearch.org) cluster.  
+It aims to help indexing the world, no more, no less :)
 
 ## Documentation
 
@@ -23,3 +24,8 @@ Current stable release: **1.3.0** / 2013-05-02 ([download](http://sourceforge.ne
 [![OpenStreetMap](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/openstreetmap.png)](http://www.openstreetmap.org)
 [![elasticsearch](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/elasticsearch.png)](http://www.elasticsearch.org)
 [![SourceForge](https://raw.github.com/ncolomer/elasticsearch-osmosis-plugin/master/assets/sourceforge.png)](http://www.sourceforge.net)
+
+## License
+
+This plugin is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)  
+OpenStreetMap data is licensed under the [Open Data Commons Open Database License](http://opendatacommons.org/licenses/odbl/1.0/) (ODbL)
