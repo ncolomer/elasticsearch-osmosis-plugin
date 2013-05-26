@@ -1,5 +1,4 @@
-
-| Take a look at the brand new <a href="#">Discovery</a> site-plugin to visualize and explore your freshly indexed OpenStreetMap data! |
+| Take a look at the brand new <a href="https://github.com/ncolomer/discovery">discovery</a> site-plugin to visualize and explore your freshly indexed OpenStreetMap data! |
 | :-: |
 
 # elasticsearch-osmosis-plugin
