@@ -1,6 +1,11 @@
+
+| Take a look at the brand new <a href="#">Discovery</a> site-plugin to visualize and explore your freshly indexed OpenStreetMap data! |
+| :-: |
+
 # elasticsearch-osmosis-plugin
 
-elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/Osmosis) plugin that index [OpenStreetMap](http://www.openstreetmap.org) data into an [elasticsearch](http://www.elasticsearch.org) cluster.  
+elasticsearch-osmosis-plugin is an [Osmosis](http://wiki.openstreetmap.org/wiki/Osmosis) plugin that index 
+[OpenStreetMap](http://www.openstreetmap.org) data into an [elasticsearch](http://www.elasticsearch.org) cluster.  
 It aims to help indexing the world, no more, no less :)
 
 ## Documentation
