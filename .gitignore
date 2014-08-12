@@ -14,3 +14,6 @@ release.properties
 pom.xml.releaseBackup
 
 .DS_Store
+
+.idea
+elasticsearch-osmosis-plugin.iml
