@@ -4,17 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.elasticsearch.common.geo.GeoShapeConstants;
-
 import com.spatial4j.core.distance.DistanceUtils;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.CoordinateSequence;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.LinearRing;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.geom.*;
+
+import static org.elasticsearch.common.geo.builders.ShapeBuilder.SPATIAL_CONTEXT;
 
 public class ESShape {
 
@@ -200,7 +193,7 @@ public class ESShape {
 						locations.get(i).getLongitude(),
 						locations.get(i).getLatitude());
 			}
-			GeometryFactory factory = GeoShapeConstants.SPATIAL_CONTEXT.getGeometryFactory();
+			GeometryFactory factory = SPATIAL_CONTEXT.getGeometryFactory();
 			CoordinateSequence sequence = factory.getCoordinateSequenceFactory().create(coordinates);
 			switch (getShapeType()) {
 			case POINT:

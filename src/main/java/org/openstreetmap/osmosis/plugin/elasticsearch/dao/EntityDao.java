@@ -1,11 +1,6 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -17,12 +12,7 @@ import org.elasticsearch.action.get.MultiGetRequest.Item;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.client.Client;
-import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
-import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
-import org.openstreetmap.osmosis.core.domain.v0_6.Node;
-import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
-import org.openstreetmap.osmosis.core.domain.v0_6.Way;
-import org.openstreetmap.osmosis.core.domain.v0_6.WayNode;
+import org.openstreetmap.osmosis.core.domain.v0_6.*;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
@@ -280,8 +270,8 @@ public class EntityDao {
 	public <T extends ESEntity> boolean delete(Class<T> entityClass, long osmId) {
 		try {
 			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
-			return !client.prepareDelete(indexName, indiceName, Long.toString(osmId))
-					.execute().actionGet().isNotFound();
+			return client.prepareDelete(indexName, indiceName, Long.toString(osmId))
+					.execute().actionGet().isFound();
 		} catch (Exception e) {
 			String indiceName = ESEntityType.valueOf(entityClass).getIndiceName();
 			String message = String.format("Unable to delete entity %s in %s/%s",

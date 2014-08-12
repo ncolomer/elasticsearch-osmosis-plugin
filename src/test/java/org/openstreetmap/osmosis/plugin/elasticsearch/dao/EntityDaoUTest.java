@@ -1,26 +1,8 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.dao;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -40,18 +22,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.openstreetmap.osmosis.core.domain.v0_6.Bound;
-import org.openstreetmap.osmosis.core.domain.v0_6.Entity;
-import org.openstreetmap.osmosis.core.domain.v0_6.EntityType;
-import org.openstreetmap.osmosis.core.domain.v0_6.Node;
-import org.openstreetmap.osmosis.core.domain.v0_6.Relation;
-import org.openstreetmap.osmosis.core.domain.v0_6.Way;
+import org.openstreetmap.osmosis.core.domain.v0_6.*;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntity;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESEntityType;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.entity.ESNode;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape;
 import org.openstreetmap.osmosis.plugin.elasticsearch.model.shape.ESShape.ESShapeBuilder;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
 public class EntityDaoUTest {
@@ -513,7 +497,7 @@ public class EntityDaoUTest {
 		when(deleteRequestBuilder.execute()).thenReturn(listenableActionFutureMocked);
 		DeleteResponse deleteResponseMocked = mock(DeleteResponse.class);
 		when(listenableActionFutureMocked.actionGet()).thenReturn(deleteResponseMocked);
-		when(deleteResponseMocked.isNotFound()).thenReturn(false);
+		when(deleteResponseMocked.isFound()).thenReturn(true);
 
 		// Action
 		boolean actual = entityDao.delete(ESNode.class, 1l);
@@ -532,7 +516,7 @@ public class EntityDaoUTest {
 		when(deleteRequestBuilder.execute()).thenReturn(listenableActionFutureMocked);
 		DeleteResponse deleteResponseMocked = mock(DeleteResponse.class);
 		when(listenableActionFutureMocked.actionGet()).thenReturn(deleteResponseMocked);
-		when(deleteResponseMocked.isNotFound()).thenReturn(true);
+		when(deleteResponseMocked.isFound()).thenReturn(false);
 
 		// Action
 		boolean actual = entityDao.delete(ESNode.class, 1l);
@@ -548,7 +532,7 @@ public class EntityDaoUTest {
 		when(clientMocked.prepareDelete(any(String.class), any(String.class), any(String.class))).thenReturn(deleteRequestBuilder);
 		ListenableActionFuture<DeleteResponse> listenableActionFutureMocked = mock(ListenableActionFuture.class);
 		when(deleteRequestBuilder.execute()).thenReturn(listenableActionFutureMocked);
-		when(listenableActionFutureMocked.actionGet()).thenThrow(new ElasticSearchException("Simulated exception"));
+		when(listenableActionFutureMocked.actionGet()).thenThrow(new ElasticsearchException("Simulated exception"));
 
 		// Action
 		entityDao.delete(ESNode.class, 1l);
