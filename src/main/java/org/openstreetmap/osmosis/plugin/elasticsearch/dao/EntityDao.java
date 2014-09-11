@@ -126,7 +126,7 @@ public class EntityDao {
 		for (Way way : ways) {
 			for (WayNode wayNode : way.getWayNodes()) {
 				request.add(new Item(indexName, ESEntityType.NODE.getIndiceName(),
-						String.valueOf(wayNode.getNodeId())).fields("shape"));
+						String.valueOf(wayNode.getNodeId())).fields("centroid"));
 			}
 		}
 		MultiGetResponse responses = request.execute().actionGet();
@@ -139,10 +139,10 @@ public class EntityDao {
 		for (int i = 0; i < size; i++) {
 			GetResponse response = iterator.next().getResponse();
 			if (!response.isExists()) continue;
-			@SuppressWarnings("unchecked")
-			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
-			@SuppressWarnings("unchecked")
-			List<Double> coordinates = (List<Double>) shape.get("coordinates");
+			//@SuppressWarnings("unchecked")
+			//Map<String, Object> shape = (Map<String, Object>) response.getField("centroid").getValue();
+			//@SuppressWarnings("unchecked")
+			List<Double> coordinates = (List) response.getField("centroid").getValues();
 			shapeBuilder.addLocation(coordinates.get(1), coordinates.get(0));
 		}
 		return shapeBuilder.build();
