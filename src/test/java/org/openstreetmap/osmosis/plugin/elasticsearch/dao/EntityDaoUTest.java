@@ -41,6 +41,8 @@ import static org.mockito.Mockito.*;
 public class EntityDaoUTest {
 
 	private static final String INDEX_NAME = "osm-test";
+        
+        private static final Boolean WITHOUT_WAYS = false;
 
 	private Client clientMocked;
 
@@ -49,7 +51,7 @@ public class EntityDaoUTest {
 	@Before
 	public void setUp() throws Exception {
 		clientMocked = mock(Client.class);
-		entityDao = new EntityDao(INDEX_NAME, clientMocked);
+		entityDao = new EntityDao(INDEX_NAME, clientMocked, WITHOUT_WAYS);
 		entityDao = Mockito.spy(entityDao);
 	}
 

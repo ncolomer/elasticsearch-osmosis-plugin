@@ -63,12 +63,15 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 		addArgumentIfExists(Parameters.INDEX_MAPPING_NODE, taskConfig, builder);
 		addArgumentIfExists(Parameters.INDEX_MAPPING_WAY, taskConfig, builder);
 
+                addArgumentIfExists(Parameters.INDEX_BUILDERS, taskConfig, builder);
+                
 		addArgumentIfExists(Parameters.CONFIG_QUEUE_SIZE, taskConfig, builder);
 		addArgumentIfExists(Parameters.CONFIG_NODE_BULK_SIZE, taskConfig, builder);
 		addArgumentIfExists(Parameters.CONFIG_WAY_BULK_SIZE, taskConfig, builder);
 		addArgumentIfExists(Parameters.CONFIG_WORKER_POOL_SIZE, taskConfig, builder);
-
-		addArgumentIfExists(Parameters.INDEX_BUILDERS, taskConfig, builder);
+                
+                addArgumentIfExists(Parameters.WITHOUT_WAYS, taskConfig, builder);
+		
 		return builder.build();
 	}
 
@@ -100,7 +103,8 @@ public class ElasticSearchWriterFactory extends TaskManagerFactory {
 
 	protected EntityDao buildEntityDao(Client client, Parameters params) {
 		String indexName = params.getProperty(Parameters.INDEX_NAME);
-		return new EntityDao(indexName, client);
+                Boolean withoutWays = Boolean.valueOf(params.getProperty(Parameters.WITHOUT_WAYS, "false"));
+		return new EntityDao(indexName, client, withoutWays);
 	}
 
 	protected Set<AbstractIndexBuilder> getSelectedIndexBuilders(Endpoint endpoint, Parameters params) {

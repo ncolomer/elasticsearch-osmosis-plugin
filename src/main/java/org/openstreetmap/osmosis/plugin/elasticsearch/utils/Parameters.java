@@ -24,6 +24,8 @@ public class Parameters {
 	public static final String CONFIG_NODE_BULK_SIZE = "config.node.bulk.size";
 	public static final String CONFIG_WAY_BULK_SIZE = "config.way.bulk.size";
 	public static final String CONFIG_WORKER_POOL_SIZE = "config.worker.pool.size";
+        
+        public static final String WITHOUT_WAYS = "without_ways";
 
 	private final Properties params;
 
