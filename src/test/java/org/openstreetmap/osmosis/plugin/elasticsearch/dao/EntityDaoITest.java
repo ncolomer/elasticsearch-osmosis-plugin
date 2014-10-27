@@ -27,11 +27,13 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 	private static final String INDEX_NAME = "osm-test";
 
+        private static final Boolean WITHOUT_WAYS = false;
+        
 	private EntityDao entityDao;
 
 	@Before
 	public void setUp() throws IOException {
-		entityDao = new EntityDao(INDEX_NAME, client());
+		entityDao = new EntityDao(INDEX_NAME, client(), WITHOUT_WAYS);
 		Parameters params = new Parameters.Builder().loadResource("plugin.properties").build();
 		IndexAdminService indexAdminService = new IndexAdminService(client());
 		HashMap<String, String> mappings = new HashMap<String, String>();

@@ -26,10 +26,12 @@ public class EntityDao {
 
 	private final String indexName;
 	private final Client client;
-
-	public EntityDao(String indexName, Client client) {
+        private final Boolean withoutWays;
+        
+	public EntityDao(String indexName, Client client, Boolean withoutWays) {
 		this.indexName = indexName;
 		this.client = client;
+                this.withoutWays = withoutWays;
 	}
 
 	/**
@@ -85,7 +87,7 @@ public class EntityDao {
 			}
 		}
 		if (!nodes.isEmpty()) saveAllNodes(nodes);
-		if (!ways.isEmpty()) saveAllWays(ways);
+		if (!ways.isEmpty() && false == this.withoutWays) saveAllWays(ways);
 	}
 
 	protected void saveAllNodes(List<Node> nodes) {
