@@ -98,6 +98,7 @@ public class ElasticsearchClientBuilder {
 		TransportClient transportClient = new TransportClient(settings);
 		// Add specified TransportAddresses
 		for (String host : hosts.split(",")) {
+			if (host.length() == 0) { host = hosts; }
 			String[] params = host.split(":");
 			String hostname = params[0];
 			int port = (params.length == 2) ? Integer.valueOf(params[1]) : 9300;
