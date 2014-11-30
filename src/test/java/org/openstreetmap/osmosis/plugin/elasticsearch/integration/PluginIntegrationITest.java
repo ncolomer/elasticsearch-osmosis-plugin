@@ -17,7 +17,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticS
 public class PluginIntegrationITest extends AbstractElasticSearchInMemoryTest {
 
 	private static final String INDEX_NAME = "osm-test";
-        
+
 	@Test
 	public void countMainIndexedDocuments() throws Exception {
 		// Action
