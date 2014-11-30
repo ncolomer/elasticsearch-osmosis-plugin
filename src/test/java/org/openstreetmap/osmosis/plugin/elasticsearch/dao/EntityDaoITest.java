@@ -71,7 +71,7 @@ public class EntityDaoITest extends AbstractElasticSearchInMemoryTest {
 
 		// Action
 		entityDao.save(way);
-		refresh(INDEX_NAME);
+		refresh();
 
 		// Assert
 		GetResponse response = client().prepareGet(INDEX_NAME, "way", "1").execute().actionGet();

@@ -2,7 +2,6 @@ package org.openstreetmap.osmosis.plugin.elasticsearch.model.entity;
 
 import java.util.HashMap;
 
-import com.spatial4j.core.distance.DistanceUtils;
 import com.spatial4j.core.shape.Point;
 import com.spatial4j.core.shape.Rectangle;
 import com.spatial4j.core.shape.impl.PointImpl;
@@ -21,6 +20,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.service.IndexAdminService;
 import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticSearchInMemoryTest;
 
 import junit.framework.Assert;
+import org.elasticsearch.common.geo.GeoUtils;
 
 import static org.elasticsearch.common.geo.builders.ShapeBuilder.SPATIAL_CONTEXT;
 
@@ -195,9 +195,8 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 
 	protected ShapeBuilder buildSquareShape(double centerLat, double centerLon, double distanceMeter) {
 		Point point = new PointImpl(centerLon, centerLat, SPATIAL_CONTEXT);
-		double radius = DistanceUtils.dist2Degrees(distanceMeter / 10E3, DistanceUtils.EARTH_MEAN_RADIUS_KM);
-		Rectangle shape = SPATIAL_CONTEXT.makeCircle(point, radius).getBoundingBox();
-		return ShapeBuilder.newEnvelope().bottomRight(shape.getMinX(), shape.getMinY()).topLeft(shape.getMaxX(), shape.getMaxY());
+		Rectangle shape = SPATIAL_CONTEXT.makeCircle(point, 360 * distanceMeter / GeoUtils.EARTH_EQUATOR).getBoundingBox();
+		return ShapeBuilder.newEnvelope().bottomRight(shape.getMaxX(), shape.getMinY()).topLeft(shape.getMinX(), shape.getMaxY());
 	}
 
 }

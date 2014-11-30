@@ -126,7 +126,7 @@ public class EntityDao {
 		for (Way way : ways) {
 			for (WayNode wayNode : way.getWayNodes()) {
 				request.add(new Item(indexName, ESEntityType.NODE.getIndiceName(),
-						String.valueOf(wayNode.getNodeId())).fields("shape"));
+						String.valueOf(wayNode.getNodeId())));
 			}
 		}
 		MultiGetResponse responses = request.execute().actionGet();
@@ -140,7 +140,7 @@ public class EntityDao {
 			GetResponse response = iterator.next().getResponse();
 			if (!response.isExists()) continue;
 			@SuppressWarnings("unchecked")
-			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
+			Map<String, Object> shape = (Map<String, Object>) response.getSource().get("shape");
 			@SuppressWarnings("unchecked")
 			List<Double> coordinates = (List<Double>) shape.get("coordinates");
 			shapeBuilder.addLocation(coordinates.get(1), coordinates.get(0));
@@ -221,8 +221,7 @@ public class EntityDao {
 		ESEntityType type = ESEntityType.valueOf(entityClass);
 		MultiGetRequestBuilder request = client.prepareMultiGet();
 		for (long osmId : osmIds) {
-			request.add(new Item(indexName, type.getIndiceName(), String.valueOf(osmId))
-					.fields("centroid", "lengthKm", "areaKm2", "shape", "tags"));
+			request.add(new Item(indexName, type.getIndiceName(), String.valueOf(osmId)));
 		}
 		return request;
 	}

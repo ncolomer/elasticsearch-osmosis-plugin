@@ -67,7 +67,11 @@ public abstract class AbstractElasticSearchInMemoryTest {
 	}
 
 	protected void delete(String... indices) {
+            if (indices == null || indices.length == 0) {
+                client().admin().indices().prepareDelete("_all").execute().actionGet();
+            } else {
 		client().admin().indices().prepareDelete(indices).execute().actionGet();
+            }
 	}
 
 	protected void refresh(String... indices) {

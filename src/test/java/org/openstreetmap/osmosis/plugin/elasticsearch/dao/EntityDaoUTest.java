@@ -32,9 +32,6 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
@@ -203,7 +200,7 @@ public class EntityDaoUTest {
 		Iterator<MultiGetItemResponse> actual = entityDao.getNodeItems(Arrays.asList(way));
 
 		// Assert
-		Item item = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1").fields("shape");
+		Item item = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1");
 		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item)));
 		verify(multiGetRequestBuilderMocked, times(1)).execute();
 		Assert.assertSame(iteratorMocked, actual);
@@ -215,13 +212,13 @@ public class EntityDaoUTest {
 		GetResponse response1 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		when(response1.isExists()).thenReturn(true);
 		Map<String, Object> map1 = mock(Map.class);
-		when(response1.getField("shape").getValue()).thenReturn(map1);
+		when(response1.getSource().get("shape")).thenReturn(map1);
 		when(map1.get("coordinates")).thenReturn(Arrays.asList(2.0, 1.0));
 
 		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		when(response2.isExists()).thenReturn(true);
 		Map<String, Object> map2 = mock(Map.class);
-		when(response2.getField("shape").getValue()).thenReturn(map2);
+		when(response2.getSource().get("shape")).thenReturn(map2);
 		when(map2.get("coordinates")).thenReturn(Arrays.asList(4.0, 3.0));
 
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
@@ -246,7 +243,7 @@ public class EntityDaoUTest {
 		GetResponse response1 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		when(response1.isExists()).thenReturn(true);
 		Map<String, Object> map1 = mock(Map.class);
-		when(response1.getField("shape").getValue()).thenReturn(map1);
+		when(response1.getSource().get("shape")).thenReturn(map1);
 		when(map1.get("coordinates")).thenReturn(Arrays.asList(2.0, 1.0));
 
 		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
@@ -405,10 +402,8 @@ public class EntityDaoUTest {
 		MultiGetRequestBuilder actual = entityDao.buildMultiGetRequest(ESNode.class, 1, 2);
 
 		// Assert
-		Item item1 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1")
-				.fields("centroid", "lengthKm", "areaKm2", "shape", "tags");
-		Item item2 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "2")
-				.fields("centroid", "lengthKm", "areaKm2", "shape", "tags");
+		Item item1 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "1");
+		Item item2 = new Item(INDEX_NAME, ESEntityType.NODE.getIndiceName(), "2");
 		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item1)));
 		verify(multiGetRequestBuilderMocked).add(argThat(new ItemMatcher(item2)));
 		Assert.assertSame(multiGetRequestBuilderMocked, actual);
