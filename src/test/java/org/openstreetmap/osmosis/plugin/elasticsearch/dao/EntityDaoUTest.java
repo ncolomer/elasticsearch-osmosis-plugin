@@ -248,7 +248,7 @@ public class EntityDaoUTest {
 
 		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		when(response2.isExists()).thenReturn(false);
-        
+
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
 		when(multiGetItemResponseMocked.getResponse()).thenReturn(response1, response2);
 
