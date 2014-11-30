@@ -133,7 +133,7 @@ public class EntityDao {
 		Iterator<MultiGetItemResponse> iterator = responses.iterator();
 		return iterator;
 	}
-//some error occures here!
+
 	protected ESShape getShape(Iterator<MultiGetItemResponse> iterator, int size) {
 		ESShapeBuilder shapeBuilder = new ESShapeBuilder(size);
 		for (int i = 0; i < size; i++) {
