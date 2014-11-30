@@ -75,7 +75,7 @@ public class ESWayUTest {
 		when(response.getId()).thenReturn("1");
 		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("highway", "primary");
-		when(response.getField("tags").getValue()).thenReturn(tags);
+		when(response.getSource().get("tags")).thenReturn(tags);
 		List<List<List<Double>>> locations = new ArrayList<List<List<Double>>>();
 		ArrayList<List<Double>> subLocations = new ArrayList<List<Double>>();
 		subLocations.add(Arrays.asList(new Double[] { 2.0, 1.0 }));
@@ -85,10 +85,10 @@ public class ESWayUTest {
 		Map<String, Object> shape = mock(Map.class);
 		when(shape.get("type")).thenReturn("polygon");
 		when(shape.get("coordinates")).thenReturn(locations);
-		when(response.getField("shape").getValue()).thenReturn(shape);
-		when(response.getField("centroid").getValue()).thenReturn(Arrays.asList(new Double[] { 2.5, 1.5 }));
-		when(response.getField("lengthKm").getValue()).thenReturn(157.25358982950198d);
-		when(response.getField("areaKm2").getValue()).thenReturn(0d);
+		when(response.getSource().get("shape")).thenReturn(shape);
+		when(response.getSource().get("centroid")).thenReturn(Arrays.asList(new Double[] { 2.5, 1.5 }));
+		when(response.getSource().get("lengthKm")).thenReturn(157.25358982950198d);
+		when(response.getSource().get("areaKm2")).thenReturn(0d);
 
 		ESWay expected = ESWay.Builder.create().id(1l)
 				.addLocation(1.0, 2.0).addLocation(2.0, 3.0)
