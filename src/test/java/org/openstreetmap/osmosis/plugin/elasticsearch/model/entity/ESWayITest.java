@@ -130,8 +130,6 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 				.execute().actionGet();
 
 		// Assert
-        System.out.println(shape);
-        System.out.println(way);
 		Assert.assertEquals(0, searchResponse.getHits().hits().length);
 	}
 
