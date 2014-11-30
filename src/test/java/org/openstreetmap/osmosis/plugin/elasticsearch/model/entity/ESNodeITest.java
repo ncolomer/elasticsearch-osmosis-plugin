@@ -84,7 +84,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		index(INDEX_NAME, node);
 		refresh();
 
- 		// Action
+		// Action
 		ShapeBuilder shape = buildSquareShape(48.676455, 2.380899, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
