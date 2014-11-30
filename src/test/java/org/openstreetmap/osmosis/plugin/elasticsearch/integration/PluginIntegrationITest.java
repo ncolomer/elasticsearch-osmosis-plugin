@@ -17,7 +17,7 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.AbstractElasticS
 public class PluginIntegrationITest extends AbstractElasticSearchInMemoryTest {
 
 	private static final String INDEX_NAME = "osm-test";
-
+        
 	@Test
 	public void countMainIndexedDocuments() throws Exception {
 		// Action
@@ -40,7 +40,6 @@ public class PluginIntegrationITest extends AbstractElasticSearchInMemoryTest {
 		refresh(INDEX_NAME);
 
 		// Assert
-		;
 		assertTrue(client().admin().indices().exists(new IndicesExistsRequest(INDEX_NAME)).actionGet().isExists());
 		assertEquals(777, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.NODE.getIndiceName())).actionGet().getCount());
 		assertEquals(57, client().count(new CountRequest(INDEX_NAME).types(ESEntityType.WAY.getIndiceName())).actionGet().getCount());
