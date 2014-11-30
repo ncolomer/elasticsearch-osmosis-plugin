@@ -32,9 +32,6 @@ import org.openstreetmap.osmosis.plugin.elasticsearch.testutils.OsmDataBuilder;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
@@ -251,7 +248,7 @@ public class EntityDaoUTest {
 
 		GetResponse response2 = mock(GetResponse.class, Mockito.RETURNS_DEEP_STUBS);
 		when(response2.isExists()).thenReturn(false);
-
+        
 		MultiGetItemResponse multiGetItemResponseMocked = mock(MultiGetItemResponse.class);
 		when(multiGetItemResponseMocked.getResponse()).thenReturn(response1, response2);
 

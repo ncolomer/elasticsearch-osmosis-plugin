@@ -138,7 +138,7 @@ public class EntityDao {
 		ESShapeBuilder shapeBuilder = new ESShapeBuilder(size);
 		for (int i = 0; i < size; i++) {
 			GetResponse response = iterator.next().getResponse();
-			if (response.isSourceEmpty()) continue;
+			if (!response.isExists()) continue;
 			@SuppressWarnings("unchecked")
 			Map<String, Object> shape = (Map<String, Object>) response.getSource().get("shape");
 			@SuppressWarnings("unchecked")
