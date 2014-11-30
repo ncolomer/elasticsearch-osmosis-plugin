@@ -36,7 +36,11 @@ public class ESWay extends ESEntity {
 	public ESEntityType getEntityType() {
 		return ESEntityType.WAY;
 	}
-
+        
+        public double[][] getCoordinates(){
+            return shape.getGeoJsonArray();
+        }
+        
 	@Override
 	public ESShapeType getShapeType() {
 		return shape.getShapeType();
@@ -140,9 +144,8 @@ public class ESWay extends ESEntity {
 
 			Builder builder = new Builder();
 			builder.id = Long.valueOf(response.getId());
-			builder.tags = (Map<String, String>) response.getField("tags").getValue();
-
-			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
+			builder.tags = (Map<String, String>) response.getSource().get("tags");
+			Map<String, Object> shape = (Map<String, Object>) response.getSource().get("shape");
 			String type = (String) shape.get("type");
 			if ("linestring".equals(type)) {
 				List<List<Double>> locations = (List<List<Double>>) shape.get("coordinates");
@@ -156,11 +159,11 @@ public class ESWay extends ESEntity {
 				}
 			}
 
-			List<Double> centroid = (List<Double>) response.getField("centroid").getValue();
+			List<Double> centroid = (List<Double>) response.getSource().get("centroid");
 			builder.shapeBuilder.setCentroid(new ESLocation(centroid.get(1), centroid.get(0)));
-			Double length = (Double) response.getField("lengthKm").getValue();
+			Double length = (Double) response.getSource().get("lengthKm");
 			builder.shapeBuilder.setLength(length);
-			Double area = (Double) response.getField("areaKm2").getValue();
+			Double area = (Double) response.getSource().get("areaKm2");
 			builder.shapeBuilder.setArea(area);
 
 			builder.shape = builder.shapeBuilder.buildFast();

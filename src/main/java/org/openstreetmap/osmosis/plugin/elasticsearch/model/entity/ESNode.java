@@ -140,8 +140,8 @@ public class ESNode extends ESEntity {
 			if (!response.getType().equals(ESEntityType.NODE.getIndiceName())) throw new IllegalArgumentException("Provided GetResponse is not a Node");
 			Builder builder = new Builder();
 			builder.id = Long.valueOf(response.getId());
-			builder.tags = (Map<String, String>) response.getField("tags").getValue();
-			Map<String, Object> shape = (Map<String, Object>) response.getField("shape").getValue();
+			builder.tags = (Map<String, String>) response.getSource().get("tags");
+			Map<String, Object> shape = (Map<String, Object>) response.getSource().get("shape");
 			List<Double> location = (List<Double>) shape.get("coordinates");
 			builder.latitude = location.get(1);
 			builder.longitude = location.get(0);
