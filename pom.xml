@@ -1,13 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<groupId>org.openstreetmap.osmosis</groupId>
 	<artifactId>elasticsearch-osmosis-plugin</artifactId>
 	<version>1.4.0-SNAPSHOT</version>
-	<name>elasticsearch-osmosis-plugin</name>
 	<packaging>jar</packaging>
 
 	<scm>
-		<connection>scm:git:git@github.com:ncolomer/elasticsearch-osmosis-plugin.git</connection>
+		<url>scm:git:git@github.com:ncolomer/elasticsearch-osmosis-plugin.git</url>
+    <connection>scm:git:git@github.com:ncolomer/elasticsearch-osmosis-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:ncolomer/elasticsearch-osmosis-plugin.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 
@@ -28,17 +30,17 @@
 		<logback.version>1.0.9</logback.version>
 		<slf4j.version>1.7.2</slf4j.version>
 		<!-- Maven plugins -->
-		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
-		<maven-assembly-plugin.version>2.3</maven-assembly-plugin.version>
-		<maven-surefire-plugin.version>2.14</maven-surefire-plugin.version>
-		<maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-		<maven-source-plugin.version>2.1.2</maven-source-plugin.version>
-		<maven-javadoc-plugin.version>2.8.1</maven-javadoc-plugin.version>
-		<maven-install-plugin.version>2.3.1</maven-install-plugin.version>
-		<maven-release-plugin.version>2.3.2</maven-release-plugin.version>
-		<maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
-		<maven-wagon-plugin.version>1.0-beta-4</maven-wagon-plugin.version>
-		<maven-wagon-ssh.version>2.4</maven-wagon-ssh.version>
+		<maven-compiler-plugin.version>3.2</maven-compiler-plugin.version>
+		<maven-assembly-plugin.version>2.5.2</maven-assembly-plugin.version>
+		<maven-surefire-plugin.version>2.18</maven-surefire-plugin.version>
+		<maven-jar-plugin.version>2.5</maven-jar-plugin.version>
+		<maven-source-plugin.version>2.4</maven-source-plugin.version>
+		<maven-javadoc-plugin.version>2.10.1</maven-javadoc-plugin.version>
+		<maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+		<maven-release-plugin.version>2.5.1</maven-release-plugin.version>
+		<maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+		<maven-wagon-ssh.version>2.8</maven-wagon-ssh.version>
+		<maven-wagon-plugin.version>1.0-beta-5</maven-wagon-plugin.version>
 	</properties>
 
 	<repositories>
@@ -229,9 +231,6 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
 				<version>${maven-release-plugin.version}</version>
-				<configuration>
-					<goals>clean deploy</goals>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -240,7 +239,7 @@
 				<configuration>
 					<skip>true</skip>
 				</configuration>
-			</plugin>
+ 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>wagon-maven-plugin</artifactId>
@@ -256,7 +255,7 @@
 				</executions>
 				<configuration>
 					<serverId>sourceforge</serverId>
-					<url>sftp://frs.sourceforge.net/home/frs/project/es-osmosis</url>
+					<url>sftp://ncolomer,es-osmosis@web.sourceforge.net:/home/frs/project/e/es/es-osmosis</url>
 					<fromDir>${project.build.directory}</fromDir>
 					<includes>${project.name}-${project.version}.jar</includes>
 					<toDir>releases</toDir>
