@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.openstreetmap.osmosis</groupId>
 	<artifactId>elasticsearch-osmosis-plugin</artifactId>
-	<version>1.4.1-SNAPSHOT</version>
+	<version>1.4.0-SNAPSHOT</version>
 	<name>elasticsearch-osmosis-plugin</name>
 	<packaging>jar</packaging>
 
@@ -73,7 +73,7 @@
 			<version>${osmosis.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<!-- elasticsearch -->
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
