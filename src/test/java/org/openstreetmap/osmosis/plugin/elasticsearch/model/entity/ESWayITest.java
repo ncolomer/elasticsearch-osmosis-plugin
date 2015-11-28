@@ -51,7 +51,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		String expected = "{\"centroid\":[2.37966091923039,48.67553114382843],\"lengthKm\":0.08489436252741311," +
 				"\"areaKm2\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
 				"[[2.379358,48.675763],[2.379606,48.675584],[2.379955,48.675288]]}," +
-				"\"tags\":{\"name\":\"Avenue Marc Sangnier\",\"highway\":\"residential\"}}";
+				"\"tags\":{\"highway\":\"residential\",\"name\":\"Avenue Marc Sangnier\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
