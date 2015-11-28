@@ -1,11 +1,12 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.client;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
@@ -67,7 +68,7 @@ public class ElasticsearchClientBuilder {
 		// Connect as NodeClient (member of the cluster), see Gists:
 		// https://gist.github.com/2491022 and https://gist.github.com/2491022
 		// http://www.elasticsearch.org/guide/reference/modules/discovery/zen.html
-		Settings settings = ImmutableSettings.settingsBuilder()
+		Settings settings = Settings.settingsBuilder()
 				.put("node.local", false) // Disable local JVM discovery
 				.put("node.data", false) // Disable data on this node
 				.put("node.master", false) // Never elected as master
@@ -91,17 +92,22 @@ public class ElasticsearchClientBuilder {
 		LOG.info(String.format("Connecting to elasticsearch cluster '%s' via [%s]" +
 				" using TransportClient", clusterName, hosts));
 		// Connect as TransportClient (proxy of the cluster)
-		Settings settings = ImmutableSettings.settingsBuilder()
+		Settings settings = Settings.settingsBuilder()
 				.put("cluster.name", clusterName)
 				.put("client.transport.sniff", true)
 				.build();
-		TransportClient transportClient = new TransportClient(settings);
+		TransportClient transportClient = TransportClient.builder().settings(settings).build();
 		// Add specified TransportAddresses
 		for (String host : hosts.split(",")) {
 			String[] params = host.split(":");
 			String hostname = params[0];
 			int port = (params.length == 2) ? Integer.valueOf(params[1]) : 9300;
-			transportClient.addTransportAddress(new InetSocketTransportAddress(hostname, port));
+			try {
+				transportClient.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostname), port));
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return transportClient;
 	}

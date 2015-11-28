@@ -10,8 +10,8 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.GeoDistanceFilterBuilder;
-import org.elasticsearch.index.query.GeoShapeFilterBuilder;
+import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
+import org.elasticsearch.index.query.GeoShapeQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
 import org.junit.Before;
@@ -69,7 +69,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		ShapeBuilder shape = buildSquareShape(48.675652, 2.384955, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -88,7 +88,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		ShapeBuilder shape = buildSquareShape(48.676455, 2.380899, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -107,7 +107,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		ShapeBuilder shape = buildSquareShape(48.675652, 2.384955, 10000);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -127,7 +127,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		ShapeBuilder shape = buildSquareShape(48.675652, 2.384955, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -145,7 +145,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		// Action
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoDistanceFilterBuilder("centroid").point(48.675652, 2.384955).distance(20, DistanceUnit.METERS))
+				.setPostFilter(new GeoDistanceQueryBuilder("centroid").point(48.675652, 2.384955).distance(20, DistanceUnit.METERS))
 				.execute().actionGet();
 
 		// Assert
@@ -163,7 +163,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		// Action
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoDistanceFilterBuilder("centroid").point(48.676455, 2.380899).distance(20, DistanceUnit.METERS))
+				.setPostFilter(new GeoDistanceQueryBuilder("centroid").point(48.676455, 2.380899).distance(20, DistanceUnit.METERS))
 				.execute().actionGet();
 
 		// Assert
@@ -183,7 +183,7 @@ public class ESNodeITest extends AbstractElasticSearchInMemoryTest {
 		// Action
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.NODE.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoDistanceFilterBuilder("centroid").point(48.676455, 2.380899).distance(1, DistanceUnit.KILOMETERS))
+				.setPostFilter(new GeoDistanceQueryBuilder("centroid").point(48.676455, 2.380899).distance(1, DistanceUnit.KILOMETERS))
 				.addSort(new GeoDistanceSortBuilder("centroid").point(48.676455, 2.380899).unit(DistanceUnit.METERS))
 				.execute().actionGet();
 

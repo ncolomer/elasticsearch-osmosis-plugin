@@ -9,7 +9,7 @@ import com.spatial4j.core.shape.impl.PointImpl;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
-import org.elasticsearch.index.query.GeoShapeFilterBuilder;
+import org.elasticsearch.index.query.GeoShapeQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		String expected = "{\"centroid\":[2.37966091923039,48.67553114382843],\"lengthKm\":0.08489436252741311," +
 				"\"areaKm2\":0.0,\"shape\":{\"type\":\"linestring\",\"coordinates\":" +
 				"[[2.379358,48.675763],[2.379606,48.675584],[2.379955,48.675288]]}," +
-				"\"tags\":{\"highway\":\"residential\",\"name\":\"Avenue Marc Sangnier\"}}";
+				"\"tags\":{\"name\":\"Avenue Marc Sangnier\",\"highway\":\"residential\"}}";
 		String actual = response.getSourceAsString();
 		Assert.assertEquals(expected, actual);
 	}
@@ -106,7 +106,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		ShapeBuilder shape = buildSquareShape(48.675763, 2.379358, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -126,7 +126,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
         ShapeBuilder shape = buildSquareShape(48.676455, 2.380899, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -146,7 +146,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
         ShapeBuilder shape = buildSquareShape(48.675763, 2.379358, 10000);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -172,7 +172,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
         ShapeBuilder shape = buildSquareShape(48.675689, 2.38259, 45);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -193,7 +193,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		ShapeBuilder shape = buildSquareShape(48.675763, 2.379358, 100);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
@@ -214,7 +214,7 @@ public class ESWayITest extends AbstractElasticSearchInMemoryTest {
 		ShapeBuilder shape = buildSquareShape(48.676455, 2.380899, 20);
 		SearchResponse searchResponse = client().prepareSearch(INDEX_NAME).setTypes(ESEntityType.WAY.getIndiceName())
 				.setQuery(QueryBuilders.matchAllQuery())
-				.setPostFilter(new GeoShapeFilterBuilder("shape", shape))
+				.setPostFilter(new GeoShapeQueryBuilder("shape", shape))
 				.execute().actionGet();
 
 		// Assert
