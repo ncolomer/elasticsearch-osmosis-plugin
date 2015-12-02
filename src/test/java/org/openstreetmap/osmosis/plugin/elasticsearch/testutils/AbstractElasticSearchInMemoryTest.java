@@ -1,7 +1,7 @@
 package org.openstreetmap.osmosis.plugin.elasticsearch.testutils;
 
 import static junit.framework.Assert.fail;
-import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.settings.Settings.settingsBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,11 +40,9 @@ public abstract class AbstractElasticSearchInMemoryTest {
 		if (!tmpFolder.mkdir()) fail("Could not create a temporary folder [" + tmpFolderPath + "]");
 		Settings settings = settingsBuilder()
 				.put("cluster.name", CLUSTER_NAME)
-				.put("gateway.type", "none")
-				.put("index.store.type", "memory")
 				.put("index.number_of_shards", 1)
 				.put("index.number_of_replicas", 0)
-				.put("path.data", tmpFolderPath)
+				.put("path.home", tmpFolderPath)
 				.build();
 		node = NodeBuilder.nodeBuilder()
 				.settings(settings)
