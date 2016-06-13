@@ -23,6 +23,7 @@ Following documentation is available in the project's [wiki](https://github.com/
 
 | elasticsearch version | plugin branch | build status | release |
 |:-:|:-:|:-:|:-:|
+| 2.1.x | 2.1.x | [![Circle CI](https://circleci.com/gh/ncolomer/elasticsearch-osmosis-plugin/tree/2.1.x.svg?style=shield)](https://circleci.com/gh/ncolomer/elasticsearch-osmosis-plugin/tree/2.1.x) | [![2.1.0](http://img.shields.io/badge/download-2.1.0-blue.svg)](http://sourceforge.net/projects/es-osmosis/files/releases/elasticsearch-osmosis-plugin-2.1.0.jar) |
 | 1.4.x | 1.4.x-tmp | [![Circle CI](https://circleci.com/gh/ncolomer/elasticsearch-osmosis-plugin/tree/1.4.x-tmp.svg?style=shield)](https://circleci.com/gh/ncolomer/elasticsearch-osmosis-plugin/tree/1.4.x-tmp) | [![1.4.0](http://img.shields.io/badge/download-1.4.0-blue.svg)](http://sourceforge.net/projects/es-osmosis/files/releases/elasticsearch-osmosis-plugin-1.4.0.jar) |
 | 0.90.x | 0.90.x | [![Circle CI](https://circleci.com/gh/ncolomer/elasticsearch-osmosis-plugin/tree/0.90.x.svg?style=shield)](https://circleci.com/gh/ncolomer/elasticsearch-osmosis-plugin/tree/0.90.x) | [![1.3.0](http://img.shields.io/badge/download-1.3.0-blue.svg)](http://sourceforge.net/projects/es-osmosis/files/releases/elasticsearch-osmosis-plugin-1.3.0.jar) |
 
